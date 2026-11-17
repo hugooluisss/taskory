@@ -1,0 +1,17 @@
+<header class="topbar">
+  <a class="brand" routerLink="/activities">Taskory</a>
+  <nav *ngIf="auth.isAuthenticated()" aria-label="{{ 'nav.label' | transloco }}">
+    <a routerLink="/activities">{{ 'nav.activities' | transloco }}</a>
+    <a routerLink="/reports">{{ 'nav.reports' | transloco }}</a>
+    <a routerLink="/settings">{{ 'nav.settings' | transloco }}</a>
+  </nav>
+  <div class="tools">
+    <app-language-switcher />
+    <button *ngIf="auth.isAuthenticated()" type="button" (click)="logout()">
+      {{ 'auth.logout' | transloco }}
+    </button>
+  </div>
+</header>
+<router-outlet />
+<app-confirm-dialog />
+<app-toast />

@@ -1,0 +1,33 @@
+<section class="filters" aria-label="{{ 'filters' | transloco }}">
+  <button
+    class="mobile-toggle"
+    type="button"
+    [attr.aria-expanded]="expanded"
+    (click)="expanded = !expanded"
+  >
+    {{ 'filters' | transloco }}
+  </button>
+  <form [class.expanded]="expanded" (ngSubmit)="submit()">
+    <label for="filter-from">{{ 'from' | transloco }}</label>
+    <input id="filter-from" name="from" type="date" [(ngModel)]="from" />
+    <label for="filter-to">{{ 'to' | transloco }}</label>
+    <input id="filter-to" name="to" type="date" [(ngModel)]="to" />
+    <label for="filter-project">{{ 'project' | transloco }}</label>
+    <select id="filter-project" name="project" [(ngModel)]="project">
+      <option value="">{{ 'allProjects' | transloco }}</option>
+      @for (item of projects; track item) {
+        <option [value]="item">{{ item }}</option>
+      }
+    </select>
+    <label for="filter-tag">{{ 'tag' | transloco }}</label>
+    <input id="filter-tag" name="tag" [(ngModel)]="tag" />
+    <label for="filter-query">{{ 'search' | transloco }}</label>
+    <input id="filter-query" name="q" [(ngModel)]="q" />
+    <div class="actions">
+      <button type="submit">{{ 'applyFilters' | transloco }}</button>
+      <button type="button" class="clear" (click)="reset()">
+        {{ 'clearFilters' | transloco }}
+      </button>
+    </div>
+  </form>
+</section>

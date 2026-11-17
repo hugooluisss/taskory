@@ -1,0 +1,60 @@
+<dialog #dialog aria-labelledby="activity-form-title" (cancel)="$event.preventDefault(); close()">
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <h2 id="activity-form-title">{{ (currentId ? 'editActivity' : 'newActivity') | transloco }}</h2>
+    <label for="form-date">{{ 'date' | transloco }} *</label>
+    <input
+      id="form-date"
+      type="date"
+      formControlName="date"
+      [attr.aria-invalid]="dateError ? 'true' : null"
+      aria-describedby="date-error"
+    />
+    @if (dateError) {
+      <small id="date-error" aria-live="polite">{{ 'required' | transloco }}</small>
+    }
+    <label for="form-title">{{ 'title' | transloco }} *</label>
+    <input
+      id="form-title"
+      formControlName="title"
+      maxlength="200"
+      [attr.aria-invalid]="titleError ? 'true' : null"
+      aria-describedby="title-error"
+    />
+    @if (titleError) {
+      <small id="title-error" aria-live="polite">{{ titleError | transloco }}</small>
+    }
+    <label for="form-project">{{ 'project' | transloco }}</label>
+    <input id="form-project" formControlName="project" list="form-projects" />
+    <datalist id="form-projects">
+      @for (suggestion of projects; track suggestion) {
+        <option [value]="suggestion"></option>
+      }
+    </datalist>
+    <app-textarea
+      id="form-description"
+      formControlName="description"
+      [label]="'description' | transloco"
+    ></app-textarea>
+    <app-chips-input
+      id="form-tags"
+      mode="tags"
+      formControlName="tags"
+      [label]="'tags' | transloco"
+    ></app-chips-input>
+    <app-chips-input
+      id="form-urls"
+      mode="urls"
+      formControlName="referenceUrls"
+      [label]="'referenceUrls' | transloco"
+    ></app-chips-input>
+    @if (error) {
+      <p class="error" role="alert">{{ error | transloco }}</p>
+    }
+    <div class="actions">
+      <button type="button" class="cancel" (click)="close()">{{ 'cancel' | transloco }}</button>
+      <button type="submit" [disabled]="saving" [attr.aria-busy]="saving">
+        {{ 'save' | transloco }}
+      </button>
+    </div>
+  </form>
+</dialog>

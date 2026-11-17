@@ -1,0 +1,44 @@
+<details>
+  <summary>{{ 'settings.advanced' | transloco }}</summary>
+  <h2>{{ 'settings.keys' | transloco }}</h2>
+  <label for="key-name">{{ 'settings.keyName' | transloco }}</label>
+  <input
+    id="key-name"
+    [value]="keyName"
+    required
+    aria-required="true"
+    (input)="keyNameChange.emit($any($event.target).value)"
+    required
+  />
+  <button type="button" (click)="create.emit()" [disabled]="!keyName.trim() || creating">
+    {{ (creating ? 'settings.saving' : 'settings.create') | transloco }}
+  </button>
+  <div class="secret" *ngIf="newKey">
+    <p>{{ 'settings.newKey' | transloco }}</p>
+    <code>{{ newKey }}</code>
+    <button type="button" (click)="copy.emit(newKey)">{{ 'settings.copy' | transloco }}</button>
+    <button type="button" (click)="dismiss.emit()">{{ 'settings.dismissKey' | transloco }}</button>
+  </div>
+  <p>{{ 'settings.clients' | transloco }}</p>
+  <ul>
+    <li *ngFor="let key of keys">
+      <strong>{{ key.name }}</strong>
+      <span>{{ 'settings.prefix' | transloco }}: {{ key.prefix }}</span>
+      <span
+        >{{ 'settings.created' | transloco }}:
+        {{ key.createdAt | date: undefined : undefined : locale }}</span
+      >
+      <span
+        >{{ 'settings.lastUsed' | transloco }}:
+        {{
+          key.lastUsedAt
+            ? (key.lastUsedAt | date: undefined : undefined : locale)
+            : ('settings.lastUsedUnknown' | transloco)
+        }}</span
+      >
+      <button type="button" (click)="revoke.emit(key.id)">
+        {{ 'settings.revoke' | transloco }}
+      </button>
+    </li>
+  </ul>
+</details>

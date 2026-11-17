@@ -1,0 +1,11 @@
+<form [formGroup]="form">
+  <app-textarea
+    id="reactive-description"
+    label="Description"
+    formControlName="description"
+    hint="Details"
+    error="Required"
+    [required]="true"
+  />
+</form>
+<app-textarea id="model-description" label="Model description" [(ngModel)]="modelValue" />

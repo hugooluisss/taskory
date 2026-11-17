@@ -1,0 +1,31 @@
+.page {
+  display: grid;
+  gap: 20px;
+  width: min(960px, calc(100% - 32px));
+  margin: 32px auto;
+}
+.error {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--color-danger);
+  background: #fff0f0;
+}
+.error button {
+  border: 0;
+  color: var(--color-accent);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 520px) {
+  .page {
+    width: min(100% - 24px, 960px);
+    margin: 20px auto;
+    gap: 16px;
+  }
+}

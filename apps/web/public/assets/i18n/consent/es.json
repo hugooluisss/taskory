@@ -1,0 +1,16 @@
+{
+  "question": "¿Permitir que {{name}} acceda a tu Taskory?",
+  "unverified": "No verificado",
+  "clientId": "ID del cliente",
+  "redirect": "Destino completo de redirección",
+  "grants": "Esto concede acceso completo a tus actividades e informes.",
+  "allow": "Permitir",
+  "deny": "Denegar",
+  "loading": "Procesando…",
+  "unavailable": "Esta solicitud venció o ya no está disponible. Inténtalo de nuevo desde tu asistente.",
+  "home": "Ir a Taskory",
+  "framed": "Por tu seguridad, abre esta página en su propia pestaña.",
+  "retry": "Hubo un problema de conexión. Inténtalo de nuevo.",
+  "load": "Cargar solicitud",
+  "unknown": "Algo salió mal. Inténtalo de nuevo."
+}

@@ -1,0 +1,34 @@
+<main class="consent">
+  <p *ngIf="framed()" role="alert">{{ 'consent.framed' | transloco }}</p>
+  <ng-container *ngIf="!framed()">
+    <p *ngIf="loading()" role="status">{{ 'consent.loading' | transloco }}</p>
+    <ng-container *ngIf="request() as consent">
+      <h1>{{ 'consent.question' | transloco: { name: consent.clientName } }}</h1>
+      <app-consent-details [request]="consent" />
+      <p>{{ 'consent.grants' | transloco }}</p>
+      <p *ngIf="error()" role="alert">{{ 'consent.retry' | transloco }}</p>
+      <button
+        *ngIf="error()"
+        type="button"
+        [disabled]="loading()"
+        (click)="decide(lastDecision() ?? true)"
+      >
+        {{ 'consent.load' | transloco }}
+      </button>
+      <button type="button" [disabled]="loading()" (click)="decide(true)">
+        {{ 'consent.allow' | transloco }}
+      </button>
+      <button type="button" [disabled]="loading()" (click)="decide(false)">
+        {{ 'consent.deny' | transloco }}
+      </button>
+    </ng-container>
+    <section *ngIf="unavailable()" role="status">
+      <h1>{{ 'consent.unavailable' | transloco }}</h1>
+      <a routerLink="/activities">{{ 'consent.home' | transloco }}</a>
+    </section>
+    <section *ngIf="error() && !request()" role="alert">
+      <p>{{ 'consent.retry' | transloco }}</p>
+      <button type="button" (click)="load()">{{ 'consent.load' | transloco }}</button>
+    </section>
+  </ng-container>
+</main>

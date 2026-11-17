@@ -1,0 +1,13 @@
+<form [formGroup]="form">
+  <app-chips-input
+    id="reactive-tags"
+    label="Tags"
+    mode="tags"
+    formControlName="tags"
+    hint="Add tags"
+    error="Required"
+    [required]="true"
+  />
+</form>
+<app-chips-input id="model-tags" label="Model tags" [(ngModel)]="modelValue" />
+<app-chips-input id="url-tags" label="URLs" mode="urls" />

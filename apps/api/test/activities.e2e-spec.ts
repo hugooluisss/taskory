@@ -85,11 +85,16 @@ describe("Activity creation", () => {
 
     expect(response.body.id).not.toBe("forged-post-id");
     expect(stored.body.id).toBe(response.body.id);
-    expect(stored.body.userId).toBe(response.body.userId);
+    expect(stored.body).not.toHaveProperty("userId");
+    const persisted = await app
+      .get(DataSource)
+      .getRepository(Activity)
+      .findOneByOrFail({ id: response.body.id });
+    expect(persisted.userId).toBeTruthy();
+    expect(persisted.userId).not.toBe("foreign-user");
     expect(stored.body.createdAt).toBe(response.body.createdAt);
     expect(stored.body.updatedAt).toBe(response.body.updatedAt);
-    expect(response.body.userId).toBeTruthy();
-    expect(response.body.userId).not.toBe("foreign-user");
+    expect(response.body).not.toHaveProperty("userId");
     expect(new Date(response.body.createdAt).getUTCFullYear()).not.toBe(2000);
     expect(new Date(response.body.updatedAt).getUTCFullYear()).not.toBe(2000);
   });
@@ -142,6 +147,7 @@ describe("Activity listing and filters", () => {
       owner,
       "from=2026-11-01&to=2026-11-15",
     ).expect(200);
+    expect(response.body.items[0]).not.toHaveProperty("userId");
     const titles = response.body.items.map(
       (item: { title: string }) => item.title,
     );
@@ -270,7 +276,13 @@ describe("Filter and body validation", () => {
     expect(response.body.createdAt).toBe(created.body.createdAt);
     expect(response.body.updatedAt).not.toBe("2000-01-01");
     expect(stored.body.id).toBe(created.body.id);
-    expect(stored.body.userId).toBe(created.body.userId);
+    expect(response.body).not.toHaveProperty("userId");
+    expect(stored.body).not.toHaveProperty("userId");
+    const persisted = await app
+      .get(DataSource)
+      .getRepository(Activity)
+      .findOneByOrFail({ id: created.body.id });
+    expect(persisted.userId).not.toBe("other");
     expect(stored.body.createdAt).toBe(created.body.createdAt);
     expect(stored.body.updatedAt).toBe(response.body.updatedAt);
     expect(stored.body.updatedAt).not.toBe("2000-01-01");

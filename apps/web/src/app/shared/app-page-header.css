@@ -1,0 +1,10 @@
+header {
+  margin-bottom: 24px;
+}
+h1 {
+  margin: 0;
+  font-weight: 600;
+}
+p {
+  color: var(--color-muted);
+}

@@ -1,0 +1,55 @@
+<form class="quick-add" (ngSubmit)="submit()">
+  <label for="quick-title">{{ 'quickTitle' | transloco }}</label>
+  <div class="title-row">
+    <input
+      id="quick-title"
+      name="title"
+      [(ngModel)]="title"
+      required
+      maxlength="200"
+      (keydown.enter)="submit(); $event.preventDefault()"
+    />
+    <button type="submit" [disabled]="!title.trim() || pending">{{ 'add' | transloco }}</button>
+  </div>
+  <button
+    class="details-toggle"
+    type="button"
+    [attr.aria-expanded]="expanded"
+    (click)="expanded = !expanded"
+  >
+    {{ (expanded ? 'hideDetails' : 'moreDetails') | transloco }}
+  </button>
+  @if (expanded) {
+    <div class="details">
+      <label for="quick-date">{{ 'date' | transloco }}</label>
+      <input id="quick-date" name="date" type="date" [(ngModel)]="date" required />
+      <label for="quick-project">{{ 'project' | transloco }}</label>
+      <input id="quick-project" name="project" list="quick-projects" [(ngModel)]="project" />
+      <datalist id="quick-projects">
+        @for (suggestion of projects; track suggestion) {
+          <option [value]="suggestion"></option>
+        }
+      </datalist>
+      <app-textarea
+        id="quick-description"
+        name="description"
+        [label]="'description' | transloco"
+        [(ngModel)]="description"
+      ></app-textarea>
+      <app-chips-input
+        id="quick-tags"
+        name="tags"
+        mode="tags"
+        [label]="'tags' | transloco"
+        [(ngModel)]="tags"
+      ></app-chips-input>
+      <app-chips-input
+        id="quick-urls"
+        name="urls"
+        mode="urls"
+        [label]="'referenceUrls' | transloco"
+        [(ngModel)]="referenceUrls"
+      ></app-chips-input>
+    </div>
+  }
+</form>

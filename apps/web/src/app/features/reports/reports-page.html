@@ -1,0 +1,27 @@
+<main class="page">
+  <app-page-header
+    [title]="'reports.title' | transloco"
+    [description]="'reports.description' | transloco"
+  />
+  <app-report-form (generate)="generate($event)" />
+  @if (errorKey()) {
+    <p class="error" role="alert">{{ errorKey() | transloco }}</p>
+    @if (activeReportId()) {
+      <button class="open-report" type="button" (click)="openActiveReport()">
+        {{ 'reports.errors.openActiveReport' | transloco }}
+      </button>
+    }
+  }
+  @if (job(); as currentJob) {
+    <app-report-progress
+      [job]="currentJob"
+      [active]="currentJob.status === 'queued' || currentJob.status === 'running'"
+      (retry)="retry()"
+      (delete)="deleteJob()"
+      (cancel)="deleteJob()"
+    />
+  }
+  @if (result(); as report) {
+    <app-report-result [report]="report" />
+  }
+</main>

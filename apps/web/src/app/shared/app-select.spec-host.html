@@ -1,0 +1,17 @@
+<form [formGroup]="form">
+  <app-select
+    id="reactive-project"
+    label="Project"
+    placeholder="Choose"
+    formControlName="project"
+    hint="Optional"
+    error="Required"
+    [required]="true"
+  >
+    <option value="one">One</option>
+    <option value="two">Two</option>
+  </app-select>
+</form>
+<app-select id="model-project" label="Model project" placeholder="Choose" [(ngModel)]="modelValue">
+  <option value="one">One</option>
+</app-select>

@@ -1,0 +1,16 @@
+{
+  "question": "Allow {{name}} to access your Taskory?",
+  "unverified": "Not verified",
+  "clientId": "Client ID",
+  "redirect": "Complete redirect destination",
+  "grants": "This grants full access to your activities and reports.",
+  "allow": "Allow",
+  "deny": "Deny",
+  "loading": "Working…",
+  "unavailable": "This request has expired or is no longer available. Please retry from your assistant.",
+  "home": "Go to Taskory",
+  "framed": "For your security, open this page in its own tab.",
+  "retry": "A connection problem occurred. Try again.",
+  "load": "Load request",
+  "unknown": "Something went wrong. Try again."
+}

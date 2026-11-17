@@ -1,0 +1,59 @@
+.quick-add {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px #1b23330d;
+}
+.title-row {
+  display: flex;
+  gap: 8px;
+}
+.title-row input {
+  flex: 1;
+  min-width: 0;
+}
+.quick-add input {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+}
+.quick-add button {
+  min-height: 42px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.quick-add button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.quick-add .details-toggle {
+  justify-self: start;
+  padding: 4px 0;
+  color: var(--color-accent);
+  background: transparent;
+}
+.details {
+  display: grid;
+  gap: 8px;
+}
+.details label {
+  margin-top: 8px;
+}
+@media (max-width: 520px) {
+  .quick-add {
+    padding: 16px;
+  }
+  .title-row {
+    flex-direction: column;
+  }
+}

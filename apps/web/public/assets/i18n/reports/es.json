@@ -1,0 +1,63 @@
+{
+  "title": "Informes",
+  "description": "Convierte tus actividades en un resumen claro de tu trabajo.",
+  "form": {
+    "title": "Detalles del informe",
+    "range": "Periodo",
+    "thisWeek": "Esta semana",
+    "lastWeek": "La semana pasada",
+    "thisMonth": "Este mes",
+    "lastMonth": "El mes pasado",
+    "from": "Desde",
+    "to": "Hasta",
+    "invalidRange": "Elige fechas válidas y asegúrate de que el inicio no sea posterior al final.",
+    "project": "Proyecto",
+    "projectsUnavailable": "No se pudieron cargar las sugerencias de proyectos. Aún puedes escribir un nombre.",
+    "language": "Idioma del informe",
+    "spanish": "Español",
+    "english": "Inglés",
+    "style": "Estilo",
+    "summary": "Resumen",
+    "detailed": "Detallado",
+    "advanced": "Avanzado",
+    "provider": "Proveedor",
+    "defaultProvider": "Proveedor predeterminado",
+    "model": "Modelo",
+    "unavailable": "no disponible",
+    "unavailableHint": "Los proveedores no disponibles no se pueden seleccionar hasta que estén conectados.",
+    "providersUnavailable": "No se pudieron cargar las opciones de proveedor. El proveedor predeterminado sigue disponible.",
+    "generate": "Generar informe"
+  },
+  "progress": {
+    "title": "Tu informe está en proceso",
+    "reading": "Leyendo tus actividades, parte {{part}} de {{total}}",
+    "failed": "No se pudo completar la parte {{chunk}}. Puedes reintentar el informe.",
+    "failedWithoutChunk": "No se pudo completar el informe. Puedes intentarlo de nuevo.",
+    "retry": "Reintentar",
+    "delete": "Eliminar informe",
+    "cancel": "Cancelar informe"
+  },
+  "result": {
+    "title": "Tu informe",
+    "copy": "Copiar como Markdown",
+    "metadata": "{{provider}} · {{model}} · {{count}} actividades",
+    "copied": "Informe copiado.",
+    "copyFailed": "No se pudo copiar el informe."
+  },
+  "errors": {
+    "NO_ACTIVITIES": "No encontramos actividades en estas fechas. Elige otro periodo o proyecto.",
+    "RANGE_TOO_LARGE": "Este periodo contiene demasiadas actividades. Elige un periodo más corto.",
+    "LLM_UNAVAILABLE": "El servicio de informes no está disponible. Inténtalo de nuevo en un momento.",
+    "UNKNOWN_PROVIDER": "No reconocemos ese proveedor. Elige otro.",
+    "REPORT_IN_PROGRESS": "Ya se está generando un informe. Abre el informe activo para ver su progreso.",
+    "openActiveReport": "Abrir el informe activo",
+    "VALIDATION_ERROR": "Revisa los detalles del informe e inténtalo de nuevo.",
+    "UNKNOWN": "No se pudo generar el informe. Inténtalo de nuevo."
+  },
+  "confirm": {
+    "title": "¿Eliminar este informe?",
+    "message": "Se eliminarán el informe y su progreso.",
+    "confirm": "Eliminar",
+    "cancel": "Conservar informe"
+  }
+}

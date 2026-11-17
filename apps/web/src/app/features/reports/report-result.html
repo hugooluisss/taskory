@@ -1,0 +1,16 @@
+<section class="card" aria-labelledby="result-title">
+  <div class="heading">
+    <h2 id="result-title">{{ 'reports.result.title' | transloco }}</h2>
+    <app-button variant="secondary" [loading]="copying()" (click)="copy()">{{
+      'reports.result.copy' | transloco
+    }}</app-button>
+  </div>
+  <p class="metadata">
+    {{
+      'reports.result.metadata'
+        | transloco: { provider: report.provider, model: report.model, count: report.activityCount }
+    }}
+  </p>
+  <article class="markdown" [innerHTML]="html"></article>
+  <ng-content />
+</section>

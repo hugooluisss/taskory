@@ -1,0 +1,26 @@
+<main class="settings">
+  <app-page-header [title]="'settings.title' | transloco" />
+  <app-profile-section
+    [name]="user()?.name || ''"
+    [language]="user()?.language || 'en'"
+    [saving]="savingProfile()"
+    (save)="saveProfile($event)"
+  />
+  <app-connect-assistant-card [serverUrl]="mcpUrl" (copy)="copy($event)" />
+  <app-connected-apps-section
+    [apps]="appsList()"
+    [loading]="loading()"
+    (disconnect)="disconnect($event)"
+  />
+  <app-api-keys-section
+    [keys]="keysList()"
+    [keyName]="keyName()"
+    [newKey]="newKey()"
+    [creating]="creatingKey()"
+    (keyNameChange)="keyName.set($event)"
+    (create)="createKey()"
+    (copy)="copy($event)"
+    (dismiss)="dismissKey()"
+    (revoke)="revokeKey($event)"
+  />
+</main>

@@ -1,0 +1,10 @@
+dl {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) 2fr;
+  gap: 0.5rem 1rem;
+  overflow-wrap: anywhere;
+}
+
+dt {
+  font-weight: 600;
+}

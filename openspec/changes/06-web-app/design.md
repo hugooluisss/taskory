@@ -24,3 +24,11 @@ Una primera versión de la app existe en una copia de respaldo (no está en el r
 ## Risks / Trade-offs
 
 - JWT en `localStorage` es vulnerable a XSS → mitigado con sanitización y CSP en el despliegue.
+
+## Decisiones de ejecución (fase 06)
+
+- **Guía visual y de accesibilidad**: `docs/web-design.md` (audiencia no técnica, quick-add, diálogos de confirmación accesibles con `<dialog>` en lugar de `window.confirm`, tokens CSS, componentes compartidos). Es obligatoria.
+- **Proxy de desarrollo**: `proxy.conf.mjs` lee `API_PROXY_TARGET` (por defecto `http://localhost:3000`) y solo proxea `/api`; en esta máquina el puerto 3000 está ocupado por otro servicio, así que las pruebas usan `API_PROXY_TARGET=http://localhost:3999`.
+- **Ruta de consentimiento**: `/oauth/consent?request=<id>` es una ruta de la web; en el despliegue (fase 07) esa ruta exacta va a la web y el resto de `/oauth/*` va a la API.
+- **Pruebas**: Vitest con el ejecutor de Angular (`ng test`), TestBed, `HttpTestingController` solo en los repositories; las páginas se prueban con servicios falsos.
+- **Estructura**: `src/app/core/` (repositories, interceptor, guards, config, i18n), `src/app/features/<feature>/` (página = controller con su `.html` y `.css`, service de la feature), `src/app/shared/` (componentes de UI).

@@ -1,0 +1,63 @@
+{
+  "title": "Reports",
+  "description": "Turn your activities into a clear summary of your work.",
+  "form": {
+    "title": "Report details",
+    "range": "Date range",
+    "thisWeek": "This week",
+    "lastWeek": "Last week",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "from": "From",
+    "to": "To",
+    "invalidRange": "Choose valid dates, with the start on or before the end.",
+    "project": "Project",
+    "projectsUnavailable": "Project suggestions could not be loaded. You can still enter a project name.",
+    "language": "Report language",
+    "spanish": "Spanish",
+    "english": "English",
+    "style": "Style",
+    "summary": "Summary",
+    "detailed": "Detailed",
+    "advanced": "Advanced",
+    "provider": "Provider",
+    "defaultProvider": "Default provider",
+    "model": "Model",
+    "unavailable": "unavailable",
+    "unavailableHint": "Unavailable providers cannot be selected until they are online.",
+    "providersUnavailable": "Could not load provider choices. The default provider is still available.",
+    "generate": "Generate report"
+  },
+  "progress": {
+    "title": "Your report is in progress",
+    "reading": "Reading your activities, part {{part}} of {{total}}",
+    "failed": "Part {{chunk}} could not be completed. You can retry this report.",
+    "failedWithoutChunk": "The report could not be completed. You can retry it.",
+    "retry": "Retry",
+    "delete": "Delete report",
+    "cancel": "Cancel report"
+  },
+  "result": {
+    "title": "Your report",
+    "copy": "Copy as Markdown",
+    "metadata": "{{provider}} · {{model}} · {{count}} activities",
+    "copied": "Report copied.",
+    "copyFailed": "Could not copy the report."
+  },
+  "errors": {
+    "NO_ACTIVITIES": "No activities were found for these dates. Choose another date range or project.",
+    "RANGE_TOO_LARGE": "This date range includes too many activities. Choose a shorter range.",
+    "LLM_UNAVAILABLE": "The report service is unavailable. Try again in a moment.",
+    "UNKNOWN_PROVIDER": "That report provider is not recognized. Choose another provider.",
+    "REPORT_IN_PROGRESS": "A report is already being generated. Open the active report to follow its progress.",
+    "openActiveReport": "Open the active report",
+    "VALIDATION_ERROR": "Check the report details and try again.",
+    "UNKNOWN": "The report could not be generated. Try again."
+  },
+  "confirm": {
+    "title": "Delete this report?",
+    "message": "This report and its progress will be deleted.",
+    "confirm": "Delete",
+    "cancel": "Keep report"
+  }
+}

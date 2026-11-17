@@ -1,0 +1,29 @@
+<section aria-labelledby="apps-heading">
+  <h2 id="apps-heading">{{ 'settings.apps' | transloco }}</h2>
+  <app-spinner *ngIf="loading" />
+  <app-empty-state
+    *ngIf="!loading && apps.length === 0"
+    [title]="'settings.apps' | transloco"
+    [message]="'settings.emptyApps' | transloco"
+  />
+  <ul *ngIf="!loading">
+    <li *ngFor="let app of apps">
+      <strong>{{ app.clientName }}</strong>
+      <span
+        >{{ 'settings.created' | transloco }}:
+        {{ app.createdAt | date: undefined : undefined : locale }}</span
+      >
+      <span
+        >{{ 'settings.lastUsed' | transloco }}:
+        {{
+          app.lastUsedAt
+            ? (app.lastUsedAt | date: undefined : undefined : locale)
+            : ('settings.lastUsedUnknown' | transloco)
+        }}</span
+      >
+      <button type="button" (click)="disconnect.emit(app.id)">
+        {{ 'settings.disconnect' | transloco }}
+      </button>
+    </li>
+  </ul>
+</section>

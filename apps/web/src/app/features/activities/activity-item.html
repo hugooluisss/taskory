@@ -1,0 +1,43 @@
+<article class="activity">
+  <div class="heading">
+    <h3>{{ activity.title }}</h3>
+    <div class="actions">
+      <button type="button" (click)="edit.emit(activity)">{{ 'edit' | transloco }}</button>
+      <button type="button" class="delete" (click)="remove.emit(activity)">
+        {{ 'delete' | transloco }}
+      </button>
+    </div>
+  </div>
+  @if (activity.project) {
+    <span class="project">{{ activity.project }}</span>
+  }
+  @if (activity.tags.length) {
+    <ul class="tags" [attr.aria-label]="'tags' | transloco">
+      @for (tag of activity.tags; track tag) {
+        <li>{{ tag }}</li>
+      }
+    </ul>
+  }
+  @if (activity.description) {
+    <button
+      class="description-toggle"
+      type="button"
+      [attr.aria-expanded]="expanded"
+      (click)="expanded = !expanded"
+    >
+      {{ (expanded ? 'hideDescription' : 'showDescription') | transloco }}
+    </button>
+    @if (expanded) {
+      <p>{{ activity.description }}</p>
+    }
+  }
+  @if (activity.referenceUrls.length) {
+    <ul class="links" [attr.aria-label]="'referenceUrls' | transloco">
+      @for (url of activity.referenceUrls; track $index) {
+        <li>
+          <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+        </li>
+      }
+    </ul>
+  }
+</article>

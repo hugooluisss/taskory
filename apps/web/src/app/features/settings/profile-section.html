@@ -1,0 +1,27 @@
+<section aria-labelledby="profile-heading">
+  <h2 id="profile-heading">{{ 'settings.profile' | transloco }}</h2>
+  <form (ngSubmit)="submit()" novalidate>
+    <label for="profile-name">{{ 'settings.name' | transloco }}</label>
+    <input
+      id="profile-name"
+      name="profileName"
+      [(ngModel)]="name"
+      required
+      maxlength="100"
+      [attr.aria-invalid]="submitted && nameInvalid"
+      aria-describedby="profile-name-error"
+      (blur)="submitted = true"
+    />
+    <p id="profile-name-error" aria-live="polite" *ngIf="submitted && nameInvalid">
+      {{ 'settings.nameRequired' | transloco }}
+    </p>
+    <label for="profile-language">{{ 'settings.language' | transloco }}</label>
+    <select id="profile-language" name="profileLanguage" [(ngModel)]="language">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+    </select>
+    <button type="submit" [disabled]="saving">
+      {{ (saving ? 'settings.saving' : 'settings.save') | transloco }}
+    </button>
+  </form>
+</section>

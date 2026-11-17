@@ -1,0 +1,37 @@
+<section class="card" aria-labelledby="progress-title">
+  <h2 id="progress-title">{{ 'reports.progress.title' | transloco }}</h2>
+  <div
+    class="progress"
+    role="progressbar"
+    [attr.aria-valuenow]="job.progress.done"
+    [attr.aria-valuemin]="0"
+    [attr.aria-valuemax]="job.progress.total"
+  >
+    <span [style.width.%]="percent"></span>
+  </div>
+  <p [attr.aria-live]="announce ? 'polite' : 'off'">
+    {{
+      'reports.progress.reading'
+        | transloco: { part: job.progress.done + 1, total: job.progress.total }
+    }}
+  </p>
+  @if (job.status === 'failed') {
+    @if (job.error?.chunk !== null && job.error?.chunk !== undefined) {
+      <p class="error" role="alert">
+        {{ 'reports.progress.failed' | transloco: { chunk: job.error?.chunk } }}
+      </p>
+    } @else {
+      <p class="error" role="alert">{{ 'reports.progress.failedWithoutChunk' | transloco }}</p>
+    }
+    <div class="actions">
+      <app-button (click)="retry.emit()">{{ 'reports.progress.retry' | transloco }}</app-button>
+      <app-button variant="danger" (click)="delete.emit()">{{
+        'reports.progress.delete' | transloco
+      }}</app-button>
+    </div>
+  } @else if (active) {
+    <app-button variant="secondary" (click)="cancel.emit()">{{
+      'reports.progress.cancel' | transloco
+    }}</app-button>
+  }
+</section>

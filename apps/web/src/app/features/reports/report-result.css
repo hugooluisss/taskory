@@ -1,0 +1,36 @@
+.card {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 18px #1b233310;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+h2 {
+  margin: 0;
+}
+.metadata {
+  color: var(--color-muted);
+}
+.markdown {
+  max-width: 72ch;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.markdown :first-child {
+  margin-top: 0;
+}
+.markdown :last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 480px) {
+  .heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,39 @@
+<main class="auth">
+  <app-language-switcher />
+  <section class="card">
+    <h1>{{ 'auth.registerTitle' | transloco }}</h1>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label for="name">{{ 'auth.name' | transloco }}</label>
+      <input id="name" formControlName="name" autocomplete="name" required />
+      <small aria-live="polite" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+        {{ 'auth.required' | transloco }}
+      </small>
+      <label for="email">{{ 'auth.email' | transloco }}</label>
+      <input id="email" type="email" formControlName="email" autocomplete="email" required />
+      <small aria-live="polite" *ngIf="form.controls.email.touched && form.controls.email.invalid">
+        {{ 'auth.emailInvalid' | transloco }}
+      </small>
+      <label for="password">{{ 'auth.password' | transloco }}</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="new-password"
+        required
+      />
+      <small
+        aria-live="polite"
+        *ngIf="form.controls.password.touched && form.controls.password.invalid"
+      >
+        {{ 'auth.passwordLength' | transloco }}
+      </small>
+      <p role="alert" *ngIf="errorKey()">{{ errorKey() | transloco }}</p>
+      <button type="submit" [disabled]="loading()">
+        {{ (loading() ? 'common.loading' : 'auth.register') | transloco }}
+      </button>
+    </form>
+    <a routerLink="/login" [queryParams]="{ returnUrl: returnUrl }">{{
+      'auth.loginLink' | transloco
+    }}</a>
+  </section>
+</main>

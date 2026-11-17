@@ -1,0 +1,16 @@
+.consent {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.consent button {
+  margin: 0.5rem 0.5rem 0 0;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(59, 91, 219, 0.35);
+}

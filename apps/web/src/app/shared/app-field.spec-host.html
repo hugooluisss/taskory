@@ -1,0 +1,11 @@
+<form [formGroup]="form">
+  <app-field
+    id="reactive-name"
+    label="Name"
+    formControlName="name"
+    hint="Your name"
+    error="Required"
+    [required]="true"
+  />
+</form>
+<app-field id="model-name" label="Model name" [(ngModel)]="modelValue" />

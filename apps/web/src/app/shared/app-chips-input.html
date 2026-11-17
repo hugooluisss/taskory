@@ -1,0 +1,36 @@
+<label [for]="id">
+  {{ label }}
+  @if (required) {
+    <span aria-hidden="true">*</span>
+  }
+</label>
+<div class="chips" [attr.aria-describedby]="describedBy">
+  @for (item of value; track item) {
+    <span class="chip">
+      {{ item }}
+      <button
+        type="button"
+        [disabled]="disabled"
+        [attr.aria-label]="'shared.removeItem' | transloco: { item: item }"
+        (click)="remove(item)"
+      >
+        ×
+      </button>
+    </span>
+  }
+  <input
+    [id]="id"
+    [value]="inputValue"
+    [disabled]="disabled || value.length >= maxItems"
+    [required]="required"
+    [attr.aria-invalid]="visibleError ? 'true' : null"
+    [attr.aria-describedby]="describedBy"
+    (input)="inputValue = $any($event.target).value"
+    (keydown)="addOnKey($event)"
+    (blur)="addOnBlur()"
+    (paste)="paste($event)"
+  />
+</div>
+@if (hint || visibleError) {
+  <small [id]="id + '-help'" aria-live="polite">{{ visibleError || hint }}</small>
+}

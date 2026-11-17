@@ -1,0 +1,104 @@
+<form class="card" (ngSubmit)="submit()">
+  <h2>{{ 'reports.form.title' | transloco }}</h2>
+  <fieldset>
+    <legend>{{ 'reports.form.range' | transloco }}</legend>
+    <div class="presets">
+      <button type="button" (click)="selectPreset('thisWeek')">
+        {{ 'reports.form.thisWeek' | transloco }}
+      </button>
+      <button type="button" (click)="selectPreset('lastWeek')">
+        {{ 'reports.form.lastWeek' | transloco }}
+      </button>
+      <button type="button" (click)="selectPreset('thisMonth')">
+        {{ 'reports.form.thisMonth' | transloco }}
+      </button>
+      <button type="button" (click)="selectPreset('lastMonth')">
+        {{ 'reports.form.lastMonth' | transloco }}
+      </button>
+    </div>
+  </fieldset>
+  <div class="dates">
+    <label
+      >{{ 'reports.form.from' | transloco
+      }}<input type="date" name="from" [ngModel]="from()" (ngModelChange)="from.set($event)"
+    /></label>
+    <label
+      >{{ 'reports.form.to' | transloco
+      }}<input type="date" name="to" [ngModel]="to()" (ngModelChange)="to.set($event)"
+    /></label>
+  </div>
+  @if (rangeError()) {
+    <p class="error" role="alert">{{ 'reports.form.invalidRange' | transloco }}</p>
+  }
+  <label
+    >{{ 'reports.form.project' | transloco
+    }}<input
+      name="project"
+      list="report-projects"
+      [ngModel]="project()"
+      (ngModelChange)="project.set($event)"
+  /></label>
+  <datalist id="report-projects">
+    @for (item of projects(); track item) {
+      <option [value]="item"></option>
+    }
+  </datalist>
+  @if (projectsUnavailable()) {
+    <p class="hint">{{ 'reports.form.projectsUnavailable' | transloco }}</p>
+  }
+  <div class="columns">
+    <label
+      >{{ 'reports.form.language' | transloco }}
+      <select name="language" [ngModel]="language()" (ngModelChange)="language.set($event)">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+    <label
+      >{{ 'reports.form.style' | transloco }}
+      <select name="style" [ngModel]="style()" (ngModelChange)="style.set($event)">
+        <option value="summary">{{ 'reports.form.summary' | transloco }}</option>
+        <option value="detailed">{{ 'reports.form.detailed' | transloco }}</option>
+      </select>
+    </label>
+  </div>
+  <button
+    class="advanced-toggle"
+    type="button"
+    [attr.aria-expanded]="advanced()"
+    (click)="advanced.set(!advanced())"
+  >
+    {{ 'reports.form.advanced' | transloco }}
+  </button>
+  @if (advanced()) {
+    <div class="columns">
+      <label
+        >{{ 'reports.form.provider' | transloco }}
+        <select name="provider" [ngModel]="provider()" (ngModelChange)="provider.set($event)">
+          <option value="">{{ 'reports.form.defaultProvider' | transloco }}</option>
+          @for (item of providers(); track item.id) {
+            <option [value]="item.id" [disabled]="!item.available">
+              {{ item.id
+              }}{{ item.available ? '' : ' — ' + ('reports.form.unavailable' | transloco) }}
+            </option>
+          }
+        </select>
+      </label>
+      <label
+        >{{ 'reports.form.model' | transloco
+        }}<input
+          name="model"
+          maxlength="100"
+          [ngModel]="model()"
+          (ngModelChange)="model.set($event)"
+      /></label>
+    </div>
+    <p class="hint">{{ 'reports.form.unavailableHint' | transloco }}</p>
+    @if (providersUnavailable()) {
+      <p class="error" role="alert">{{ 'reports.form.providersUnavailable' | transloco }}</p>
+    }
+  }
+  <app-button type="submit" [loading]="loading()">{{
+    'reports.form.generate' | transloco
+  }}</app-button>
+</form>

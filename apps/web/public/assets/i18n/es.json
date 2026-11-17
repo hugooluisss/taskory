@@ -1,0 +1,61 @@
+{
+  "language": {
+    "label": "Idioma"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "loading": "Cargando…",
+    "comingSoon": "Próximamente",
+    "dismiss": "Cerrar"
+  },
+  "nav": {
+    "activities": "Actividades",
+    "reports": "Informes",
+    "settings": "Ajustes",
+    "consent": "Conectar asistente",
+    "label": "Navegación principal"
+  },
+  "auth": {
+    "loginTitle": "Inicia sesión",
+    "registerTitle": "Crea tu cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "emailInvalid": "Escribe un correo válido.",
+    "required": "Este campo es obligatorio.",
+    "passwordLength": "Usa al menos 8 caracteres.",
+    "login": "Entrar",
+    "register": "Crear cuenta",
+    "registerLink": "¿No tienes cuenta? Regístrate",
+    "loginLink": "¿Ya tienes cuenta? Entra",
+    "logout": "Cerrar sesión"
+  },
+  "errors": {
+    "validation": "Revisa la información.",
+    "invalidCredentials": "El correo o la contraseña no son correctos.",
+    "emailTaken": "Ese correo ya está registrado.",
+    "notFound": "No se encontró el elemento.",
+    "unauthorized": "Inicia sesión de nuevo.",
+    "tooManyRequests": "Demasiados intentos. Prueba más tarde.",
+    "noActivities": "No hay actividades en estas fechas.",
+    "rangeTooLarge": "El rango incluye demasiadas actividades.",
+    "unknownProvider": "Ese proveedor de informes no está disponible.",
+    "llmUnavailable": "El servicio de informes no está disponible ahora.",
+    "invalidLlmOutput": "No se pudo crear el informe.",
+    "reportInProgress": "Ya hay un informe en curso.",
+    "reportNotRetryable": "No se puede volver a intentar este informe.",
+    "apiKeyLimit": "Llegaste al límite de claves API.",
+    "payloadTooLarge": "La solicitud es demasiado grande.",
+    "network": "No se pudo conectar. Revisa tu conexión.",
+    "unknown": "Ocurrió un error. Prueba de nuevo."
+  },
+  "shared": {
+    "removeItem": "Quitar {{item}}"
+  },
+  "pagination": {
+    "label": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  }
+}

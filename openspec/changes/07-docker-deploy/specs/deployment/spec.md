@@ -29,7 +29,7 @@ The web container SHALL proxy `/api/v1` to the api, and the mcp container SHALL 
 - **THEN** API calls go to the same origin under `/api/v1`
 
 ### Requirement: Public URL and OAuth routing
-The deployment SHALL require `PUBLIC_URL` and route `/.well-known/*` and `/oauth/*` to the api, `/mcp` to the mcp container and everything else to the web container, all under the same public origin.
+The deployment SHALL require `PUBLIC_URL` and route `/.well-known/*` and `/oauth/*` to the api (except the exact path `/oauth/consent`, which belongs to the web app), `/mcp` to the mcp container and everything else to the web container, all under the same public origin.
 
 #### Scenario: Discovery through the public origin
 - **WHEN** a client requests `<PUBLIC_URL>/.well-known/oauth-authorization-server`

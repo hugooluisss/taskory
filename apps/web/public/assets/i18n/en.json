@@ -1,0 +1,61 @@
+{
+  "language": {
+    "label": "Language"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading…",
+    "comingSoon": "Coming soon",
+    "dismiss": "Dismiss"
+  },
+  "nav": {
+    "activities": "Activities",
+    "reports": "Reports",
+    "settings": "Settings",
+    "consent": "Connect assistant",
+    "label": "Main navigation"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create your account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "emailInvalid": "Enter a valid email.",
+    "required": "This field is required.",
+    "passwordLength": "Use at least 8 characters.",
+    "login": "Sign in",
+    "register": "Create account",
+    "registerLink": "New here? Create an account",
+    "loginLink": "Already have an account? Sign in",
+    "logout": "Sign out"
+  },
+  "errors": {
+    "validation": "The information is invalid.",
+    "invalidCredentials": "Email or password is incorrect.",
+    "emailTaken": "That email is already registered.",
+    "notFound": "The item could not be found.",
+    "unauthorized": "Please sign in again.",
+    "tooManyRequests": "Too many attempts. Try again later.",
+    "noActivities": "There are no activities in this date range.",
+    "rangeTooLarge": "This date range contains too many activities.",
+    "unknownProvider": "That report provider is unavailable.",
+    "llmUnavailable": "The report service is temporarily unavailable.",
+    "invalidLlmOutput": "The report could not be created.",
+    "reportInProgress": "A report is already running.",
+    "reportNotRetryable": "This report cannot be retried.",
+    "apiKeyLimit": "You have reached the API key limit.",
+    "payloadTooLarge": "The request is too large.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "Something went wrong. Please try again."
+  },
+  "shared": {
+    "removeItem": "Remove {{item}}"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

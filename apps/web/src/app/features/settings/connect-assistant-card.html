@@ -1,0 +1,13 @@
+<section aria-labelledby="connect-heading">
+  <h2 id="connect-heading">{{ 'settings.connect' | transloco }}</h2>
+  <label for="server-address">{{ 'settings.serverAddress' | transloco }}</label>
+  <div class="address-row">
+    <input id="server-address" readonly [value]="serverUrl" />
+    <button type="button" (click)="copy.emit(serverUrl)">{{ 'settings.copy' | transloco }}</button>
+  </div>
+  <ol>
+    <li>{{ 'settings.stepOne' | transloco }}</li>
+    <li>{{ 'settings.stepTwo' | transloco }}</li>
+    <li>{{ 'settings.stepThree' | transloco }}</li>
+  </ol>
+</section>

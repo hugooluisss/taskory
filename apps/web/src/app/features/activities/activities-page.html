@@ -1,0 +1,42 @@
+<main class="page">
+  <app-page-header
+    [title]="'pageTitle' | transloco"
+    [description]="'pageDescription' | transloco"
+  ></app-page-header>
+  <activities-quick-add
+    [projects]="projects"
+    (createActivity)="create($event)"
+  ></activities-quick-add>
+  <activities-filters-bar
+    [projects]="projects"
+    (apply)="applyFilters($event)"
+    (clear)="clearFilters()"
+  ></activities-filters-bar>
+  @if (error) {
+    <div class="error" role="alert">
+      <span>{{ error | transloco }}</span>
+      @if (error === 'loadError') {
+        <button type="button" (click)="load()">{{ 'retry' | transloco }}</button>
+      }
+    </div>
+  }
+  <activities-list
+    [groups]="groups"
+    [loading]="loading"
+    [hasFilters]="hasFilters"
+    [totalCount]="total"
+    (edit)="edit($event)"
+    (remove)="remove($event)"
+  ></activities-list>
+  @if (!loading && total > 0) {
+    <app-pagination
+      [page]="page"
+      [pages]="pages"
+      (pageChange)="changePage($event)"
+    ></app-pagination>
+  }
+  <activities-form-dialog
+    [projects]="projects"
+    (saveActivity)="save($event)"
+  ></activities-form-dialog>
+</main>
