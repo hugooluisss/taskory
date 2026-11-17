@@ -4,18 +4,16 @@ import { TaskoryApiClient } from "./taskory-api.client.js";
 
 describe("Token forwarding without shared credentials", () => {
   it("Invalid token", async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            statusCode: 404,
-            code: "NOT_FOUND",
-            message: "missing",
-          }),
-          { status: 404 },
-        ),
-      );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          statusCode: 404,
+          code: "NOT_FOUND",
+          message: "missing",
+        }),
+        { status: 404 },
+      ),
+    );
     const client = new TaskoryApiClient("http://localhost/api/v1", fetcher);
     const error = await client
       .listActivities("user-token", {})

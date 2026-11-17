@@ -9,7 +9,7 @@ export interface RuntimeConfig {
 export class ConfigService {
   readonly config = signal<RuntimeConfig>({ apiBaseUrl: '/api/v1', mcpUrl: '' });
   async load(): Promise<void> {
-    const response = await fetch('/assets/config.json');
+    const response = await fetch('assets/config.json');
     if (!response.ok) return;
     const override = (await response.json()) as Partial<RuntimeConfig>;
     this.config.set({ ...this.config(), ...override });

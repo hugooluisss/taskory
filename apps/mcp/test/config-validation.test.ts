@@ -15,6 +15,7 @@ describe("Configuration validation", () => {
       port: 3100,
       taskoryApiUrl: "http://localhost:3999/api/v1",
       publicUrl: "http://localhost:3999",
+      mcpPath: "/mcp",
     });
   });
 
@@ -41,6 +42,7 @@ describe("Configuration validation", () => {
       port: 3100,
       taskoryApiUrl: "https://api.test/api/v1",
       publicUrl: "https://taskory.test",
+      mcpPath: "/mcp",
     });
   });
 
@@ -48,6 +50,13 @@ describe("Configuration validation", () => {
     expect(() =>
       loadConfig({ PUBLIC_URL: "https://taskory.test/path" }),
     ).toThrow("PUBLIC_URL");
+  });
+
+  it("Validates the configurable MCP path", () => {
+    expect(loadConfig({ MCP_PATH: "/taskory-mcp" }).mcpPath).toBe("/taskory-mcp");
+    for (const MCP_PATH of ["mcp", "/mcp/", "/mcp?x=1", "/mcp#x"]) {
+      expect(() => loadConfig({ MCP_PATH })).toThrow("MCP_PATH");
+    }
   });
 });
 

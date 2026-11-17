@@ -27,8 +27,8 @@ const JOB_KEY = 'taskory_report_job_';
     provideTranslocoScope({
       scope: 'reports',
       loader: {
-        en: () => fetch('/assets/i18n/reports/en.json').then((response) => response.json()),
-        es: () => fetch('/assets/i18n/reports/es.json').then((response) => response.json()),
+        en: () => fetch('assets/i18n/reports/en.json').then((response) => response.json()),
+        es: () => fetch('assets/i18n/reports/es.json').then((response) => response.json()),
       },
     }),
   ],

@@ -1,0 +1,10 @@
+FROM node:24-alpine
+WORKDIR /workspace/apps/web
+COPY apps/web/package*.json ./
+RUN npm ci
+WORKDIR /workspace
+COPY --chown=node:node . .
+WORKDIR /workspace/apps/web
+USER node
+EXPOSE 4200
+CMD ["sh", "-c", "npx ng serve --host 0.0.0.0 --port 4200 --allowed-hosts --serve-path /taskory-web/ --configuration taskory --poll 1000"]

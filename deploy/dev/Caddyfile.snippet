@@ -1,0 +1,33 @@
+# BEGIN taskory-dev
+redir /taskory-web /taskory-web/ 308
+redir /oauth/consent /taskory-web/oauth/consent?{query} 302
+
+@taskory_consent path /taskory-web/oauth/consent
+header @taskory_consent {
+	Content-Security-Policy "frame-ancestors 'none'"
+	X-Frame-Options DENY
+}
+
+@taskory_oauth_api {
+	path /oauth/*
+	not path /oauth/consent
+}
+handle /taskory-web/* {
+	reverse_proxy 127.0.0.1:4380
+}
+handle /.well-known/* {
+	reverse_proxy 127.0.0.1:3050
+}
+handle /api/v1/* {
+	reverse_proxy 127.0.0.1:3050
+}
+handle @taskory_oauth_api {
+	reverse_proxy 127.0.0.1:3050
+}
+@taskory_mcp path /taskory-mcp /taskory-mcp/*
+handle @taskory_mcp {
+	reverse_proxy 127.0.0.1:3051 {
+		flush_interval -1
+	}
+}
+# END taskory-dev

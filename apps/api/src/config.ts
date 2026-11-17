@@ -1,4 +1,4 @@
-import { getPublicUrl } from "./oauth/public-url";
+import { getMcpPath, getPublicUrl } from "./oauth/public-url";
 
 export function getTrustProxyHops(): number {
   const value = process.env.TRUST_PROXY_HOPS;
@@ -17,4 +17,5 @@ export function validateConfig(): void {
   }
   getTrustProxyHops();
   getPublicUrl();
+  getMcpPath();
 }

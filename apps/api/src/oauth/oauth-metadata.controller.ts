@@ -1,5 +1,6 @@
-import { Controller, Get } from "@nestjs/common";
-import { getMcpResource, getPublicUrl } from "./public-url";
+import { Controller, Get, NotFoundException, Req } from "@nestjs/common";
+import type { Request } from "express";
+import { getMcpPath, getMcpResource, getPublicUrl } from "./public-url";
 
 @Controller()
 export class OAuthMetadataController {
@@ -22,7 +23,21 @@ export class OAuthMetadataController {
   }
 
   @Get("/.well-known/oauth-protected-resource")
-  protectedResource() {
+  protectedResourceAlias() {
+    return this.resourceMetadata();
+  }
+
+  @Get("/.well-known/oauth-protected-resource/{*path}")
+  protectedResource(@Req() request: Request) {
+    if (
+      request.path !== `/.well-known/oauth-protected-resource${getMcpPath()}`
+    ) {
+      throw new NotFoundException();
+    }
+    return this.resourceMetadata();
+  }
+
+  private resourceMetadata() {
     const issuer = getPublicUrl();
     return {
       resource: getMcpResource(),

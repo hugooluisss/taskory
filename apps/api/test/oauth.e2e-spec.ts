@@ -205,6 +205,56 @@ describe("OAuth authorization flow", () => {
       });
     });
 
+    it("Publishes path-suffixed metadata and binds OAuth to the configured resource", async () => {
+      const originalMcpPath = process.env.MCP_PATH;
+      process.env.MCP_PATH = "/taskory-mcp";
+      try {
+        const client = await registerClient("Custom Resource");
+        const metadata = await request(app.getHttpServer())
+          .get("/.well-known/oauth-protected-resource/taskory-mcp")
+          .expect(200);
+        expect(metadata.body.resource).toBe(`${PUBLIC_URL}/taskory-mcp`);
+        await request(app.getHttpServer())
+          .get("/.well-known/oauth-protected-resource/mcp")
+          .expect(404);
+
+        const accepted = await request(app.getHttpServer())
+          .get("/oauth/authorize")
+          .query({
+            response_type: "code",
+            client_id: client.client_id,
+            redirect_uri: REDIRECT_URI,
+            code_challenge: sha256("v".repeat(43)),
+            code_challenge_method: "S256",
+            state: "custom-resource",
+            resource: `${PUBLIC_URL}/taskory-mcp`,
+          })
+          .redirects(0)
+          .expect(302);
+        expect(new URL(accepted.headers.location).pathname).toBe("/oauth/consent");
+
+        const refused = await request(app.getHttpServer())
+          .get("/oauth/authorize")
+          .query({
+            response_type: "code",
+            client_id: client.client_id,
+            redirect_uri: REDIRECT_URI,
+            code_challenge: sha256("w".repeat(43)),
+            code_challenge_method: "S256",
+            state: "wrong-resource",
+            resource: `${PUBLIC_URL}/mcp`,
+          })
+          .redirects(0)
+          .expect(302);
+        expect(new URL(refused.headers.location).searchParams.get("error")).toBe(
+          "invalid_target",
+        );
+      } finally {
+        if (originalMcpPath === undefined) delete process.env.MCP_PATH;
+        else process.env.MCP_PATH = originalMcpPath;
+      }
+    });
+
     it("Returns registered client data", async () => {
       const response = await request(app.getHttpServer())
         .post("/oauth/register")

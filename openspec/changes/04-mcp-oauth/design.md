@@ -17,6 +17,7 @@ El estándar MCP de autorización se apoya en OAuth 2.1: el cliente MCP recibe u
 - **Redirect URIs**: coincidencia exacta; solo `https`, loopback `http` o esquemas propios sin comodines.
 - **Las API keys se conservan** como opción avanzada; la UI las presenta en segundo plano.
 - **`PUBLIC_URL`** define el `issuer`; sin ella la API no arranca en producción.
+- **Decisión: ruta del recurso configurable**: `MCP_PATH` define la ruta protegida (predeterminado `/mcp`); la API la usa como audiencia y la publica también en `/.well-known/oauth-protected-resource<MCP_PATH>`, conservando la URL de metadatos sin sufijo como alias.
 
 ## Arquitectura controller -> service -> repository
 
@@ -37,7 +38,7 @@ Ninguna bloqueante. Verificar con el cliente real del usuario (Claude Code) en l
 
 ## Decisiones tras la revisión de seguridad (ronda 2)
 
-- **Un solo recurso protegido**: el servicio Taskory completo, identificado como `<PUBLIC_URL>/mcp` (el mismo que anuncian los metadatos). La API es parte del mismo despliegue y la misma frontera de confianza que el MCP, así que el MCP reenvía el token del usuario a la API; esto es una desviación consciente de la regla estricta de "no pasar tokens a otros servicios" de la especificación MCP, que está pensada para APIs de terceros. La mitigación es que los tokens quedan ligados por audiencia a este único recurso (`invalid_target` para cualquier otro) y que la API los acepta solo con esa audiencia.
+- **Un solo recurso protegido**: el servicio Taskory completo, identificado como `<PUBLIC_URL><MCP_PATH>` (predeterminado `<PUBLIC_URL>/mcp`, el mismo que anuncian los metadatos). La API es parte del mismo despliegue y la misma frontera de confianza que el MCP, así que el MCP reenvía el token del usuario a la API; esto es una desviación consciente de la regla estricta de "no pasar tokens a otros servicios" de la especificación MCP, que está pensada para APIs de terceros. La mitigación es que los tokens quedan ligados por audiencia a este único recurso (`invalid_target` para cualquier otro) y que la API los acepta solo con esa audiencia.
 - **Alcance**: un único alcance `taskory` de acceso completo; los demás se rechazan (`invalid_scope`). Sin alcances finos (fuera de objetivo).
 - **Reuso de código**: revoca la autorización completa (no solo los tokens con `codeId`), porque las rotaciones no heredan el `codeId`.
 - **Evidencia de reuso**: los códigos usados y los refresh rotados se conservan mientras la autorización siga viva; se purgan solo autorizaciones muertas (revocadas o sin ningún token sin caducar) con antigüedad mínima, junto con sus clientes sin autorizaciones y sin solicitudes de consentimiento pendientes.

@@ -2,6 +2,7 @@ export interface Config {
   port: number;
   taskoryApiUrl: string;
   publicUrl: string;
+  mcpPath: string;
 }
 
 function validUrl(value: string, name: string): URL {
@@ -44,9 +45,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (publicUrl.pathname !== "/") {
     throw new Error("PUBLIC_URL must not include a path.");
   }
+  const mcpPath = env.MCP_PATH ?? "/mcp";
+  if (
+    !mcpPath.startsWith("/") ||
+    mcpPath.endsWith("/") ||
+    mcpPath.includes("?") ||
+    mcpPath.includes("#")
+  ) {
+    throw new Error(
+      "MCP_PATH must start with / and must not include a query, fragment, or trailing slash.",
+    );
+  }
   return {
     port,
     taskoryApiUrl: taskoryApiUrl.toString().replace(/\/+$/, ""),
     publicUrl: publicUrl.origin,
+    mcpPath,
   };
 }

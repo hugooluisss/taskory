@@ -12,6 +12,7 @@ export async function startMcpSystem(
   handler: FakeTaskoryHandler,
   options: {
     publicUrl?: string;
+    mcpPath?: string;
     timeoutMs?: number;
     now?: () => Date;
     fetcher?: typeof fetch;
@@ -27,6 +28,7 @@ export async function startMcpSystem(
     port: 0,
     taskoryApiUrl: api.baseUrl,
     publicUrl: options.publicUrl ?? "https://taskory.test",
+    mcpPath: options.mcpPath,
     timeoutMs: options.timeoutMs,
     now: options.now,
     fetcher: options.fetcher,
@@ -35,16 +37,16 @@ export async function startMcpSystem(
   return {
     root,
     apiRequests: api.requests,
-    connect: (token) => connect(root, token),
+    connect: (token) => connect(root, token, options.mcpPath),
     close: async () => {
       await Promise.all([close(server), api.close()]);
     },
   };
 }
 
-export function connect(root: string, token: string): Promise<Client> {
+export function connect(root: string, token: string, mcpPath = "/mcp"): Promise<Client> {
   const client = new Client({ name: "test", version: "1.0.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(`${root}/mcp`), {
+  const transport = new StreamableHTTPClientTransport(new URL(`${root}${mcpPath}`), {
     requestInit: { headers: { authorization: `Bearer ${token}` } },
   });
   return client.connect(transport).then(() => client);
@@ -79,7 +81,7 @@ export async function withMcpClient<T>(
     client: Client;
     system: Awaited<ReturnType<typeof startMcpSystem>>;
   }) => Promise<T>,
-  options: { publicUrl?: string; timeoutMs?: number; now?: () => Date } = {},
+  options: { publicUrl?: string; mcpPath?: string; timeoutMs?: number; now?: () => Date } = {},
 ): Promise<T> {
   return withMcpSystem(
     handler,
@@ -98,7 +100,7 @@ export async function withMcpClient<T>(
 export async function withMcpSystem<T>(
   handler: FakeTaskoryHandler,
   run: (system: Awaited<ReturnType<typeof startMcpSystem>>) => Promise<T>,
-  options: { publicUrl?: string; timeoutMs?: number; now?: () => number } = {},
+  options: { publicUrl?: string; mcpPath?: string; timeoutMs?: number; now?: () => number } = {},
 ): Promise<T> {
   const system = await startMcpSystem(handler, options);
   try {

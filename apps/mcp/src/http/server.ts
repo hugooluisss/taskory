@@ -19,6 +19,7 @@ export interface HttpServerOptions {
   port: number;
   taskoryApiUrl: string;
   publicUrl: string;
+  mcpPath?: string;
   fetcher?: typeof fetch;
   timeoutMs?: number;
   now?: () => Date;
@@ -42,14 +43,15 @@ async function handleRequest(
   options: HttpServerOptions,
   api: TaskoryApiClient,
 ): Promise<void> {
-  if (request.url === "/mcp") {
+  const mcpPath = options.mcpPath ?? "/mcp";
+  if (request.url === mcpPath) {
     response.setHeader("Access-Control-Allow-Origin", "*");
     response.setHeader(
       "Access-Control-Expose-Headers",
       "WWW-Authenticate, Mcp-Session-Id",
     );
   }
-  if (request.method === "OPTIONS" && request.url === "/mcp") {
+  if (request.method === "OPTIONS" && request.url === mcpPath) {
     response
       .writeHead(204, {
         "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
@@ -66,12 +68,12 @@ async function handleRequest(
       .end(JSON.stringify({ status: "ok" }));
     return;
   }
-  if (request.url !== "/mcp") {
+  if (request.url !== mcpPath) {
     response.writeHead(404).end("Not found");
     return;
   }
   const token = bearerToken(request);
-  const challenge = wwwAuthenticate(options.publicUrl);
+  const challenge = wwwAuthenticate(options.publicUrl, mcpPath);
   if (!token) {
     response.writeHead(401, { "WWW-Authenticate": challenge }).end();
     return;

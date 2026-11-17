@@ -5,6 +5,6 @@ import { TranslocoLoader } from '@jsverse/transloco';
 export class AppTranslocoLoader implements TranslocoLoader {
   private http = inject(HttpClient);
   getTranslation(lang: string) {
-    return this.http.get<Record<string, unknown>>(`/assets/i18n/${lang}.json`);
+    return this.http.get<Record<string, unknown>>(`assets/i18n/${lang}.json`);
   }
 }

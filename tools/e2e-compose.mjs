@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 
 const port = process.env.WEB_PORT ?? "8080";
-const BASE = `http://localhost:${port}`;
+const BASE = process.env.BASE ?? `http://localhost:${port}`;
 const ISSUER = process.env.PUBLIC_URL;
+const MCP_PATH = process.env.MCP_PATH ?? "/mcp";
+const RESOURCE_METADATA_PATH = `/.well-known/oauth-protected-resource${MCP_PATH === "/mcp" ? "" : MCP_PATH}`;
 assert.ok(ISSUER, "PUBLIC_URL must be set");
 
 async function request(path, options = {}) {
@@ -25,7 +27,7 @@ async function json(response, status = 200) {
 }
 
 async function rpc(id, method, params, token) {
-  const response = await request("/mcp", {
+  const response = await request(MCP_PATH, {
     method: "POST",
     headers: {
       authorization: `Bearer ${token}`,
@@ -62,18 +64,13 @@ const user = await json(
 assert.ok(user.token);
 const jwt = user.token;
 
-const unauthenticated = await request("/mcp", { method: "POST" });
+const unauthenticated = await request(MCP_PATH, { method: "POST" });
 assert.equal(unauthenticated.status, 401);
 const challenge = unauthenticated.headers.get("www-authenticate");
-assert.ok(
-  challenge?.includes(`${ISSUER}/.well-known/oauth-protected-resource`),
-  challenge,
-);
+assert.ok(challenge?.includes(`${ISSUER}${RESOURCE_METADATA_PATH}`), challenge);
 
-const resourceMetadata = await json(
-  await request("/.well-known/oauth-protected-resource"),
-);
-assert.equal(resourceMetadata.resource, `${ISSUER}/mcp`);
+const resourceMetadata = await json(await request(RESOURCE_METADATA_PATH));
+assert.equal(resourceMetadata.resource, `${ISSUER}${MCP_PATH}`);
 assert.ok(resourceMetadata.authorization_servers.includes(ISSUER));
 const serverMetadata = await json(
   await request("/.well-known/oauth-authorization-server"),
@@ -105,7 +102,7 @@ for (const [key, value] of Object.entries({
   code_challenge: codeChallenge,
   code_challenge_method: "S256",
   state,
-  resource: `${ISSUER}/mcp`,
+  resource: `${ISSUER}${MCP_PATH}`,
 }))
   authorize.searchParams.set(key, value);
 const authorization = await request(authorize);
@@ -150,7 +147,7 @@ const tokenBody = new URLSearchParams({
   code_verifier: verifier,
   client_id: client.client_id,
   redirect_uri: redirectUri,
-  resource: `${ISSUER}/mcp`,
+  resource: `${ISSUER}${MCP_PATH}`,
 });
 const tokens = await json(
   await request("/oauth/token", {
@@ -220,7 +217,7 @@ const activity = activities.items.find(
 );
 assert.ok(activity, "logged activity must appear in the user's API list");
 assert.deepEqual(activity.referenceUrls, referenceUrls);
-const consentPage = await request("/oauth/consent");
+const consentPage = await request(process.env.CONSENT_PATH ?? "/oauth/consent");
 assert.equal(consentPage.status, 200);
 assert.match(consentPage.headers.get("content-type"), /text\/html/);
 assert.match(

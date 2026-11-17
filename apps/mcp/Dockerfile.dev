@@ -1,0 +1,10 @@
+FROM node:24-alpine
+WORKDIR /workspace/apps/mcp
+COPY apps/mcp/package*.json ./
+RUN npm ci
+WORKDIR /workspace
+COPY --chown=node:node . .
+WORKDIR /workspace/apps/mcp
+USER node
+EXPOSE 3100
+CMD ["sh", "-c", "npm run build && (npm run dev &) && node --watch dist/src/main.js"]

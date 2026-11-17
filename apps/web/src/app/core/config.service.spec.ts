@@ -10,12 +10,10 @@ describe('Runtime API configuration', () => {
   it('loads an API base URL override from runtime config', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({ apiBaseUrl: 'https://api.test/v2', mcpUrl: 'https://mcp.test/mcp' }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ apiBaseUrl: 'https://api.test/v2', mcpUrl: 'https://mcp.test/mcp' }),
+      }),
     );
     const service = TestBed.inject(ConfigService);
     await service.load();

@@ -25,5 +25,5 @@ curl --fail http://127.0.0.1:${WEB_PORT:-8080}/api/v1/health
 
 `docker compose down -v` elimina también el volumen de datos. La migración inicial está pensada para una base nueva; no convierte bases creadas previamente con TypeORM `synchronize`. Revertir (`down`) la migración inicial elimina todas las tablas.
 
-Conecta un agente por MCP en `<PUBLIC_URL>/mcp`. Para habilitar Ollama, usa `docker compose --profile ollama up -d --build`; mantén `OLLAMA_BASE_URL=http://ollama:11434`.
+Conecta un agente por MCP en `<PUBLIC_URL><MCP_PATH>` (`MCP_PATH` predeterminado: `/mcp`). Para habilitar Ollama, usa `docker compose --profile ollama up -d --build`; mantén `OLLAMA_BASE_URL=http://ollama:11434`.
 En el primer arranque del perfil Ollama, el servicio de descarga obtiene el modelo configurado (`DEFAULT_LLM_MODEL`, por defecto `llama3.2`); la descarga puede tardar.

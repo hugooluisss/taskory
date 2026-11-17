@@ -5,7 +5,7 @@ Taskory stores a user's daily work activities and generates AI reports from them
 ## Repo layout (each agent owns its folder; no root workspace, each app has its own package.json)
 - `apps/api` — NestJS + TypeScript + SQLite (TypeORM). Port 3000, global prefix `/api/v1`.
 - `packages/llm` — dependency-free TS lib: `LlmProvider` interface, `OllamaProvider`, `DeepSeekProvider`, `ReportGenerator`. Consumed by the api as `"@taskory/llm": "file:../../packages/llm"`.
-- `apps/mcp` — MCP server (streamable HTTP, port 3100, path `/mcp`). Talks to the API over REST only.
+- `apps/mcp` — MCP server (streamable HTTP, port 3100, path `MCP_PATH`, default `/mcp`). Talks to the API over REST only.
 - `apps/web` — Angular (latest), es/en runtime switch.
 - `bruno/taskory` — Bruno collection, one `.bru` per endpoint, env files `local` and `server`.
 - Docker comes later (separate task).
@@ -63,7 +63,7 @@ Notes:
 - Rate-limit `/auth/*` (e.g. @nestjs/throttler).
 
 ## OAuth for MCP clients (phase 04)
-The API is the OAuth 2.1 authorization server (public clients, PKCE S256 only, dynamic registration). Outside the `/api/v1` prefix: `GET /.well-known/oauth-authorization-server`, `GET /.well-known/oauth-protected-resource`, `POST /oauth/register`, `GET /oauth/authorize`, `POST /oauth/token`, `POST /oauth/revoke`. Under the prefix: `GET /oauth/requests/:id`, `POST /oauth/requests/:id/decision`, `GET /connected-apps`, `DELETE /connected-apps/:id`. Consent UI lives in the web app at `/oauth/consent`. Env: `PUBLIC_URL`. Tokens are opaque (`to_` access, `tr_` refresh) and hashed. Full behavior: `openspec/changes/04-mcp-oauth`.
+The API is the OAuth 2.1 authorization server (public clients, PKCE S256 only, dynamic registration). Outside the `/api/v1` prefix: `GET /.well-known/oauth-authorization-server`, `GET /.well-known/oauth-protected-resource` and its resource path-suffixed URL, `POST /oauth/register`, `GET /oauth/authorize`, `POST /oauth/token`, `POST /oauth/revoke`. Under the prefix: `GET /oauth/requests/:id`, `POST /oauth/requests/:id/decision`, `GET /connected-apps`, `DELETE /connected-apps/:id`. Consent UI lives in the web app at `/oauth/consent`. Env: `PUBLIC_URL` and `MCP_PATH` (default `/mcp`; must start with `/` and have no trailing slash, query or fragment). Tokens are opaque (`to_` access, `tr_` refresh) and hashed. Full behavior: `openspec/changes/04-mcp-oauth`.
 
 ## MCP tools (apps/mcp)
 Auth: OAuth access token (primary, zero-config for users) or personal API key `tk_...` (advanced) as `Authorization: Bearer ...`; the MCP forwards it to the API per request (multi-user, no shared credential). Without a valid token it answers 401 with `WWW-Authenticate: Bearer resource_metadata=...`.

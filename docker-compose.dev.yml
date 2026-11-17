@@ -1,0 +1,90 @@
+name: taskory-dev
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env.dev}
+      PUBLIC_URL: ${PUBLIC_URL:?Set PUBLIC_URL in .env.dev}
+      MCP_PATH: ${MCP_PATH:-/taskory-mcp}
+      DEV_HOST: ${DEV_HOST:?Set DEV_HOST in .env.dev}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-2}
+      DATABASE_PATH: /data/taskory.sqlite
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-ollama}
+      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-llama3.2}
+    ports:
+      - "127.0.0.1:3050:3000"
+    volumes:
+      - .:/workspace
+      - /workspace/apps/api/node_modules
+      - /workspace/packages/llm/node_modules
+      - taskory-dev-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp/Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      PORT: 3100
+      TASKORY_API_URL: http://api:3000/api/v1
+      PUBLIC_URL: ${PUBLIC_URL:?Set PUBLIC_URL in .env.dev}
+      MCP_PATH: ${MCP_PATH:-/taskory-mcp}
+      DEV_HOST: ${DEV_HOST:?Set DEV_HOST in .env.dev}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3051:3100"
+    volumes:
+      - .:/workspace
+      - /workspace/apps/mcp/node_modules
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      DEV_HOST: ${DEV_HOST:?Set DEV_HOST in .env.dev}
+      API_PROXY_TARGET: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+      mcp:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:4380:4200"
+    volumes:
+      - .:/workspace
+      - /workspace/apps/web/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4200/taskory-web/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  taskory-dev-data:
+    name: taskory-dev-data

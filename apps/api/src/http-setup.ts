@@ -7,6 +7,7 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { ErrorsFilter } from "./common/errors/errors.filter";
 import { OAuthCorsMiddleware } from "./oauth/oauth-cors.middleware";
 import { getTrustProxyHops } from "./config";
+import { getMcpPath } from "./oauth/public-url";
 
 export const JSON_BODY_LIMIT = "256kb";
 
@@ -16,6 +17,8 @@ export function configureHttp(app: INestApplication): void {
     exclude: [
       ".well-known/oauth-authorization-server",
       ".well-known/oauth-protected-resource",
+      `.well-known/oauth-protected-resource${getMcpPath()}`,
+      ".well-known/oauth-protected-resource/*",
       "oauth/authorize",
       "oauth/token",
       "oauth/register",

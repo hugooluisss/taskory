@@ -3,7 +3,22 @@ import { OAUTH_PUBLIC_URL_DEFAULT } from "./constants";
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export function getMcpResource(): string {
-  return `${getPublicUrl()}/mcp`;
+  return `${getPublicUrl()}${getMcpPath()}`;
+}
+
+export function getMcpPath(): string {
+  const path = process.env.MCP_PATH ?? "/mcp";
+  if (
+    !path.startsWith("/") ||
+    path.endsWith("/") ||
+    path.includes("?") ||
+    path.includes("#")
+  ) {
+    throw new Error(
+      "MCP_PATH must start with / and must not include a query, fragment, or trailing slash",
+    );
+  }
+  return path;
 }
 
 export function getPublicUrl(): string {

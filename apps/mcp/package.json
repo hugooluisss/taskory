@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/main.js",
+    "dev": "tsc --watch -p tsconfig.json",
     "test": "vitest run",
     "test:cov": "vitest run --coverage"
   },

@@ -49,6 +49,12 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "taskory": {
+              "baseHref": "/taskory-web/",
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -61,6 +67,9 @@
             },
             "development": {
               "buildTarget": "web:build:development"
+            },
+            "taskory": {
+              "buildTarget": "web:build:taskory"
             }
           },
           "defaultConfiguration": "development"

@@ -4,6 +4,7 @@ const originalEnv = {
   JWT_SECRET: process.env.JWT_SECRET,
   PUBLIC_URL: process.env.PUBLIC_URL,
   TRUST_PROXY_HOPS: process.env.TRUST_PROXY_HOPS,
+  MCP_PATH: process.env.MCP_PATH,
 };
 
 afterEach(() => {
@@ -31,5 +32,12 @@ describe("TRUST_PROXY_HOPS", () => {
     expect(() => validateConfig()).toThrow(
       "TRUST_PROXY_HOPS must be an integer greater than or equal to 0",
     );
+  });
+
+  it("fails startup with a clear error for an invalid MCP path", () => {
+    process.env.JWT_SECRET = "test-secret";
+    process.env.PUBLIC_URL = "https://taskory.example";
+    process.env.MCP_PATH = "/mcp/";
+    expect(() => validateConfig()).toThrow("MCP_PATH");
   });
 });

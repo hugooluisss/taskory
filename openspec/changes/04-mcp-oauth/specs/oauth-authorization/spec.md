@@ -107,15 +107,15 @@ The system SHALL rate limit `/oauth/register`, `/oauth/token` and the approval e
 - **THEN** the system responds 429
 
 ### Requirement: Resource binding
-The system SHALL accept the RFC 8707 `resource` parameter on authorization and token requests, bind each authorization to the single protected resource `<PUBLIC_URL>/mcp`, and refuse any other value with `invalid_target`. When `resource` is omitted, the system SHALL default to that resource. Access tokens SHALL be accepted by the API only when their authorization is bound to that resource, and refresh SHALL NOT change the bound resource.
+The system SHALL accept the RFC 8707 `resource` parameter on authorization and token requests, bind each authorization to the single protected resource `<PUBLIC_URL><MCP_PATH>`, and refuse any other value with `invalid_target`. When `resource` is omitted, the system SHALL default to that resource. Access tokens SHALL be accepted by the API only when their authorization is bound to that resource, and refresh SHALL NOT change the bound resource.
 
 #### Scenario: Wrong resource
-- **WHEN** an authorization or token request names a `resource` other than `<PUBLIC_URL>/mcp`
+- **WHEN** an authorization or token request names a `resource` other than `<PUBLIC_URL><MCP_PATH>`
 - **THEN** the system answers 400 `invalid_target`
 
 #### Scenario: Resource omitted
 - **WHEN** a client omits `resource`
-- **THEN** the authorization is bound to `<PUBLIC_URL>/mcp`
+- **THEN** the authorization is bound to `<PUBLIC_URL><MCP_PATH>`
 
 ### Requirement: Scope handling
 The system SHALL define one scope, `taskory`, that grants full access to the approving user's Taskory data, advertise it as `scopes_supported`, treat an omitted scope as `taskory`, and refuse any other requested scope with `invalid_scope`; the consent data SHALL state the granted access.
@@ -211,3 +211,10 @@ The consent lookup SHALL return the complete registered redirect URI, the `clien
 #### Scenario: Custom scheme destination
 - **WHEN** the consent request belongs to a client with a custom-scheme redirect URI
 - **THEN** the response contains the complete URI, not only its scheme
+
+### Requirement: Configurable resource path
+The system SHALL read `MCP_PATH` in both the API and MCP server, default it to `/mcp`, and reject values that do not start with `/` or contain a query, fragment, or trailing slash. The API SHALL publish protected resource metadata at `/.well-known/oauth-protected-resource<MCP_PATH>` and keep `/.well-known/oauth-protected-resource` as an alias; the MCP challenge SHALL reference the matching metadata URL.
+
+#### Scenario: Custom resource path
+- **WHEN** `MCP_PATH=/taskory-mcp`
+- **THEN** the MCP listens at `/taskory-mcp`, metadata names `<PUBLIC_URL>/taskory-mcp`, OAuth accepts that resource and refuses `<PUBLIC_URL>/mcp` with `invalid_target`, and the 401 challenge points to `/.well-known/oauth-protected-resource/taskory-mcp`
