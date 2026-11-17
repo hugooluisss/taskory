@@ -13,6 +13,8 @@
 - [ ] 3.2 Registro de las 5 herramientas con zod y descripciones (spec: Tool descriptions guide the agent)
 - [ ] 3.3 Test de integración MCP cliente-servidor con API simulada, incluida identidad por llamada
 
+- [ ] 3.4 `generate_report` devuelve id y progreso ante 202 y herramienta `get_report` (spec: Asynchronous reports; depende de 03b-chunked-reports)
+
 ## 4. Revisión (trazabilidad)
 
 - [ ] 4.1 Revisión de diff por el arquitecto

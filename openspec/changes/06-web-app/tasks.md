@@ -19,6 +19,7 @@
 - [ ] 4.1 Login y registro (spec: Access)
 - [ ] 4.2 Actividades: lista, filtros, paginación, formulario, confirmación de borrado, errores (spec: Activity management)
 - [ ] 4.3 Informes con Markdown sanitizado y copiar (spec: Report generation)
+- [ ] 4.3b Informes largos: progreso, sondeo, reintento, borrado y reanudación al recargar (spec: Long report progress; depende de 03b-chunked-reports)
 - [ ] 4.4 Ajustes: perfil y API keys en sección avanzada con confirmación al revocar (spec: Settings)
 - [ ] 4.5 Página `/oauth/consent` con login intermedio, permitir y denegar (spec: Agent connection and consent)
 - [ ] 4.6 Sección "Conecta tu agente" (URL del MCP, pasos simples) y lista de aplicaciones conectadas con desconexión confirmada (spec: Agent connection and consent, Connected apps)

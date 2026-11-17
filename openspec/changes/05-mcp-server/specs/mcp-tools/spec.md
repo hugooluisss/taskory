@@ -60,3 +60,14 @@ Each tool SHALL have a description stating when the agent should use it and type
 #### Scenario: Tool discovery
 - **WHEN** a client lists tools
 - **THEN** each has a description and a parameter schema
+
+### Requirement: Asynchronous reports
+When the API answers 202 to a report request, `generate_report` SHALL return the report `id`, `status` and `progress` instead of waiting indefinitely, and the system SHALL provide `get_report` (id) that returns the current status, progress and, when completed, the Markdown.
+
+#### Scenario: Large report
+- **WHEN** an agent calls `generate_report` for a range with more than 100 activities
+- **THEN** the tool returns the report id and progress, and tells the agent to call `get_report` later
+
+#### Scenario: Completed report
+- **WHEN** an agent calls `get_report` for a completed report
+- **THEN** the tool returns the Markdown report

@@ -91,3 +91,18 @@ The web client SHALL read the API base URL from runtime configuration, defaultin
 #### Scenario: Behind a reverse proxy
 - **WHEN** no configuration overrides the URL
 - **THEN** requests go to `/api/v1`
+
+### Requirement: Long report progress
+When a report is generated in chunks, the web client SHALL show a progress indicator, poll the job until it finishes, and let the user retry a failed job or delete a report.
+
+#### Scenario: Progress
+- **WHEN** the API answers 202 to a report request
+- **THEN** the page shows `done` of `total` chunks and updates until the job is completed or failed
+
+#### Scenario: Failed job
+- **WHEN** the job fails
+- **THEN** a translated error with the failing chunk is shown together with a retry button
+
+#### Scenario: Leave and return
+- **WHEN** the user reloads the page while a job is active
+- **THEN** the page resumes showing that job's progress
