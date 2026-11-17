@@ -3,12 +3,15 @@ import {
   INestApplication,
   ValidationPipe,
 } from "@nestjs/common";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { ErrorsFilter } from "./common/errors/errors.filter";
 import { OAuthCorsMiddleware } from "./oauth/oauth-cors.middleware";
+import { getTrustProxyHops } from "./config";
 
 export const JSON_BODY_LIMIT = "256kb";
 
 export function configureHttp(app: INestApplication): void {
+  (app as NestExpressApplication).set("trust proxy", getTrustProxyHops());
   app.setGlobalPrefix("api/v1", {
     exclude: [
       ".well-known/oauth-authorization-server",

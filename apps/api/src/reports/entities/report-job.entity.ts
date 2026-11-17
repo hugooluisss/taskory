@@ -11,6 +11,10 @@ export type ReportJobStatus = "queued" | "running" | "completed" | "failed";
 
 @Entity("report_jobs")
 @Index("report_jobs_id_user", ["id", "userId"], { unique: true })
+@Index("report_jobs_active_user", ["userId"], {
+  unique: true,
+  where: "status IN ('queued', 'running')",
+})
 export class ReportJob {
   @PrimaryGeneratedColumn("uuid") id!: string;
   @Column() userId!: string;

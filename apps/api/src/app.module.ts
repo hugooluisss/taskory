@@ -19,6 +19,7 @@ import { OAuthToken } from "./oauth/entities/oauth-token.entity";
 import { OAuthModule } from "./oauth/oauth.module";
 import { ConnectedAppsModule } from "./connected-apps/connected-apps.module";
 import { OAuthHttpModule } from "./oauth/oauth-http.module";
+import { InitialSchema1763400000000 } from "./migrations/1763400000000-InitialSchema";
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === "true" ||
@@ -45,8 +46,9 @@ export function databaseOptions(
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    // ponytail: synchronization only supports early deployments; use migrations as the upgrade path.
+    migrations: [InitialSchema1763400000000],
     synchronize,
+    migrationsRun: !synchronize,
   };
 }
 
