@@ -1,0 +1,55 @@
+meta {
+  name: Generate a detailed report
+  type: http
+  seq: 4
+  tags: [
+    requires-llm
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama",
+    "style": "detailed"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-detailed+" + Date.now() + "@example.com", name: "Reports detailed", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+  await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token },
+    data: { date: "2026-11-16", title: "Detailed report activity", description: "A detailed activity description" }
+  });
+}
+docs {
+  Spec scenario: report-generation / Report language and style / Spanish detailed report. This request exercises detailed style in English and requires Ollama.
+}
+tests {
+  test("returns a detailed report", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.markdown).to.be.a("string").and.not.empty;
+    expect(res.body.activityCount).to.equal(1);
+  });
+}

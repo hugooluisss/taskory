@@ -1,0 +1,36 @@
+meta {
+  name: List unavailable report providers
+  type: http
+  seq: 12
+}
+get {
+  url: {{baseUrl}}/reports/providers
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-providers-down+" + Date.now() + "@example.com", name: "Reports providers down", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: llm-providers / Provider availability / Unreachable provider. Requires the test server to point Ollama at an unavailable endpoint.
+}
+tests {
+  test("lists an unreachable provider as unavailable", function() {
+    expect(res.status).to.equal(200);
+    const ollama = res.body.find(function(provider) { return provider.id === "ollama"; });
+    expect(ollama).to.be.an("object");
+    expect(ollama.available).to.equal(false);
+  });
+}

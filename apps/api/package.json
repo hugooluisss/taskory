@@ -11,6 +11,7 @@
     "test:cov": "jest --coverage --runInBand && jest --config ./test/jest-e2e.json --coverage --runInBand"
   },
   "dependencies": {
+    "@taskory/llm": "file:../../packages/llm",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",

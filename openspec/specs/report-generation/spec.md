@@ -1,4 +1,9 @@
-## ADDED Requirements
+# report-generation Specification
+
+## Purpose
+TBD - created by archiving change 03-llm-reports. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: Report generation
 The system SHALL generate a Markdown report from the caller's activities in `[from, to]`, optionally filtered by `project` and `tags`, via `POST /api/v1/reports`, returning `markdown`, `provider`, `model` and `activityCount`.
@@ -39,3 +44,14 @@ The system SHALL reject invalid ranges.
 #### Scenario: Inverted range
 - **WHEN** `from` is after `to`
 - **THEN** the system responds 400 with code `VALIDATION_ERROR`
+
+### Requirement: Report size limit
+The system SHALL refuse to generate a report from more than 300 activities, to stay within model context limits.
+
+#### Scenario: Range too large
+- **WHEN** the selected range, project and tags match more than 300 activities
+- **THEN** the system responds 422 with code `RANGE_TOO_LARGE` and does not call the provider
+
+#### Scenario: Tag filter
+- **WHEN** `tags` is provided
+- **THEN** only activities having at least one of those tags are included

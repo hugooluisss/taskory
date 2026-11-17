@@ -6,6 +6,7 @@ import {
   ActivityFilters,
   CreateActivityInput,
   UpdateActivityInput,
+  ReportActivityFilters,
 } from "./types";
 import { Activity } from "./entities/activity.entity";
 import { isCalendarDate } from "../common/dates/is-calendar-date";
@@ -68,6 +69,13 @@ export class ActivitiesService {
 
   meta(userId: string) {
     return this.activities.meta(userId);
+  }
+
+  findForReport(userId: string, filters: ReportActivityFilters) {
+    return this.activities.findForReport(userId, {
+      ...filters,
+      tags: filters.tags ? this.normalizeTags(filters.tags) : undefined,
+    });
   }
 
   private normalizeTags(tags: string[]): string[] {

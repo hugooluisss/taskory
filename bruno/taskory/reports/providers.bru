@@ -1,0 +1,39 @@
+meta {
+  name: List report providers
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/reports/providers
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-providers+" + Date.now() + "@example.com", name: "Reports providers", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: llm-providers / Provider availability / Unreachable provider. Expects a plain array with provider id, defaultModel and available fields, including ollama.
+}
+tests {
+  test("lists provider availability", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
+    expect(res.body.every(function(provider) {
+      return typeof provider.id === "string" && typeof provider.defaultModel === "string" && typeof provider.available === "boolean";
+    })).to.equal(true);
+    expect(res.body.map(function(provider) { return provider.id; })).to.include("ollama");
+    expect(res.body.find(function(provider) { return provider.id === "ollama"; }).available).to.equal(false);
+  });
+}

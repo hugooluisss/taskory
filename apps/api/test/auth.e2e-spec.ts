@@ -11,6 +11,7 @@ import { configureHttp } from "../src/http-setup";
 import { User } from "../src/users/entities/user.entity";
 import { ApiKey } from "../src/api-keys/entities/api-key.entity";
 import { authRateLimit } from "../src/auth/auth.constants";
+import { REPORT_GENERATOR } from "../src/reports/report-generator.provider";
 
 interface RegisteredUser {
   id: string;
@@ -582,7 +583,13 @@ async function createApp(): Promise<{
   process.env.DATABASE_PATH = databasePath;
   const module = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  })
+    .overrideProvider(REPORT_GENERATOR)
+    .useValue({
+      listProviders: async () => [],
+      generate: async () => ({ markdown: "", provider: "", model: "" }),
+    })
+    .compile();
   const app = module.createNestApplication();
   configureHttp(app);
   await app.init();

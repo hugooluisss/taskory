@@ -15,5 +15,6 @@ import { ACTIVITY_CLOCK } from "./activities.service";
     ActivitiesService,
     { provide: ACTIVITY_CLOCK, useValue: () => new Date() },
   ],
+  exports: [ActivitiesService],
 })
 export class ActivitiesModule {}

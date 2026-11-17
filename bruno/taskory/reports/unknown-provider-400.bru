@@ -1,0 +1,50 @@
+meta {
+  name: Reject unknown report provider
+  type: http
+  seq: 7
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "nope"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-unknown+" + Date.now() + "@example.com", name: "Reports unknown provider", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+  await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token },
+    data: { date: "2026-11-16", title: "Unknown provider report activity" }
+  });
+}
+docs {
+  Spec scenario: report-generation / Provider failure handling / Unknown provider. Creates one activity; expects 400 UNKNOWN_PROVIDER.
+}
+tests {
+  test("rejects an unknown provider", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("UNKNOWN_PROVIDER");
+  });
+}

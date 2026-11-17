@@ -58,7 +58,8 @@ Taskory stores a user's daily work activities and generates AI reports from them
 
 Notes:
 - `/activities/meta` must be declared before `/activities/:id`.
-- `POST /reports` fetches the user's activities in range, passes them to `ReportGenerator`; 422 `NO_ACTIVITIES` if empty; 502 `LLM_UNAVAILABLE` if the provider fails.
+- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `project?`, `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `provider?`, `model?` (max 100 chars), `style?`. The provider is validated first: 400 `UNKNOWN_PROVIDER`. Then 400 `VALIDATION_ERROR` (inverted range), 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` (more than 300 activities in this phase; raised by change 03b), 502 `LLM_UNAVAILABLE` (provider down, timeout, HTTP error, invalid or EMPTY output). The provider is never called on 4xx.
+- `DEFAULT_LLM_MODEL` applies only when the resolved provider is the default provider; otherwise the provider's own default model is used.
 - Rate-limit `/auth/*` (e.g. @nestjs/throttler).
 
 ## OAuth for MCP clients (phase 04)

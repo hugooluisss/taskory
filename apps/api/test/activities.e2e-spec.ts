@@ -10,6 +10,7 @@ import { AppModule } from "../src/app.module";
 import { Activity } from "../src/activities/entities/activity.entity";
 import { ACTIVITY_CLOCK } from "../src/activities/activities.service";
 import { configureHttp } from "../src/http-setup";
+import { REPORT_GENERATOR } from "../src/reports/report-generator.provider";
 
 describe("Activity creation", () => {
   let app: INestApplication;
@@ -435,6 +436,11 @@ async function createApp(): Promise<{
   );
   process.env.DATABASE_PATH = databasePath;
   const module = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(REPORT_GENERATOR)
+    .useValue({
+      listProviders: async () => [],
+      generate: async () => ({ markdown: "", provider: "", model: "" }),
+    })
     .overrideProvider(ACTIVITY_CLOCK)
     .useValue(() => new Date("2099-01-01T00:00:00.000Z"))
     .compile();

@@ -1,0 +1,44 @@
+meta {
+  name: Report without activities (Spanish)
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: es
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "es"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-empty-es+" + Date.now() + "@example.com", name: "Reports empty Spanish", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: report-generation / Report generation / No activities. Fresh user; expects 422 NO_ACTIVITIES and a Spanish message.
+}
+tests {
+  test("returns the Spanish no-activities error", function() {
+    expect(res.status).to.equal(422);
+    expect(res.body.code).to.equal("NO_ACTIVITIES");
+    expect(res.body.message).to.match(/actividades/i);
+  });
+}

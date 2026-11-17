@@ -11,6 +11,10 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.TOO_MANY_REQUESTS]: "Too many requests",
     [ERROR_CODES.API_KEY_LIMIT]: "You have reached the active API key limit",
     [ERROR_CODES.INTERNAL_ERROR]: "Internal server error",
+    [ERROR_CODES.NO_ACTIVITIES]: "No activities found for this report",
+    [ERROR_CODES.RANGE_TOO_LARGE]: "Too many activities for one report",
+    [ERROR_CODES.UNKNOWN_PROVIDER]: "Unknown LLM provider",
+    [ERROR_CODES.LLM_UNAVAILABLE]: "LLM provider is unavailable",
   },
   es: {
     [ERROR_CODES.EMAIL_TAKEN]: "El correo ya está registrado",
@@ -24,5 +28,10 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.API_KEY_LIMIT]:
       "Has alcanzado el límite de claves API activas",
     [ERROR_CODES.INTERNAL_ERROR]: "Error interno del servidor",
+    [ERROR_CODES.NO_ACTIVITIES]:
+      "No se encontraron actividades para el informe",
+    [ERROR_CODES.RANGE_TOO_LARGE]: "Demasiadas actividades para un informe",
+    [ERROR_CODES.UNKNOWN_PROVIDER]: "Proveedor de IA desconocido",
+    [ERROR_CODES.LLM_UNAVAILABLE]: "El proveedor de IA no está disponible",
   },
 };

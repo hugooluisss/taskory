@@ -19,8 +19,16 @@ The system SHALL report each provider's `id`, `defaultModel` and whether it is c
 - **THEN** it is listed with `available: false` and the request still succeeds
 
 ### Requirement: Defaults
-The system SHALL use `DEFAULT_LLM_PROVIDER` and `DEFAULT_LLM_MODEL` when the request omits them.
+The system SHALL use `DEFAULT_LLM_PROVIDER` when the request omits the provider, and SHALL use `DEFAULT_LLM_MODEL` when the request omits the model only if the resolved provider is the default provider; otherwise it SHALL use the resolved provider's own default model, so that a model meant for one provider is never sent to another.
 
 #### Scenario: No provider in request
 - **WHEN** a report is requested without `provider`
 - **THEN** the configured default provider is used and returned in the response
+
+#### Scenario: Default model of the default provider
+- **WHEN** the request omits `model` and resolves to the default provider
+- **THEN** `DEFAULT_LLM_MODEL` is used when configured
+
+#### Scenario: Other provider without model
+- **WHEN** the request names a provider other than the default and omits `model`
+- **THEN** that provider's own default model is used, not `DEFAULT_LLM_MODEL`

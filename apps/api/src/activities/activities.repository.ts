@@ -9,6 +9,7 @@ import { Activity } from "./entities/activity.entity";
 import {
   ActivityFilters,
   CreateActivityInput,
+  ReportActivityFilters,
   UpdateActivityInput,
 } from "./types";
 
@@ -60,6 +61,33 @@ export class ActivitiesRepository {
       .take(limit)
       .getManyAndCount();
     return { items, total, page, limit };
+  }
+
+  findForReport(
+    userId: string,
+    filters: ReportActivityFilters,
+  ): Promise<Activity[]> {
+    const query = this.activities
+      .createQueryBuilder("activity")
+      .where("activity.userId = :userId", { userId })
+      .andWhere("activity.date >= :from", { from: filters.from })
+      .andWhere("activity.date <= :to", { to: filters.to });
+    if (filters.project) {
+      query.andWhere("activity.project = :project", {
+        project: filters.project,
+      });
+    }
+    if (filters.tags?.length) {
+      query.andWhere(
+        "EXISTS (SELECT 1 FROM json_each(activity.tags) WHERE json_each.value IN (:...tags))",
+        { tags: filters.tags },
+      );
+    }
+    return query
+      .orderBy("activity.date", "ASC")
+      .addOrderBy("activity.createdAt", "ASC")
+      .take(301)
+      .getMany();
   }
 
   async meta(userId: string): Promise<ActivityMeta> {

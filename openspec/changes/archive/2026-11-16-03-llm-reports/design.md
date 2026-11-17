@@ -13,7 +13,8 @@
 - `fetch` inyectable para tests sin red.
 - Las actividades se envían al modelo como datos delimitados, con instrucción de tratarlas como datos y no como órdenes (mitiga inyección desde descripciones).
 - Un proveedor desconocido es `UNKNOWN_PROVIDER` (400), distinto de `LLM_UNAVAILABLE` (502).
-- Timeout configurable por llamada.
+- Timeout configurable por instancia de proveedor (`LLM_TIMEOUT_MS`, por defecto 180000 ms para generar y 5000 ms para comprobar disponibilidad); no es un parámetro por llamada.
+- El registro de la librería es la única fuente de proveedores: la API usa `new ReportGenerator()` y nunca construye su propio mapa.
 
 ## Arquitectura controller -> service -> repository
 

@@ -1,0 +1,55 @@
+meta {
+  name: Report matches any requested tag
+  type: http
+  seq: 3
+  tags: [
+    requires-llm
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama",
+    "tags": ["api", "docs"]
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-tags-any+" + Date.now() + "@example.com", name: "Reports any tag", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+  for (const tag of ["api", "docs"]) {
+    await bru.sendRequest({
+      method: "POST",
+      url: bru.getEnvVar("baseUrl") + "/activities",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token },
+      data: { date: "2026-11-16", title: "Report activity tagged " + tag, tags: [tag] }
+    });
+  }
+}
+docs {
+  Spec scenario: report-generation / Report generation / Tag filter. Requires Ollama; two activities with distinct tags prove matching is ANY-of.
+}
+tests {
+  test("includes activities matching either requested tag", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.activityCount).to.equal(2);
+  });
+}

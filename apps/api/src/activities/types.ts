@@ -20,3 +20,10 @@ export interface ActivityFilters {
   page: number;
   limit: number;
 }
+
+export interface ReportActivityFilters {
+  from: string;
+  to: string;
+  project?: string;
+  tags?: string[];
+}

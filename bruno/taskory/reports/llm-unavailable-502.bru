@@ -1,0 +1,50 @@
+meta {
+  name: Report when Ollama is unavailable
+  type: http
+  seq: 8
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-llm-down+" + Date.now() + "@example.com", name: "Reports Ollama unavailable", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+  await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token },
+    data: { date: "2026-11-16", title: "Ollama unavailable report activity" }
+  });
+}
+docs {
+  Spec scenario: report-generation / Provider failure handling / Provider down. Creates one activity; expects 502 LLM_UNAVAILABLE when the default Ollama server is stopped.
+}
+tests {
+  test("returns a controlled error when Ollama is unavailable", function() {
+    expect(res.status).to.equal(502);
+    expect(res.body.code).to.equal("LLM_UNAVAILABLE");
+  });
+}
