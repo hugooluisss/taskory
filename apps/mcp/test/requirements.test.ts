@@ -1,0 +1,609 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  defaultFakeTaskoryHandler,
+  type FakeTaskoryRequest,
+} from "./support/fake-taskory-api.js";
+import {
+  contentText,
+  withMcpClient,
+  withMcpSystem,
+} from "./support/mcp-system.js";
+
+const validToken = "valid-token";
+const activityId = "00000000-0000-4000-8000-000000000001";
+const reportId = "00000000-0000-4000-8000-000000000002";
+
+describe("MCP endpoint and authentication", () => {
+  it("Missing token starts OAuth discovery", async () => {
+    await withMcpSystem(defaultFakeTaskoryHandler, async (system) => {
+      const response = await fetch(`${system.root}/mcp`, { method: "POST" });
+      expect(response.status).toBe(401);
+      expect(response.headers.get("www-authenticate")).toBe(
+        'Bearer resource_metadata="https://taskory.test/.well-known/oauth-protected-resource"',
+      );
+      expect(system.apiRequests).toHaveLength(0);
+    });
+  });
+
+  it("Zero-configuration connection exposes the exact discovery URL without serving metadata", async () => {
+    await withMcpSystem(defaultFakeTaskoryHandler, async (system) => {
+      const response = await fetch(`${system.root}/mcp`, { method: "POST" });
+      expect(response.headers.get("www-authenticate")).toBe(
+        'Bearer resource_metadata="https://taskory.test/.well-known/oauth-protected-resource"',
+      );
+      expect(
+        new URL(
+          response.headers
+            .get("www-authenticate")!
+            .match(/resource_metadata="([^"]+)"/)![1],
+        ).pathname,
+      ).toBe("/.well-known/oauth-protected-resource");
+      const metadata = await fetch(
+        `${system.root}/.well-known/oauth-protected-resource`,
+      );
+      expect(metadata.status).toBe(404);
+    });
+  });
+
+  it.todo("Zero-configuration OAuth end-to-end flow with a real MCP client");
+
+  it("Per-user identity", async () => {
+    const seen: FakeTaskoryRequest[] = [];
+    const handler = (request: FakeTaskoryRequest) => {
+      seen.push(request);
+      return defaultFakeTaskoryHandler(request);
+    };
+    await withMcpSystem(handler, async (system) => {
+      const clientA = await system.connect("token-a");
+      const clientB = await system.connect("token-b");
+      try {
+        await clientA.callTool({ name: "list_activities", arguments: {} });
+        await clientB.callTool({ name: "list_activities", arguments: {} });
+      } finally {
+        await Promise.all([clientA.close(), clientB.close()]);
+      }
+    });
+    expect(
+      seen
+        .filter(
+          (request) =>
+            request.method === "GET" && request.url === "/api/v1/activities",
+        )
+        .map((request) => request.authorization),
+    ).toEqual(["Bearer token-a", "Bearer token-b"]);
+  });
+
+  it("Expired token", async () => {
+    await withMcpSystem(
+      (request) =>
+        request.url.endsWith("/auth/me")
+          ? {
+              status: 401,
+              body: {
+                statusCode: 401,
+                code: "UNAUTHORIZED",
+                message: "Expired.",
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: "Bearer expired-token" },
+        });
+        expect(response.status).toBe(401);
+        expect(response.headers.get("www-authenticate")).toBe(
+          'Bearer resource_metadata="https://taskory.test/.well-known/oauth-protected-resource"',
+        );
+        expect(response.headers.get("access-control-allow-origin")).toBe("*");
+        expect(response.headers.get("access-control-expose-headers")).toContain(
+          "WWW-Authenticate",
+        );
+        expect(system.apiRequests).toHaveLength(1);
+      },
+    );
+  });
+
+  it("API 401 still gives the discovery challenge", async () => {
+    await withMcpSystem(
+      (request) =>
+        request.url.endsWith("/auth/me")
+          ? {
+              status: 401,
+              body: { code: "UNAUTHORIZED", message: "do not leak" },
+            }
+          : defaultFakeTaskoryHandler(request),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: "Bearer failing-token" },
+        });
+        expect(response.status).toBe(401);
+        expect(response.headers.get("www-authenticate")).toContain(
+          "oauth-protected-resource",
+        );
+        expect(await response.text()).toBe("");
+      },
+    );
+  });
+
+  it("API 403 during token validation is UPSTREAM_REJECTED", async () => {
+    await withMcpSystem(
+      (request) =>
+        request.url.endsWith("/auth/me")
+          ? {
+              status: 403,
+              body: { code: "PRIVATE", message: "private upstream body" },
+            }
+          : defaultFakeTaskoryHandler(request),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: "Bearer failing-token" },
+        });
+        expect(response.status).toBe(502);
+        expect(response.headers.get("content-type")).toContain(
+          "application/json",
+        );
+        expect(response.headers.get("access-control-allow-origin")).toBe("*");
+        const body = await response.text();
+        expect(JSON.parse(body)).toEqual({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "UPSTREAM_REJECTED: The Taskory API rejected the request",
+            data: { code: "UPSTREAM_REJECTED" },
+          },
+          id: null,
+        });
+        expect(body).not.toContain("private upstream body");
+      },
+    );
+  });
+});
+
+describe("Token forwarding without shared credentials", () => {
+  it("Invalid token", async () => {
+    await withMcpSystem(
+      (request) =>
+        request.url.endsWith("/auth/me")
+          ? {
+              status: 401,
+              body: {
+                statusCode: 401,
+                code: "UNAUTHORIZED",
+                message: "Invalid token.",
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: "Bearer bad-token" },
+        });
+        expect(response.status).toBe(401);
+        expect(
+          system.apiRequests.some(
+            (request) => request.url === "/api/v1/activities",
+          ),
+        ).toBe(false);
+      },
+    );
+  });
+
+  it("Returns a reconnect tool error when the API revokes a token during a tool call", async () => {
+    const result = await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/activities")
+          return {
+            status: 401,
+            body: { code: "UNAUTHORIZED", message: "revoked" },
+          };
+        return defaultFakeTaskoryHandler(request);
+      },
+      "race-token",
+      async ({ client }) =>
+        client.callTool({ name: "list_activities", arguments: {} }),
+    );
+    expect(result.isError).toBe(true);
+    expect(contentText(result)).toContain(
+      "UNAUTHORIZED: The session was revoked; reconnect or reauthorize",
+    );
+  });
+});
+
+describe("Cross-origin preflight", () => {
+  it("Browser preflight", async () => {
+    await withMcpSystem(defaultFakeTaskoryHandler, async (system) => {
+      const response = await fetch(`${system.root}/mcp`, {
+        method: "OPTIONS",
+        headers: {
+          origin: "https://client.test",
+          "access-control-request-method": "POST",
+        },
+      });
+      expect(response.status).toBe(204);
+      expect(response.headers.get("access-control-allow-origin")).toBe("*");
+      expect(response.headers.get("access-control-allow-methods")).toBe(
+        "POST, GET, DELETE, OPTIONS",
+      );
+      expect(response.headers.get("access-control-allow-headers")).toContain(
+        "authorization",
+      );
+      expect(response.headers.get("access-control-max-age")).toBe("600");
+      expect(system.apiRequests).toHaveLength(0);
+    });
+  });
+});
+
+describe("Upstream failures are distinguishable", () => {
+  it("API unreachable during validation returns retryable JSON-RPC error", async () => {
+    await withMcpSystem(
+      () => ({ closeSocket: true }),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${validToken}` },
+        });
+        expect(response.status).toBe(503);
+        expect(response.headers.get("retry-after")).toBe("5");
+        expect(response.headers.get("content-type")).toContain(
+          "application/json",
+        );
+        expect(response.headers.get("access-control-allow-origin")).toBe("*");
+        expect(await response.json()).toEqual({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message:
+              "UPSTREAM_UNAVAILABLE: the Taskory API is temporarily unavailable; this can be retried",
+            data: { code: "UPSTREAM_UNAVAILABLE" },
+          },
+          id: null,
+        });
+      },
+    );
+  });
+
+  it("API timeout during validation returns UPSTREAM_UNAVAILABLE", async () => {
+    await withMcpSystem(
+      () => ({ delayMs: 100 }),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${validToken}` },
+        });
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.data.code).toBe(
+          "UPSTREAM_UNAVAILABLE",
+        );
+      },
+      { timeoutMs: 10 },
+    );
+  });
+
+  it("API 500 during validation returns UPSTREAM_UNAVAILABLE", async () => {
+    await withMcpSystem(
+      () => ({
+        status: 500,
+        body: { code: "PRIVATE", message: "private upstream body" },
+      }),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${validToken}` },
+        });
+        expect(response.status).toBe(503);
+        expect(JSON.stringify(await response.json())).not.toContain(
+          "private upstream body",
+        );
+      },
+    );
+  });
+
+  it("API 429 during validation returns RATE_LIMITED and forwards Retry-After", async () => {
+    await withMcpSystem(
+      () => ({
+        status: 429,
+        headers: { "Retry-After": "17" },
+        body: { code: "PRIVATE", message: "private upstream body" },
+      }),
+      async (system) => {
+        const response = await fetch(`${system.root}/mcp`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${validToken}` },
+        });
+        expect(response.status).toBe(429);
+        expect(response.headers.get("retry-after")).toBe("17");
+        expect((await response.json()).error.data.code).toBe("RATE_LIMITED");
+      },
+    );
+  });
+
+  it("Never returns the token in the response body or logs", async () => {
+    const token = "secret-token-value";
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const responseBody = await withMcpSystem(
+        () => ({ closeSocket: true }),
+        async (system) => {
+          const response = await fetch(`${system.root}/mcp`, {
+            method: "POST",
+            headers: { authorization: `Bearer ${token}` },
+          });
+          return await response.text();
+        },
+      );
+      expect(responseBody).not.toContain(token);
+      expect(log.mock.calls.flat().join(" ")).not.toContain(token);
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
+describe("log_activity", () => {
+  it("Log with defaults", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        const result = await client.callTool({
+          name: "log_activity",
+          arguments: { title: "Work", timezone: "Asia/Tokyo" },
+        });
+        expect(JSON.parse(contentText(result))).toMatchObject({
+          id: "new-activity",
+          title: "Work",
+        });
+        const body = system.apiRequests.find(
+          (request) =>
+            request.url === "/api/v1/activities" && request.method === "POST",
+        )?.body as { date: string };
+        expect(body.date).toBe("2026-11-18");
+      },
+      { now: () => new Date("2026-11-17T23:30:00.000Z") },
+    );
+  });
+
+  it("Rejects an invalid IANA timezone before the API call", async () => {
+    const result = await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        const tool = await client.callTool({
+          name: "log_activity",
+          arguments: { title: "Work", timezone: "Mars/Olympus" },
+        });
+        return {
+          tool,
+          requests: system.apiRequests.filter(
+            (request) => request.method === "POST",
+          ),
+        };
+      },
+    );
+    expect(result.tool.isError).toBe(true);
+    expect(result.requests).toHaveLength(0);
+  });
+});
+
+describe("list_activities", () => {
+  it("Filter by range", async () => {
+    let queriedUrl = "";
+    await withMcpClient(
+      (request) => {
+        if (request.url.startsWith("/api/v1/activities?")) {
+          queriedUrl = request.url;
+          const query = new URLSearchParams(request.url.split("?")[1]);
+          return {
+            body: {
+              items: [
+                { id: activityId, date: query.get("from"), title: "In range" },
+              ],
+              total: 1,
+            },
+          };
+        }
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client }) => {
+        const result = JSON.parse(
+          contentText(
+            await client.callTool({
+              name: "list_activities",
+              arguments: { from: "2026-02-01", to: "2026-02-28" },
+            }),
+          ),
+        );
+        expect(result.items).toEqual([
+          expect.objectContaining({ date: "2026-02-01" }),
+        ]);
+        expect(queriedUrl).toContain("from=2026-02-01");
+        expect(queriedUrl).toContain("to=2026-02-28");
+      },
+    );
+  });
+
+  it("More results than one page", async () => {
+    await withMcpClient(
+      (request) =>
+        request.url.startsWith("/api/v1/activities") && request.method === "GET"
+          ? {
+              body: {
+                items: [
+                  {
+                    id: `page-${new URL(request.url, "http://api.test").searchParams.get("page") ?? 1}`,
+                  },
+                ],
+                total: 120,
+                page: Number(
+                  new URL(request.url, "http://api.test").searchParams.get(
+                    "page",
+                  ) ?? 1,
+                ),
+                limit: 50,
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client }) => {
+        const result = JSON.parse(
+          contentText(
+            await client.callTool({ name: "list_activities", arguments: {} }),
+          ),
+        );
+        expect(result.summary).toBe(
+          "page 1 of 3, total 120; More results exist; request page 2 with list_activities.",
+        );
+        const nextPage = JSON.parse(
+          contentText(
+            await client.callTool({
+              name: "list_activities",
+              arguments: { page: 2 },
+            }),
+          ),
+        );
+        expect(nextPage.page).toBe(2);
+        expect(nextPage.items[0].id).toBe("page-2");
+      },
+    );
+  });
+});
+
+describe("update_activity and delete_activity", () => {
+  it("Unknown id", async () => {
+    await withMcpClient(
+      (request) =>
+        request.url.includes(activityId)
+          ? {
+              status: 404,
+              body: {
+                statusCode: 404,
+                code: "NOT_FOUND",
+                message: "Activity was not found.",
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client }) => {
+        const updated = await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, title: "x" },
+        });
+        const deleted = await client.callTool({
+          name: "delete_activity",
+          arguments: { id: activityId },
+        });
+        expect(updated.isError).toBe(true);
+        expect(contentText(updated)).toContain("Activity was not found.");
+        expect(deleted.isError).toBe(true);
+        expect(contentText(deleted)).toContain("NOT_FOUND");
+      },
+    );
+  });
+});
+
+describe("generate_report", () => {
+  it("Report returned", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client }) => {
+        const result = await client.callTool({
+          name: "generate_report",
+          arguments: { from: "2026-02-01", to: "2026-02-28" },
+        });
+        expect(JSON.parse(contentText(result))).toEqual({
+          markdown: "# Report",
+          provider: "local",
+          model: "test-model",
+          activityCount: 3,
+        });
+      },
+    );
+  });
+});
+
+describe("Tool descriptions guide the agent", () => {
+  it("Tool discovery", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client }) => {
+        const listed = await client.listTools();
+        expect(listed.tools).toHaveLength(6);
+        for (const tool of listed.tools) {
+          expect(tool.description).toMatch(/use/i);
+          const properties = tool.inputSchema.properties as Record<
+            string,
+            { description?: string }
+          >;
+          expect(Object.keys(properties).length).toBeGreaterThan(0);
+          for (const parameter of Object.values(properties))
+            expect(parameter.description?.trim()).toBeTruthy();
+        }
+      },
+    );
+  });
+});
+
+describe("Asynchronous reports", () => {
+  it("Large report", async () => {
+    await withMcpClient(
+      (request) =>
+        request.url === "/api/v1/reports" && request.method === "POST"
+          ? {
+              status: 202,
+              body: {
+                id: reportId,
+                status: "queued",
+                progress: { done: 0, total: 3 },
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client }) => {
+        const result = JSON.parse(
+          contentText(
+            await client.callTool({
+              name: "generate_report",
+              arguments: { from: "2026-02-01", to: "2026-02-28" },
+            }),
+          ),
+        );
+        expect(result).toMatchObject({
+          id: reportId,
+          status: "queued",
+          progress: { done: 0, total: 3 },
+        });
+        expect(result.instruction).toContain(`get_report with id ${reportId}`);
+      },
+    );
+  });
+
+  it("Completed report", async () => {
+    await withMcpClient(
+      (request) =>
+        request.url.endsWith(reportId)
+          ? {
+              body: {
+                id: reportId,
+                status: "completed",
+                progress: { done: 2, total: 2 },
+                markdown: "# Done",
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client }) => {
+        const result = await client.callTool({
+          name: "get_report",
+          arguments: { id: reportId },
+        });
+        expect(contentText(result)).toContain("# Done");
+      },
+    );
+  });
+});

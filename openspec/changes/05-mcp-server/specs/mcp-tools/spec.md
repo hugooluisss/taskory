@@ -71,3 +71,42 @@ When the API answers 202 to a report request, `generate_report` SHALL return the
 #### Scenario: Completed report
 - **WHEN** an agent calls `get_report` for a completed report
 - **THEN** the tool returns the Markdown report
+
+### Requirement: Token validation on every request
+The system SHALL validate the bearer token against the Taskory API on every MCP request and MUST NOT cache validation results, so that a revoked token is rejected with the 401 discovery challenge on the very next request.
+
+#### Scenario: Revoked token
+- **WHEN** a token is revoked and the client sends the next MCP request
+- **THEN** the system responds 401 with the `WWW-Authenticate` challenge
+
+### Requirement: Cross-origin preflight
+The system SHALL answer `OPTIONS /mcp` preflight requests without requiring a token and SHALL expose the `WWW-Authenticate` and MCP protocol headers to browser clients.
+
+#### Scenario: Browser preflight
+- **WHEN** a browser client sends `OPTIONS /mcp` with an `Origin` and `Access-Control-Request-Method`
+- **THEN** the system responds 204 with the allowed methods and headers (including `Authorization` and `Content-Type`) and does not execute any tool
+
+### Requirement: Paginated activity listing
+`list_activities` SHALL accept an optional `page` and return `total`, `page` and `limit` so an agent can retrieve every matching record.
+
+#### Scenario: More results than one page
+- **WHEN** the API reports a `total` larger than the returned items
+- **THEN** the tool result states that more pages exist and how to request the next one
+
+### Requirement: User-local default date
+`log_activity` SHALL accept an optional IANA `timezone` and, when `date` is omitted, SHALL use today's date in that timezone, falling back to the server's timezone when none is given.
+
+#### Scenario: Date near midnight
+- **WHEN** it is already the next day on the server but still the previous day in the given `timezone`
+- **THEN** the activity is logged with the date in the given timezone
+
+### Requirement: Upstream failures are distinguishable
+The system SHALL report network failures, timeouts and API 5xx responses as a stable retryable error (`UPSTREAM_UNAVAILABLE`), distinct from client-correctable API errors, which keep their API code.
+
+#### Scenario: API unreachable
+- **WHEN** the Taskory API does not answer within the timeout
+- **THEN** the tool result is an error with code `UPSTREAM_UNAVAILABLE` and a message saying it can be retried
+
+#### Scenario: API unreachable before dispatch
+- **WHEN** network failure, timeout, or an API 5xx occurs while validating the bearer token before MCP dispatch
+- **THEN** the HTTP response is 503 JSON with `Retry-After: 5` and a JSON-RPC `UPSTREAM_UNAVAILABLE` error; an API 401 still receives the discovery challenge, API 429 maps to `RATE_LIMITED` with its `Retry-After`, and other API 4xx map to `UPSTREAM_REJECTED` without leaking upstream response data

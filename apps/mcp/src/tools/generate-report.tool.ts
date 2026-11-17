@@ -1,0 +1,57 @@
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import type { ReportToolsService } from "../services/report-tools.service.js";
+import { toolError, toolResult } from "./tool-result.js";
+import { calendarDate } from "./validation.js";
+import { bearerToken } from "./token.js";
+import { reportResult } from "./report-format.js";
+
+export function registerGenerateReport(
+  server: McpServer,
+  service: ReportToolsService,
+): void {
+  server.tool(
+    "generate_report",
+    "Create a Markdown summary of the user’s work. Use when asked for a progress update, work recap, or report over a date range.",
+    {
+      from: calendarDate.describe("Inclusive report start date in YYYY-MM-DD."),
+      to: calendarDate.describe("Inclusive report end date in YYYY-MM-DD."),
+      project: z
+        .string()
+        .max(100)
+        .optional()
+        .describe("Optional project filter."),
+      tags: z
+        .array(z.string().max(50))
+        .max(20)
+        .optional()
+        .describe("Optional tags to include, up to 20."),
+      language: z
+        .enum(["es", "en"])
+        .default("en")
+        .describe("Report language, English or Spanish."),
+      provider: z
+        .string()
+        .optional()
+        .describe("Optional configured report provider."),
+      model: z
+        .string()
+        .max(100)
+        .optional()
+        .describe("Optional model override."),
+      style: z
+        .enum(["summary", "detailed"])
+        .optional()
+        .describe("Optional report detail level."),
+    },
+    async (args, extra) => {
+      try {
+        return toolResult(
+          reportResult(await service.generate(bearerToken(extra), args)),
+        );
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+}

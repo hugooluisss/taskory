@@ -11,7 +11,8 @@ MCP oficial (`@modelcontextprotocol/sdk`), transporte streamable HTTP sin estado
 
 - El token viaja en la cabecera de cada petición y se reenvía tal cual a la API.
 - Esquemas con zod; descripciones orientadas a "cuándo usarla".
-- `log_activity` calcula `date` por defecto con la fecha local del servidor.
+- `log_activity` calcula `date` por defecto con un timezone IANA recibido; si no se proporciona, usa el timezone del servidor.
+- El token se valida con `GET /auth/me` en cada petición MCP y no se cachea: un token revocado debe recibir el desafío 401 en la siguiente petición.
 
 ## Arquitectura controller -> service -> repository
 
