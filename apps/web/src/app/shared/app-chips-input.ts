@@ -27,6 +27,7 @@ export class AppChipsInputComponent implements ControlValueAccessor {
   @Input() required = false;
   @Input() maxItems = 20;
   @Input() maxLength = 50;
+  @Input() suggestions: string[] = [];
   @Input() mode: 'tags' | 'urls' = 'tags';
   @Input() validator: ChipValidator | null = null;
   readonly value = signal<string[]>([]);

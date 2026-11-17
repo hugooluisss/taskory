@@ -7,11 +7,18 @@ import { AuthService } from '../../core/services/auth.service';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { AppButtonComponent } from '../../shared/app-button';
 import { AppIconComponent } from '../../shared/app-icon';
+import { AppChipsInputComponent } from '../../shared/app-chips-input';
 
 @Component({
   selector: 'app-report-form',
   standalone: true,
-  imports: [FormsModule, TranslocoPipe, AppButtonComponent, AppIconComponent],
+  imports: [
+    FormsModule,
+    TranslocoPipe,
+    AppButtonComponent,
+    AppIconComponent,
+    AppChipsInputComponent,
+  ],
   templateUrl: './report-form.html',
 })
 export class ReportFormComponent {
@@ -26,7 +33,7 @@ export class ReportFormComponent {
   readonly providersUnavailable = signal(false);
   readonly from = signal(this.presets.thisWeek.from);
   readonly to = signal(this.presets.thisWeek.to);
-  readonly project = signal('');
+  readonly selectedProjects = signal<string[]>([]);
   readonly language = signal<Language>(this.auth.user()?.language ?? 'en');
   readonly style = signal<'summary' | 'detailed'>('summary');
   readonly provider = signal('');
@@ -61,7 +68,7 @@ export class ReportFormComponent {
     this.generate.emit({
       from: this.from(),
       to: this.to(),
-      project: this.project().trim() || undefined,
+      projects: this.selectedProjects().length ? this.selectedProjects() : undefined,
       language: this.language(),
       style: this.style(),
       provider: this.provider() || undefined,

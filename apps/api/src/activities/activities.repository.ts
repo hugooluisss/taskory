@@ -72,9 +72,9 @@ export class ActivitiesRepository {
       .where("activity.userId = :userId", { userId })
       .andWhere("activity.date >= :from", { from: filters.from })
       .andWhere("activity.date <= :to", { to: filters.to });
-    if (filters.project) {
-      query.andWhere("activity.project = :project", {
-        project: filters.project,
+    if (filters.projects?.length) {
+      query.andWhere("activity.project IN (:...projects)", {
+        projects: filters.projects,
       });
     }
     if (filters.tags?.length) {
@@ -119,9 +119,9 @@ export class ActivitiesRepository {
       .where("activity.userId = :userId", { userId })
       .andWhere("activity.date >= :from", { from: filters.from })
       .andWhere("activity.date <= :to", { to: filters.to });
-    if (filters.project) {
-      query.andWhere("activity.project = :project", {
-        project: filters.project,
+    if (filters.projects?.length) {
+      query.andWhere("activity.project IN (:...projects)", {
+        projects: filters.projects,
       });
     }
     if (filters.tags?.length) {

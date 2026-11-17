@@ -225,7 +225,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       totals: sumTotals(memory),
       from: job.params.from,
       to: job.params.to,
-      project: job.params.project,
+      projects: job.params.projects,
       language: job.params.language,
       style: job.params.style,
       provider: job.params.provider,

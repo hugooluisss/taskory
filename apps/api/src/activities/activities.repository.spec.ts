@@ -103,6 +103,29 @@ describe("Activity listing and filters", () => {
 
     expect(result.items.map((item) => item.title)).toEqual(["Exact"]);
   });
+
+  it("Report projects match any selected value", async () => {
+    await repository.create("u1", {
+      ...activity("2026-11-01", "Alpha"),
+      project: "Alpha",
+    });
+    await repository.create("u1", {
+      ...activity("2026-11-02", "Beta"),
+      project: "Beta",
+    });
+    await repository.create("u1", {
+      ...activity("2026-11-03", "Secret"),
+      project: "Secret",
+    });
+
+    const result = await repository.findReportSnapshot("u1", {
+      from: "2026-11-01",
+      to: "2026-11-30",
+      projects: ["Alpha", "Beta"],
+    });
+
+    expect(result).toHaveLength(2);
+  });
 });
 
 describe("Activity metadata", () => {

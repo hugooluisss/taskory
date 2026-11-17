@@ -26,6 +26,7 @@
   <input
     class="min-w-32 flex-1 border-0 outline-none"
     [id]="id"
+    [attr.list]="suggestions.length ? id + '-suggestions' : null"
     [value]="inputValue()"
     [disabled]="disabled() || value().length >= maxItems"
     [required]="required"
@@ -37,6 +38,13 @@
     (paste)="paste($event)"
   />
 </div>
+@if (suggestions.length) {
+  <datalist [id]="id + '-suggestions'">
+    @for (suggestion of suggestions; track suggestion) {
+      <option [value]="suggestion"></option>
+    }
+  </datalist>
+}
 @if (hint || visibleError) {
   <small
     class="label-text-alt"

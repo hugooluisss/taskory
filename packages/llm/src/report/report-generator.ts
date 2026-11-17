@@ -126,7 +126,7 @@ export class ReportGenerator {
     totals: ReportTotals;
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
     provider?: string;

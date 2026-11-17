@@ -59,6 +59,60 @@ describe("Report generation", () => {
     });
   });
 
+  describe("Report project selection", () => {
+    beforeEach(async () => {
+      await create(owner, {
+        date: "2026-11-16",
+        title: "Alpha",
+        project: "Alpha",
+      });
+      await create(owner, {
+        date: "2026-11-17",
+        title: "Beta",
+        project: "Beta",
+      });
+      await create(owner, { date: "2026-11-18", title: "Unassigned" });
+    });
+
+    it("One project", async () => {
+      await report(owner, { projects: ["Alpha"] })
+        .expect(200)
+        .expect(({ body }) => expect(body.activityCount).toBe(1));
+    });
+
+    it("Several projects", async () => {
+      await report(owner, { projects: [" Alpha ", "Beta", "Alpha"] })
+        .expect(200)
+        .expect(({ body }) => expect(body.activityCount).toBe(2));
+      expect(generator.generate.mock.calls[0][0].projects).toEqual([
+        "Alpha",
+        "Beta",
+      ]);
+    });
+
+    it("None means all", async () => {
+      await report(owner, { projects: [] })
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.activityCount).toBe(3);
+        });
+    });
+
+    it("Too many or invalid projects", async () => {
+      for (const projects of [
+        [" "],
+        ["x".repeat(101)],
+        [null],
+        Array(21).fill("A"),
+      ]) {
+        await report(owner, { projects })
+          .expect(400)
+          .expect(({ body }) => expect(body.code).toBe("VALIDATION_ERROR"));
+      }
+      expect(generator.generate).not.toHaveBeenCalled();
+    });
+  });
+
   describe("Final report from memory", () => {
     it("Completion", async () => {
       await insertActivities(250, ownerId, app);
@@ -620,21 +674,17 @@ class FakeGenerator {
       { id: "ollama", defaultModel: "test", available: true },
     ]);
   hasProvider = jest.fn((id = "ollama") => id === "ollama");
-  evaluateChunk = jest
-    .fn()
-    .mockResolvedValue({
-      summary: "Summary",
-      highlights: [],
-      provider: "ollama",
-      model: "test",
-    });
-  writeFinal = jest
-    .fn()
-    .mockResolvedValue({
-      markdown: "# Final report",
-      provider: "ollama",
-      model: "test",
-    });
+  evaluateChunk = jest.fn().mockResolvedValue({
+    summary: "Summary",
+    highlights: [],
+    provider: "ollama",
+    model: "test",
+  });
+  writeFinal = jest.fn().mockResolvedValue({
+    markdown: "# Final report",
+    provider: "ollama",
+    model: "test",
+  });
 }
 
 async function bootApp(generator: FakeGenerator): Promise<INestApplication> {

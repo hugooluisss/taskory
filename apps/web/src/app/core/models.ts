@@ -50,7 +50,7 @@ export interface ApiKey {
 export interface ReportRequest {
   from: string;
   to: string;
-  project?: string;
+  projects?: string[];
   tags?: string[];
   language: Language;
   provider?: string;

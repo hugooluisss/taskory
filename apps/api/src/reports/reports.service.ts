@@ -41,10 +41,13 @@ export class ReportsService {
     if (!this.generator.hasProvider(input.provider)) {
       throw new ApiException(400, ERROR_CODES.UNKNOWN_PROVIDER);
     }
+    const projects = [
+      ...new Set((input.projects ?? []).map((project) => project.trim())),
+    ];
     const snapshot = await this.activities.findReportSnapshot(userId, {
       from: input.from,
       to: input.to,
-      project: input.project,
+      projects,
       tags: input.tags,
     });
     if (snapshot.length === 0) {
@@ -84,7 +87,7 @@ export class ReportsService {
         })),
         from: input.from,
         to: input.to,
-        project: input.project,
+        projects,
         language: input.language,
         provider: input.provider,
         model: input.model,

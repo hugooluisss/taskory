@@ -16,5 +16,5 @@ export interface ReportOptions {
   provider?: string;
   model?: string;
   style?: "summary" | "detailed";
-  project?: string;
+  projects?: string[];
 }

@@ -31,6 +31,23 @@ describe("generate_report 200 response", () => {
       },
     );
   });
+
+  it("MCP tool", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      "report-token",
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "generate_report",
+          arguments: { ...reportArgs, projects: ["Alpha", "Beta"] },
+        });
+        expect(
+          system.apiRequests.find((item) => item.url === "/api/v1/reports")
+            ?.body,
+        ).toMatchObject({ projects: ["Alpha", "Beta"] });
+      },
+    );
+  });
 });
 
 describe("Asynchronous reports", () => {

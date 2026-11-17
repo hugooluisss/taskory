@@ -66,6 +66,18 @@ describe('Report generation', () => {
   it('offers project suggestions from activity metadata', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#report-projects option').value).toBe('Apollo');
+    expect(fixture.nativeElement.querySelector('#report-projects-suggestions option').value).toBe(
+      'Apollo',
+    );
+  });
+  it('Web multi-select', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.componentInstance.selectedProjects.set(['Apollo', 'Zeus']);
+    fixture.componentInstance.submit();
+    expect(emit.mock.calls[0]![0]!.projects).toEqual(['Apollo', 'Zeus']);
+    fixture.componentInstance.selectedProjects.set([]);
+    fixture.componentInstance.submit();
+    expect(emit.mock.calls[1]![0]!.projects).toBeUndefined();
   });
 });

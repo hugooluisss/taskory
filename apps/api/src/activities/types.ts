@@ -24,6 +24,6 @@ export interface ActivityFilters {
 export interface ReportActivityFilters {
   from: string;
   to: string;
-  project?: string;
+  projects?: string[];
   tags?: string[];
 }

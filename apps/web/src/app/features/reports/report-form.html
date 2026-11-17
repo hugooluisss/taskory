@@ -36,20 +36,16 @@
   @if (rangeError()) {
     <p class="text-error" role="alert">{{ 'reports.form.invalidRange' | transloco }}</p>
   }
-  <label class="form-control gap-1"
-    ><span>{{ 'reports.form.project' | transloco }}</span
-    ><input
-      class="input input-bordered w-full"
-      name="project"
-      list="report-projects"
-      [ngModel]="project()"
-      (ngModelChange)="project.set($event)"
-  /></label>
-  <datalist id="report-projects">
-    @for (item of projects(); track item) {
-      <option [value]="item"></option>
-    }
-  </datalist>
+  <app-chips-input
+    name="projects"
+    id="report-projects"
+    [label]="'reports.form.projects' | transloco"
+    [maxItems]="20"
+    [maxLength]="100"
+    [suggestions]="projects()"
+    [ngModel]="selectedProjects()"
+    (ngModelChange)="selectedProjects.set($event)"
+  />
   @if (projectsUnavailable()) {
     <p class="text-base-content/70">{{ 'reports.form.projectsUnavailable' | transloco }}</p>
   }

@@ -16,11 +16,13 @@ export function registerGenerateReport(
     {
       from: calendarDate.describe("Inclusive report start date in YYYY-MM-DD."),
       to: calendarDate.describe("Inclusive report end date in YYYY-MM-DD."),
-      project: z
-        .string()
-        .max(100)
+      projects: z
+        .array(z.string().trim().min(1).max(100))
+        .max(20)
         .optional()
-        .describe("Optional project filter."),
+        .describe(
+          "Optional list of project filters; activities in any selected project are included.",
+        ),
       tags: z
         .array(z.string().max(50))
         .max(20)

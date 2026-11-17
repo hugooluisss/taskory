@@ -54,11 +54,11 @@ Taskory stores a user's daily work activities and generates AI reports from them
 | DELETE | /activities/:id | yes | — | 204 |
 | GET | /activities/meta | yes | — | 200 `{projects:[], tags:[]}` distinct values of the user |
 | GET | /reports/providers | yes | — | 200 `[{id:"ollama",defaultModel,available}]` |
-| POST | /reports | yes | `{from,to,project?,tags?,language:"es"|"en",provider?,model?,style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, activityCount}` |
+| POST | /reports | yes | `{from,to,projects?,tags?,language:"es"|"en",provider?,model?,style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, activityCount}` |
 
 Notes:
 - `/activities/meta` must be declared before `/activities/:id`.
-- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `project?`, `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `provider?`, `model?` (max 100 chars), `style?`. The provider is validated first: 400 `UNKNOWN_PROVIDER`. Then 400 `VALIDATION_ERROR` (inverted range), 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` (more than 300 activities in this phase; raised by change 03b), 502 `LLM_UNAVAILABLE` (provider down, timeout, HTTP error, invalid or EMPTY output). The provider is never called on 4xx.
+- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `projects?` (max 20; trimmed, non-empty names of at most 100 characters, duplicates removed; an activity matches if its project is ANY listed value; omitted/empty means all projects), `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `provider?`, `model?` (max 100 chars), `style?`. The provider is validated first: 400 `UNKNOWN_PROVIDER`. Then 400 `VALIDATION_ERROR` (inverted range or invalid projects), 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` (more than 300 activities in this phase; raised by change 03b), 502 `LLM_UNAVAILABLE` (provider down, timeout, HTTP error, invalid or EMPTY output). The provider is never called on 4xx.
 - `DEFAULT_LLM_MODEL` applies only when the resolved provider is the default provider; otherwise the provider's own default model is used.
 - Rate-limit `/auth/*` (e.g. @nestjs/throttler).
 
@@ -71,7 +71,7 @@ Auth: OAuth access token (primary, zero-config for users) or personal API key `t
 - `list_activities {from?, to?, project?, tag?, q?, limit?}`
 - `update_activity {id, ...partial}`
 - `delete_activity {id}`
-- `generate_report {from, to, project?, language?, provider?, model?}`
+- `generate_report {from, to, projects?, language?, provider?, model?}`
 Env: `TASKORY_API_URL`.
 
 ## Architecture (mandatory)

@@ -22,7 +22,7 @@ export async function consolidateMemory(
     totals: ReportTotals;
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     style: "summary" | "detailed";
   },
 ): Promise<MemoryChunk[]> {
@@ -68,7 +68,7 @@ function fitsFinalPrompt(
     totals: ReportTotals;
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     style: "summary" | "detailed";
   },
 ): boolean {

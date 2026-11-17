@@ -31,11 +31,13 @@
       </button>
       <button
         *ngIf="auth.isAuthenticated()"
-        class="btn btn-ghost hidden md:inline-flex"
+        class="btn btn-ghost btn-square hidden md:inline-flex tooltip tooltip-bottom"
         type="button"
+        [attr.aria-label]="'auth.logout' | transloco"
+        [attr.data-tip]="'auth.logout' | transloco"
         (click)="logout()"
       >
-        <app-icon name="logout" />{{ 'auth.logout' | transloco }}
+        <app-icon name="logout" />
       </button>
     </div>
   </div>
@@ -63,8 +65,13 @@
         (click)="mobileNavOpen.set(false)"
         ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
       >
-      <button class="btn btn-ghost justify-start" type="button" (click)="logout()">
-        <app-icon name="logout" />{{ 'auth.logout' | transloco }}
+      <button
+        class="btn btn-ghost justify-start"
+        type="button"
+        [attr.aria-label]="'auth.logout' | transloco"
+        (click)="logout()"
+      >
+        <app-icon name="logout" />
       </button>
     </nav>
   }

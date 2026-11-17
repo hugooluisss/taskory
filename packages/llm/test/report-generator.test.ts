@@ -48,6 +48,20 @@ describe("Report language and style", () => {
     );
   });
 
+  it("Several projects are listed and grouped by project", async () => {
+    const p = provider();
+    await new ReportGenerator({ providers: { ollama: p } }).generate({
+      activities: [activity],
+      from: "2026-01-01",
+      to: "2026-01-02",
+      language: "en",
+      projects: ["Core", "Web"],
+    });
+    expect(vi.mocked(p.complete).mock.calls[0][0].prompt).toContain(
+      "Projects included: Core, Web. Group the report by project.",
+    );
+  });
+
   it("activity descriptions cannot close the data delimiter", async () => {
     const p = provider();
     await new ReportGenerator({ providers: { ollama: p } }).generate({

@@ -9,7 +9,7 @@ export class ReportToolsService {
     input: {
       from: string;
       to: string;
-      project?: string;
+      projects?: string[];
       tags?: string[];
       language: "es" | "en";
       provider?: string;

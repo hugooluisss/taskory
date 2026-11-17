@@ -5,7 +5,7 @@ export function buildFinalReportPrompt(options: {
   totals: ReportTotals;
   from: string;
   to: string;
-  project?: string;
+  projects?: string[];
   language: "es" | "en";
   style: "summary" | "detailed";
 }): { system: string; prompt: string } {
@@ -14,7 +14,7 @@ export function buildFinalReportPrompt(options: {
     {
       memory: options.memory,
       totals: options.totals,
-      project: options.project,
+      projects: options.projects,
     },
     null,
     2,
@@ -42,7 +42,7 @@ function buildFinalInstruction(
   options: {
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     style: "summary" | "detailed";
   },
   spanish: boolean,
@@ -58,11 +58,13 @@ function buildFinalInstruction(
   return spanish
     ? [
         `Redacta un informe ${style} del ${options.from} al ${options.to}.`,
+        `Proyectos incluidos: ${options.projects?.join(", ") || "todos"}. Si hay varios, organiza el informe por proyecto.`,
         "Usa solo esta memoria y los totales deterministas; no cuentes actividades.",
         "Incluye Evidencia con el título, fecha y proyecto de cada highlight.",
       ].join(" ")
     : [
         `Write a ${style} report for ${options.from} to ${options.to}.`,
+        `Projects included: ${options.projects?.join(", ") || "all"}. When there are several, organize the report by project.`,
         "Use only this memory and deterministic totals; do not count activities.",
         "Include evidence with the title, date, and project of every highlight.",
       ].join(" ");

@@ -8,7 +8,7 @@ export interface ReportGeneratorPort {
     activities: ReportActivity[];
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     language: "es" | "en";
     provider?: string;
     model?: string;
@@ -30,7 +30,7 @@ export interface ReportGeneratorPort {
     totals: ReportTotals;
     from: string;
     to: string;
-    project?: string;
+    projects?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
     provider?: string;

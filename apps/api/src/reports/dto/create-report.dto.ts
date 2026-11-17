@@ -18,6 +18,15 @@ class CalendarDateValidator implements ValidatorConstraintInterface {
   }
 }
 
+@ValidatorConstraint({ name: "reportProject", async: false })
+class ReportProjectValidator implements ValidatorConstraintInterface {
+  validate(value: unknown): boolean {
+    if (typeof value !== "string") return false;
+    const project = value.trim();
+    return project.length > 0 && project.length <= 100;
+  }
+}
+
 export class CreateReportDto {
   @IsString()
   @Validate(CalendarDateValidator)
@@ -28,9 +37,11 @@ export class CreateReportDto {
   to!: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  project?: string;
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @Validate(ReportProjectValidator, { each: true })
+  projects?: string[];
 
   @IsOptional()
   @IsArray()
