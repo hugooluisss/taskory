@@ -105,3 +105,109 @@ The system SHALL rate limit `/oauth/register`, `/oauth/token` and the approval e
 #### Scenario: Flood
 - **WHEN** a client exceeds the limit
 - **THEN** the system responds 429
+
+### Requirement: Resource binding
+The system SHALL accept the RFC 8707 `resource` parameter on authorization and token requests, bind each authorization to the single protected resource `<PUBLIC_URL>/mcp`, and refuse any other value with `invalid_target`. When `resource` is omitted, the system SHALL default to that resource. Access tokens SHALL be accepted by the API only when their authorization is bound to that resource, and refresh SHALL NOT change the bound resource.
+
+#### Scenario: Wrong resource
+- **WHEN** an authorization or token request names a `resource` other than `<PUBLIC_URL>/mcp`
+- **THEN** the system answers 400 `invalid_target`
+
+#### Scenario: Resource omitted
+- **WHEN** a client omits `resource`
+- **THEN** the authorization is bound to `<PUBLIC_URL>/mcp`
+
+### Requirement: Scope handling
+The system SHALL define one scope, `taskory`, that grants full access to the approving user's Taskory data, advertise it as `scopes_supported`, treat an omitted scope as `taskory`, and refuse any other requested scope with `invalid_scope`; the consent data SHALL state the granted access.
+
+#### Scenario: Unsupported scope
+- **WHEN** an authorization request asks for a scope other than `taskory`
+- **THEN** the client is redirected with `error=invalid_scope` and the original `state`
+
+### Requirement: Code replay revokes the whole grant
+When an already used authorization code is presented again, the system SHALL revoke the entire authorization it created, including every access and refresh token issued from it or from its rotations.
+
+#### Scenario: Replay after rotation
+- **WHEN** a code is exchanged, the refresh token is rotated, and the same code is presented again
+- **THEN** the system answers `invalid_grant` and both the rotated access token and the rotated refresh token stop working
+
+### Requirement: Replay evidence retention
+The system SHALL keep used codes and rotated refresh tokens (as hashes) for as long as their authorization is alive, and SHALL purge them only when the authorization is revoked or has no unexpired token left.
+
+#### Scenario: Purge then replay
+- **WHEN** the purge job runs while a rotated descendant token is still valid and an old refresh token is then presented
+- **THEN** the system answers `invalid_grant` and revokes the whole authorization
+
+### Requirement: Strict consent decision
+The decision endpoint SHALL require `approve` to be a JSON boolean and SHALL reject any other type or a missing value with 400 before claiming the request.
+
+#### Scenario: Non-boolean approve
+- **WHEN** the body contains `{"approve":"true"}`, a number, null, an array, an object or no `approve`
+- **THEN** the system answers 400 `VALIDATION_ERROR` and the request stays decidable
+
+### Requirement: Atomic approval
+Claiming the authorization request, creating the authorization and storing the code SHALL happen in one transaction.
+
+#### Scenario: Failure while storing the code
+- **WHEN** storing the code fails
+- **THEN** nothing is persisted and the request remains decidable
+
+### Requirement: Registration metadata honesty
+The registration endpoint SHALL accept only `token_endpoint_auth_method` `none`, `grant_types` within `authorization_code` and `refresh_token`, and `response_types` `code`, SHALL reject anything else with `invalid_client_metadata`, and SHALL return `token_endpoint_auth_method: "none"`. Registered redirect URIs SHALL NOT contain whitespace or control characters.
+
+#### Scenario: Confidential client requested
+- **WHEN** a client registers with `token_endpoint_auth_method` `client_secret_basic`
+- **THEN** the system answers 400 `invalid_client_metadata`
+
+#### Scenario: Control characters in a redirect URI
+- **WHEN** a redirect URI contains CR, LF, tab or any other control character
+- **THEN** the system answers 400 `invalid_redirect_uri`
+
+### Requirement: Issuer identification
+Every redirectable authorization response (success, denial or error) SHALL carry the `iss` parameter with the configured issuer, and the metadata SHALL advertise `authorization_response_iss_parameter_supported: true`.
+
+#### Scenario: Denial carries the issuer
+- **WHEN** the user denies a request
+- **THEN** the redirect contains `error=access_denied`, the original `state` and `iss=<PUBLIC_URL>`
+
+### Requirement: Issuer URL validation
+In production the configured `PUBLIC_URL` SHALL be an absolute `https` URL without userinfo, path, query or fragment, otherwise the server SHALL refuse to start; `http` is accepted only for loopback hosts outside production.
+
+#### Scenario: Insecure issuer in production
+- **WHEN** `NODE_ENV=production` and `PUBLIC_URL` is `http://example.com`
+- **THEN** startup fails with a clear error
+
+### Requirement: Revocation endpoint throttling
+`/oauth/revoke` SHALL be rate limited like the other OAuth endpoints.
+
+#### Scenario: Revoke flood
+- **WHEN** a client exceeds the limit
+- **THEN** the system answers 429
+
+### Requirement: Transaction isolation
+All multi-write database operations of the OAuth module (and of the report jobs module) SHALL run serialized through one transaction runner for the single database connection, so that overlapping requests cannot release, roll back or commit each other's work.
+
+#### Scenario: Overlapping approvals and exchanges
+- **WHEN** an approval fails and rolls back while another approval or a token exchange runs at the same time
+- **THEN** the failed operation leaves no rows, and the other operation commits exactly its own rows
+
+### Requirement: Code exchange validates the grant atomically
+Consuming an authorization code SHALL succeed only if, in the same atomic conditional write, the code is unused and unexpired, its authorization is not revoked and its authorization is bound to the expected resource.
+
+#### Scenario: Revoked before exchange
+- **WHEN** the user disconnects the app after approving and before the client exchanges the code
+- **THEN** the exchange answers `invalid_grant` and no token is issued
+
+### Requirement: Absolute grant lifetime
+An authorization SHALL stop being refreshable 180 days after its creation regardless of rotation, answering `invalid_grant`, and a grant past that lifetime SHALL be treated as dead for retention and purge.
+
+#### Scenario: Refresh after the absolute lifetime
+- **WHEN** a client refreshes an authorization older than 180 days
+- **THEN** the system answers `invalid_grant`
+
+### Requirement: Consent shows the full destination
+The consent lookup SHALL return the complete registered redirect URI, the `client_id` and the client name (unverified).
+
+#### Scenario: Custom scheme destination
+- **WHEN** the consent request belongs to a client with a custom-scheme redirect URI
+- **THEN** the response contains the complete URI, not only its scheme

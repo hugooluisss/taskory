@@ -1,0 +1,31 @@
+meta {
+  name: authorize-missing-pkce
+  type: http
+  seq: 2
+}
+get {
+  url: {{origin}}/oauth/authorize?response_type=code&client_id={{oauthClientId}}&redirect_uri=http%3A%2F%2Flocalhost%3A8787%2Fcallback&state={{oauthState}}
+  body: none
+  auth: none
+}
+settings {
+  followRedirects: false
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "client");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthChallenge", setup.pair.challenge);
+  bru.setVar("oauthState", "missing-pkce-state");
+}
+docs {
+  Spec scenario: oauth-authorization / Authorization with PKCE / Missing PKCE.
+}
+tests {
+  test("authorize-missing-pkce", function() {
+    expect([res.status, res.headers.location.includes("error=invalid_request"), res.headers.location.includes("state=missing-pkce-state")]).to.eql([302, true, true]);
+  });
+}

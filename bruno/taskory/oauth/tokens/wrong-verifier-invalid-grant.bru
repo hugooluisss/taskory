@@ -1,0 +1,29 @@
+meta {
+  name: wrong-verifier-invalid-grant
+  type: http
+  seq: 2
+}
+post {
+  url: {{origin}}/oauth/token
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "code");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthCode", setup.code);
+  flow.setFormBody(req, { grant_type: "authorization_code", code: setup.code, client_id: setup.client.id, redirect_uri: flow.redirectUri, code_verifier: "wrong-verifier-" + "x".repeat(28) });
+}
+docs {
+  Spec scenario: oauth-authorization / Token issuance / Wrong verifier.
+}
+tests {
+  test("wrong-verifier-invalid-grant", function() {
+    expect([res.status, res.body.error]).to.eql([400, "invalid_grant"]);
+  });
+}

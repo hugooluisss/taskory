@@ -1,0 +1,28 @@
+meta {
+  name: register-client
+  type: http
+  seq: 1
+}
+post {
+  url: {{origin}}/oauth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {"client_name":"Bruno client {{timestamp}}","redirect_uris":["http://localhost:8787/callback"]}
+}
+script:pre-request {
+  bru.setVar("timestamp", String(Date.now()));
+}
+docs {
+  Spec scenario: oauth-authorization / Dynamic client registration / Register a client.
+}
+tests {
+  test("register-client", function() {
+    expect([res.status, typeof res.body.client_id, res.body.client_name, res.body.redirect_uris]).to.eql([201, "string", "Bruno client " + bru.getVar("timestamp"), ["http://localhost:8787/callback"]]);
+  });
+}

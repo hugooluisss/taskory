@@ -1,0 +1,30 @@
+meta {
+  name: list-connected-apps
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/connected-apps
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{oauthToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  bru.setVar("oauthToken", setup.user.token);
+  bru.setVar("oauthClientName", setup.client.name);
+}
+docs {
+  Spec scenario: connected-apps / List connected apps / Own apps only.
+}
+tests {
+  test("list-connected-apps", function() {
+    expect([res.status, res.body.some(function(app) { return app.clientName === bru.getVar("oauthClientName"); })]).to.eql([200, true]);
+  });
+}

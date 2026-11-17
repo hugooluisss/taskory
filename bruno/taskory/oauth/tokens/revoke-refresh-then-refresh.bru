@@ -1,0 +1,30 @@
+meta {
+  name: revoke-refresh-then-refresh
+  type: http
+  seq: 6
+}
+post {
+  url: {{origin}}/oauth/token
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  await flow.revoke(bru, setup.origin, setup.client, setup.tokens.refresh_token);
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthRefresh", setup.tokens.refresh_token);
+  flow.setFormBody(req, { grant_type: "refresh_token", refresh_token: setup.tokens.refresh_token, client_id: setup.client.id });
+}
+docs {
+  Spec scenario: oauth-authorization / Revoke refresh token.
+}
+tests {
+  test("revoke-refresh-then-refresh", function() {
+    expect([res.status, res.body.error]).to.eql([400, "invalid_grant"]);
+  });
+}

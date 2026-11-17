@@ -41,6 +41,7 @@ Ponytail governs how much logic you write, NOT how you organize it. The structur
 - Never run `git add`, `git commit`, `git push`, `git stash`, `git reset` or any git write command. Leave changes in the working tree.
 - Never delete files outside your assigned folders. Do not install global packages.
 - Do not run formatters over the repo; the architect formats after review.
+- Never leave a process running: do NOT use `npm run start:dev`, `ts-node-dev --respawn` or any watch mode (they survive the agent and keep grabbing ports). Run the built output (`node dist/main.js`) in the background, and stop it by port when done (`lsof -ti:PORT | xargs kill`); never `pkill -f` with a pattern that also matches your own command line.
 - If something in the spec is ambiguous or impossible, stop and report it in your final message instead of guessing.
 
 ## Final report (your last message)

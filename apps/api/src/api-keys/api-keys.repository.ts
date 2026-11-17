@@ -1,15 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, IsNull, Repository } from "typeorm";
+import { IsNull, Repository } from "typeorm";
 import { ApiKey } from "./entities/api-key.entity";
+import { TransactionRunner } from "../common/database/transaction-runner";
 
 @Injectable()
 export class ApiKeysRepository {
-  private creationQueue: Promise<unknown> = Promise.resolve();
-
   constructor(
     @InjectRepository(ApiKey) private readonly keys: Repository<ApiKey>,
-    private readonly dataSource: DataSource,
+    private readonly transactions: TransactionRunner,
   ) {}
 
   list(userId: string): Promise<ApiKey[]> {
@@ -27,20 +26,16 @@ export class ApiKeysRepository {
     values: Pick<ApiKey, "userId" | "name" | "prefix" | "keyHash">,
     limit: number,
   ): Promise<ApiKey | null> {
-    const creation = this.creationQueue.then(() =>
-      this.dataSource.transaction(async (manager) => {
-        const repository = manager.getRepository(ApiKey);
-        const activeCount = await repository.count({
-          where: { userId: values.userId, revokedAt: IsNull() },
-        });
-        if (activeCount >= limit) {
-          return null;
-        }
-        return repository.save(repository.create(values));
-      }),
-    );
-    this.creationQueue = creation.catch(() => undefined);
-    return creation;
+    return this.transactions.run(async (manager) => {
+      const repository = manager.getRepository(ApiKey);
+      const activeCount = await repository.count({
+        where: { userId: values.userId, revokedAt: IsNull() },
+      });
+      if (activeCount >= limit) {
+        return null;
+      }
+      return repository.save(repository.create(values));
+    });
   }
 
   async markUsed(id: string, at: Date): Promise<void> {

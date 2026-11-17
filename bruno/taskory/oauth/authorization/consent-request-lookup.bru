@@ -1,0 +1,30 @@
+meta {
+  name: consent-request-lookup
+  type: http
+  seq: 4
+}
+get {
+  url: {{baseUrl}}/oauth/requests/{{oauthRequestId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{oauthToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "request");
+  bru.setVar("oauthToken", setup.user.token);
+  bru.setVar("oauthRequestId", setup.request.id);
+}
+docs {
+  Spec scenario: oauth-authorization / User consent / Consent request shows client and redirect host.
+}
+tests {
+  test("consent-request-lookup", function() {
+    expect([res.status, typeof res.body.clientName, typeof res.body.redirectHost]).to.eql([200, "string", "string"]);
+  });
+}

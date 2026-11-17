@@ -1,0 +1,21 @@
+meta {
+  name: protected-resource
+  type: http
+  seq: 2
+}
+get {
+  url: {{origin}}/.well-known/oauth-protected-resource
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: oauth-authorization / Discovery metadata / Resource points to its authorization server.
+}
+tests {
+  test("protected-resource", function() {
+    expect([res.status, res.body.resource, res.body.authorization_servers, res.body.bearer_methods_supported]).to.eql([200, bru.getVar("origin") + "/mcp", [bru.getVar("origin")], ["header"]]);
+  });
+}

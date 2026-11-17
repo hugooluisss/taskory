@@ -1,0 +1,25 @@
+meta {
+  name: bad-redirect-fragment
+  type: http
+  seq: 4
+}
+post {
+  url: {{origin}}/oauth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {"client_name":"Unsafe client","redirect_uris":["http://localhost:8787/callback#frag"]}
+}
+docs {
+  Spec scenario: oauth-authorization / Dynamic client registration / Unsafe redirect URI.
+}
+tests {
+  test("bad-redirect-fragment", function() {
+    expect([res.status, res.body.error]).to.eql([400, "invalid_redirect_uri"]);
+  });
+}

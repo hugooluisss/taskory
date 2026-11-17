@@ -1,0 +1,27 @@
+meta {
+  name: authorize-unregistered-redirect
+  type: http
+  seq: 3
+}
+get {
+  url: {{origin}}/oauth/authorize?response_type=code&client_id={{oauthClientId}}&redirect_uri=http%3A%2F%2Fevil.com%2Fcb&code_challenge={{oauthChallenge}}&code_challenge_method=S256
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "client");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthChallenge", setup.pair.challenge);
+}
+docs {
+  Spec scenario: oauth-authorization / Authorization with PKCE / Redirect URI mismatch.
+}
+tests {
+  test("authorize-unregistered-redirect", function() {
+    expect([res.status, res.headers.location]).to.eql([400, undefined]);
+  });
+}

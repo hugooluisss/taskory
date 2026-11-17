@@ -1,0 +1,28 @@
+meta {
+  name: oauth-token-authenticates-api
+  type: http
+  seq: 8
+}
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+  Authorization: Bearer {{oauthAccess}}
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  bru.setVar("oauthToken", setup.user.token);
+  bru.setVar("oauthAccess", setup.tokens.access_token);
+}
+docs {
+  Spec scenario: oauth-authorization / OAuth tokens authenticate API calls / Valid token.
+}
+tests {
+  test("oauth-token-authenticates-api", function() {
+    expect(res.status).to.equal(200);
+  });
+}

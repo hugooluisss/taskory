@@ -1,0 +1,22 @@
+meta {
+  name: authorization-server
+  type: http
+  seq: 1
+}
+get {
+  url: {{origin}}/.well-known/oauth-authorization-server
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: oauth-authorization / Discovery metadata / Client discovers the server.
+}
+tests {
+  test("authorization-server", function() {
+    const origin = bru.getVar("origin");
+    expect([res.status, res.body.issuer, res.body.authorization_endpoint, res.body.token_endpoint, res.body.registration_endpoint, res.body.revocation_endpoint, res.body.response_types_supported, res.body.grant_types_supported, res.body.code_challenge_methods_supported, res.body.token_endpoint_auth_methods_supported]).to.eql([200, origin, origin + "/oauth/authorize", origin + "/oauth/token", origin + "/oauth/register", origin + "/oauth/revoke", ["code"], ["authorization_code", "refresh_token"], ["S256"], ["none"]]);
+  });
+}

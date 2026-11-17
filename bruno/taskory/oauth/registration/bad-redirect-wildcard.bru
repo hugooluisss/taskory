@@ -1,0 +1,25 @@
+meta {
+  name: bad-redirect-wildcard
+  type: http
+  seq: 5
+}
+post {
+  url: {{origin}}/oauth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {"client_name":"Unsafe client","redirect_uris":["http://localhost:8787/*"]}
+}
+docs {
+  Spec scenario: oauth-authorization / Dynamic client registration / Unsafe redirect URI.
+}
+tests {
+  test("bad-redirect-wildcard", function() {
+    expect([res.status, res.body.error]).to.eql([400, "invalid_redirect_uri"]);
+  });
+}

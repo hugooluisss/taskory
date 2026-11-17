@@ -1,0 +1,39 @@
+meta {
+  name: delete-connected-app
+  type: http
+  seq: 2
+}
+delete {
+  url: {{baseUrl}}/connected-apps/{{oauthAuthorizationId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{oauthToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  const apps = await bru.sendRequest({ method: "GET", url: setup.api + "/connected-apps", headers: { Authorization: "Bearer " + setup.user.token } });
+  const app = apps.data.find(function(item) { return item.clientName === setup.client.name; });
+  bru.setVar("oauthToken", setup.user.token);
+  bru.setVar("oauthAuthorizationId", app.id);
+  bru.setVar("oauthAccess", setup.tokens.access_token);
+}
+script:post-response {
+  const flow = require("./oauth/lib/oauth-flow");
+  const { api } = flow.urls(bru);
+  const revoked = await flow.checkAccess(bru, api, bru.getVar("oauthAccess"));
+  bru.setVar("oauthRevokedStatus", revoked.status);
+}
+docs {
+  Spec scenario: connected-apps / Revoke a connected app / Revoke.
+}
+tests {
+  test("delete-connected-app", function() {
+    expect([res.status, bru.getVar("oauthRevokedStatus")]).to.eql([204, 401]);
+  });
+}

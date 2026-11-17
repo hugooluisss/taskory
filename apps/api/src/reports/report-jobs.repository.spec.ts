@@ -3,6 +3,7 @@ import { unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DataSource } from "typeorm";
+import { TransactionRunner } from "../common/database/transaction-runner";
 import { ReportJob } from "./entities/report-job.entity";
 import { ReportMemory } from "./entities/report-memory.entity";
 import { ReportJobsRepository } from "./report-jobs.repository";
@@ -25,7 +26,10 @@ describe("Report job repository", () => {
       synchronize: true,
       prepareDatabase: (database) => database.exec("PRAGMA foreign_keys = ON"),
     }).initialize();
-    jobs = new ReportJobsRepository(source.getRepository(ReportJob));
+    jobs = new ReportJobsRepository(
+      source.getRepository(ReportJob),
+      new TransactionRunner(source),
+    );
     memory = new ReportMemoryRepository(source.getRepository(ReportMemory));
   });
 

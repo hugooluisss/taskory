@@ -1,0 +1,37 @@
+meta {
+  name: code-reuse-invalid-grant
+  type: http
+  seq: 3
+}
+post {
+  url: {{origin}}/oauth/token
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthVerifier", setup.pair.verifier);
+  bru.setVar("oauthCode", setup.code);
+  bru.setVar("oauthAccess", setup.tokens.access_token);
+  flow.setFormBody(req, { grant_type: "authorization_code", code: setup.code, client_id: setup.client.id, redirect_uri: flow.redirectUri, code_verifier: setup.pair.verifier });
+}
+script:post-response {
+  const flow = require("./oauth/lib/oauth-flow");
+  const { api } = flow.urls(bru);
+  const revoked = await flow.checkAccess(bru, api, bru.getVar("oauthAccess"));
+  bru.setVar("oauthRevokedStatus", revoked.status);
+}
+docs {
+  Spec scenario: oauth-authorization / Code reuse.
+}
+tests {
+  test("code-reuse-invalid-grant", function() {
+    expect([res.status, res.body.error, bru.getVar("oauthRevokedStatus")]).to.eql([400, "invalid_grant", 401]);
+  });
+}

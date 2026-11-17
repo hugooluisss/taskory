@@ -1,0 +1,31 @@
+meta {
+  name: authorize-happy-path
+  type: http
+  seq: 1
+}
+get {
+  url: {{origin}}/oauth/authorize?response_type=code&client_id={{oauthClientId}}&redirect_uri=http%3A%2F%2Flocalhost%3A8787%2Fcallback&code_challenge={{oauthChallenge}}&code_challenge_method=S256&state={{oauthState}}
+  body: none
+  auth: none
+}
+settings {
+  followRedirects: false
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "client");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthChallenge", setup.pair.challenge);
+  bru.setVar("oauthState", "bruno-state");
+}
+docs {
+  Spec scenario: oauth-authorization / Authorization with PKCE / User not logged in (consent request created).
+}
+tests {
+  test("authorize-happy-path", function() {
+    expect([res.status, /\/oauth\/consent\?request=/.test(res.headers.location)]).to.eql([302, true]);
+  });
+}

@@ -1,0 +1,35 @@
+meta {
+  name: decision-deny
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/oauth/requests/{{oauthRequestId}}/decision
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{oauthToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {"approve":false}
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "request");
+  bru.setVar("oauthToken", setup.user.token);
+  bru.setVar("oauthRequestId", setup.request.id);
+  bru.setVar("oauthState", setup.request.state);
+}
+docs {
+  Spec scenario: oauth-authorization / User consent / Deny.
+}
+tests {
+  test("decision-deny", function() {
+    expect([res.status, res.body.redirectUrl.includes("error=access_denied"), res.body.redirectUrl.includes(bru.getVar("oauthState"))]).to.eql([201, true, true]);
+  });
+}

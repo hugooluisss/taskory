@@ -4,9 +4,10 @@ import { UsersModule } from "../users/users.module";
 import { AuthService } from "./auth.service";
 import { TokenAuthService } from "./token-auth.service";
 import { AuthGuard } from "./guards/auth.guard";
+import { OAuthModule } from "../oauth/oauth.module";
 
 @Module({
-  imports: [UsersModule, ApiKeysCoreModule],
+  imports: [UsersModule, ApiKeysCoreModule, OAuthModule],
   providers: [AuthService, TokenAuthService, AuthGuard],
   exports: [TokenAuthService, AuthGuard],
 })

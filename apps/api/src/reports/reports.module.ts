@@ -12,10 +12,12 @@ import { ReportMemoryRepository } from "./report-memory.repository";
 import { ReportJobsService } from "./report-jobs.service";
 import { ReportJobRunner } from "./report-job.runner";
 import { REPORT_JOB_QUEUE } from "./report-job-queue";
+import { DatabaseModule } from "../common/database/database.module";
 
 @Module({
   imports: [
     ActivitiesModule,
+    DatabaseModule,
     TokenAuthModule,
     TypeOrmModule.forFeature([ReportJob, ReportMemory]),
   ],

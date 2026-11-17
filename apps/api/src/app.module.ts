@@ -11,6 +11,14 @@ import { Activity } from "./activities/entities/activity.entity";
 import { ReportsModule } from "./reports/reports.module";
 import { ReportJob } from "./reports/entities/report-job.entity";
 import { ReportMemory } from "./reports/entities/report-memory.entity";
+import { OAuthClient } from "./oauth/entities/oauth-client.entity";
+import { OAuthAuthorizationRequest } from "./oauth/entities/oauth-authorization-request.entity";
+import { OAuthAuthorization } from "./oauth/entities/oauth-authorization.entity";
+import { OAuthAuthorizationCode } from "./oauth/entities/oauth-authorization-code.entity";
+import { OAuthToken } from "./oauth/entities/oauth-token.entity";
+import { OAuthModule } from "./oauth/oauth.module";
+import { ConnectedAppsModule } from "./connected-apps/connected-apps.module";
+import { OAuthHttpModule } from "./oauth/oauth-http.module";
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === "true" ||
@@ -25,7 +33,18 @@ export function databaseOptions(
     database: databasePath,
     prepareDatabase: (database: { exec(sql: string): void }) =>
       database.exec("PRAGMA foreign_keys = ON"),
-    entities: [User, ApiKey, Activity, ReportJob, ReportMemory],
+    entities: [
+      User,
+      ApiKey,
+      Activity,
+      ReportJob,
+      ReportMemory,
+      OAuthClient,
+      OAuthAuthorizationRequest,
+      OAuthAuthorization,
+      OAuthAuthorizationCode,
+      OAuthToken,
+    ],
     // ponytail: synchronization only supports early deployments; use migrations as the upgrade path.
     synchronize,
   };
@@ -40,6 +59,9 @@ export function databaseOptions(
     HealthModule,
     ActivitiesModule,
     ReportsModule,
+    OAuthModule,
+    ConnectedAppsModule,
+    OAuthHttpModule,
   ],
 })
 export class AppModule {}

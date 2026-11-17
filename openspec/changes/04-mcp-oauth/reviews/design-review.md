@@ -1,0 +1,69 @@
+## Design review: 04-mcp-oauth — round 2
+
+Intent: provide MCP clients with user-approved OAuth authorization, PKCE, rotating credentials and revocation inside the API.
+
+### Previous findings: status
+
+| Previous finding | Status | Evidence |
+|---|---|---|
+| Resource binding | partially | Authorization rejects another resource and approval stores the configured resource (`apps/api/src/oauth/oauth-authorization.service.ts:91`, `:205`); API access enforces it (`apps/api/src/oauth/oauth-token.service.ts:112`). Existing rows get a localhost default, and code exchange does not validate the stored audience (`apps/api/src/oauth/entities/oauth-authorization.entity.ts:28`, `apps/api/src/oauth/oauth-token.service.ts:128`). See findings below. |
+| Code replay does not revoke rotated grant | fixed | Whole authorization revoked on reuse (`apps/api/src/oauth/oauth-token.service.ts:145`, `:150`); rotated access and refresh checked in `apps/api/test/oauth.e2e-spec.ts:286`. |
+| Purge destroys replay evidence | fixed | Live grant evidence retained (`apps/api/src/oauth/oauth-tokens.repository.ts:183`); old expired evidence tested (`apps/api/src/oauth/oauth-persistence.repository.spec.ts:335`). Unbounded live-grant growth is a separate remaining concern below. |
+| Non-boolean consent approval | fixed | `apps/api/src/oauth/dto/request-decision.dto.ts:1`; malformed types and subsequent decision tested (`apps/api/test/oauth.e2e-spec.ts:222`). |
+| Scope silently discarded | fixed | `apps/api/src/oauth/dto/authorize-query.dto.ts:36`, `apps/api/src/oauth/oauth-authorization.service.ts:94`, `:151`; unsupported scope test `apps/api/test/oauth.e2e-spec.ts:182`. |
+| Consent clickjacking and identity assurance contract | partially | Phase 06 specifies frame protection, unverified name, ID and complete destination (`openspec/changes/06-web-app/specs/web-client/spec.md:111`), but the API returns only host/scheme (`apps/api/src/oauth/oauth-authorization.service.ts:133`, `:224`). |
+| Consent claim and code issuance separate writes | partially | An actual database transaction covers all three writes and isolated rollback is tested (`apps/api/src/oauth/oauth-authorization-requests.repository.ts:42`, `apps/api/src/oauth/oauth-persistence.repository.spec.ts:307`); overlapping transactions on the shared SQLite runner are not isolated as independent units. See below. |
+| PUBLIC_URL issuer validation | fixed | `apps/api/src/oauth/public-url.ts:9`, `apps/api/.env.example:1`; production rejection tests `apps/api/src/oauth/public-url.spec.ts:14`. |
+| Registration misrepresents authentication method | fixed | `apps/api/src/oauth/client-registration.service.ts:22`, `apps/api/src/oauth/oauth-register.controller.ts:21`. |
+| Purge deletes pending clients; terminal client rows unbounded | fixed | Pending requests protect clients and old terminal grants and clients are purged (`apps/api/src/oauth/oauth-tokens.repository.ts:188`, `:206`); repository tests `apps/api/src/oauth/oauth-persistence.repository.spec.ts:335`, `:389`. Live rotating grants have a distinct unbounded-retention issue below. |
+| No issuer identification in authorization responses | fixed | Success and denial `apps/api/src/oauth/oauth-authorization.service.ts:191`, `:216`; redirectable errors `apps/api/src/oauth/oauth.controller.ts:57`; discovery `apps/api/src/oauth/oauth-metadata.controller.ts:20`. |
+| Missing dangerous-sequence tests | partially | Replay-after-rotation and malformed decisions covered (`apps/api/test/oauth.e2e-spec.ts:222`, `:286`); concurrent refresh assertions and overlapping rollback are insufficient (`apps/api/test/oauth-security.e2e-spec.ts:178`, `apps/api/src/oauth/oauth-persistence.repository.spec.ts:307`). See findings below. |
+| Readability / formatting | partially | Some files improved, but entity decorators and declarations still share lines (`apps/api/src/oauth/entities/oauth-authorization.entity.ts:25`), and long one-line handlers remain (`apps/api/src/oauth/oauth-requests.controller.ts:25`). |
+
+### Findings (most severe first)
+
+- **[must-fix][architecture] Overlapping SQLite transactions do not have independent boundaries.** `apps/api/src/oauth/oauth-authorization-requests.repository.ts:42`, `apps/api/src/oauth/oauth-tokens.repository.ts:81`, `:105`, `apps/api/src/oauth/oauth-authorizations.repository.ts:62`: TypeORM's installed better-sqlite3 driver reuses one query runner (`apps/api/node_modules/typeorm/driver/better-sqlite3/BetterSqlite3Driver.js:40`), whose nested transaction state uses savepoints (`apps/api/node_modules/typeorm/driver/sqlite-abstract/AbstractSqliteQueryRunner.js:69`, `:90`). The `await`s allow independent requests to overlap on that runner; one operation can release or roll back another's savepoint, or return success before an outer transaction commits. A standalone approval really is transactional and the isolated rollback test passes, but it does not prove atomicity between concurrent requests. Serialize transaction units on this connection, or use an isolation mechanism with independent connections, and add controlled overlapping success/failure tests for approval, exchange, refresh and revocation.
+
+- **[must-fix][architecture] Consent cannot display the required complete destination.** `apps/api/src/oauth/oauth-authorization.service.ts:133`, `:150`, `:224`; `openspec/changes/06-web-app/specs/web-client/spec.md:111`: consent returns only an HTTP host or a custom scheme; paths and the rest of a custom URI are unavailable to the future page, despite the new identity-assurance requirement. Return the registered redirect URI in the consent response and test the complete destination for HTTPS and custom-scheme clients.
+
+- **[must-fix][bad practices] Code exchange can issue tokens for an already revoked or differently bound grant.** `apps/api/src/oauth/oauth-token.service.ts:74`, `:128`, `apps/api/src/oauth/oauth-tokens.repository.ts:83`: code loading checks only client ID, and the conditional consume checks neither authorization revocation nor its resource. A connected-app revocation before code exchange can therefore still produce a successful token response; a stale or different-audience grant can also issue credentials which subsequent API/refresh checks reject. Require the expected resource and an unrevoked grant in the same atomic conditional write as code consumption, and test revocation and resource changes before and during exchange.
+
+- **[should-fix][bad practices] Existing authorizations are backfilled with the development audience.** `apps/api/src/oauth/entities/oauth-authorization.entity.ts:28`, `apps/api/src/oauth/constants.ts:6`, `apps/api/src/oauth/oauth-token.service.ts:115`: schema synchronization fills existing rows with `http://localhost:3999/mcp` regardless of `PUBLIC_URL`. Existing credentials on another origin stop authenticating or refreshing; issuance still succeeds for unused codes as above. Supply an explicit migration/backfill using the deployment's actual issuer, or deliberately revoke legacy grants with a documented upgrade path and test it. Production synchronization is disabled by default (`apps/api/src/app.module.ts:23`), so deployments also need an explicit schema migration.
+
+- **[should-fix][bad practices] Active rotation retains an unlimited history.** `apps/api/src/oauth/oauth-tokens.repository.ts:188`, `apps/api/src/oauth/oauth-token.service.ts:210`, `:252`: each refresh adds two rows and renews the 30-day expiry; all rows and the used code remain as long as any descendant is live. No absolute grant lifetime or storage bound is specified (`openspec/changes/04-mcp-oauth/design.md:43`). Define and enforce an absolute lifetime with safe retention, or explicitly accept and document the growth with an operational capacity/cleanup policy. Do not delete replay evidence while the grant remains usable.
+
+- **[should-fix][tests] Concurrency and retention tests do not establish the stated guarantees.** `apps/api/test/oauth-security.e2e-spec.ts:178` accepts zero successful rotations and never asserts losing responses or descendant revocation; `:197` purges immediately rather than after old evidence expires, then replays both credentials on one grant, so the first replay can mask failure of the second. `:226` calls exchanges sequentially despite its name. The isolated rollback test at `apps/api/src/oauth/oauth-persistence.repository.spec.ts:307` does not overlap transactions. Add controlled overlapping transactions with injected failure and assertions on both results and persisted rows; independently test expired code and refresh evidence after purge and require exactly one successful rotation followed by grant revocation.
+
+- **[should-fix][formatting] The one-statement-per-line convention remains uneven.** `apps/api/src/oauth/entities/oauth-authorization.entity.ts:25`, `apps/api/src/oauth/oauth-requests.controller.ts:25`, `apps/api/src/oauth/oauth-authorization.service.ts:94`; compare `docs/agent-rules.md:20`. Split decorators/declarations and long statements for reviewability, following local conventions.
+
+### Checks and trade-offs
+
+- Resource is restricted at authorization and explicit token/refresh requests, and access resolution requires the persisted resource (`apps/api/src/oauth/oauth-authorization.service.ts:91`, `apps/api/src/oauth/oauth-token.service.ts:69`, `:87`, `:112`, `:122`). Omission on a newly approved grant uses `getMcpResource()` (`apps/api/src/oauth/oauth-authorization.service.ts:205`). The legacy default and code exchange gaps are above. The API accepts MCP-audience tokens deliberately within the shared trust boundary (`openspec/changes/04-mcp-oauth/design.md:40`).
+- Replaying a used code or rotated refresh token revokes the whole grant, including a legitimate retry after a lost response or simultaneous client requests (`apps/api/src/oauth/oauth-token.service.ts:145`, `:177`, `:201`). This is an inherent, security-first replay-detection trade-off with bearer credentials; clients must serialize refreshes and reauthorize after such a retry. The design specifies reuse revocation (`openspec/changes/04-mcp-oauth/design.md:18`) but should communicate this operational consequence.
+- `PUBLIC_URL` returns the normalized origin (`apps/api/src/oauth/public-url.ts:14`): trailing slash and default ports are removed, uppercase hosts normalize, non-default ports and bracketed IPv6 are preserved. Production rejects nonempty paths, queries and fragments; outside production HTTPS paths/queries/fragments are silently discarded. Empty `?`/`#` are normalized away by URL parsing. Tests cover core validation, not every normalization edge (`apps/api/src/oauth/public-url.spec.ts:14`).
+- Scope is case-sensitive; repeated/leading/trailing whitespace is collapsed, an empty or whitespace-only explicit scope is rejected, and omission defaults to full access (`apps/api/src/oauth/oauth-authorization.service.ts:94`, `:151`). Form-urlencoded parsing remains enabled and form exchange/refresh scenarios exist (`apps/api/src/http-setup.ts:26`, `apps/api/test/oauth.e2e-spec.ts:289`, `:518`); repeated fields are rejected (`:312`). These e2e cases were read, not run.
+- `iss` is placed in the registered redirect URI query for success, denial and redirectable errors (`apps/api/src/oauth/oauth-authorization.service.ts:191`, `:216`, `apps/api/src/oauth/oauth.controller.ts:57`). OAuth errors use generic descriptions and unexpected errors return `server_error` without exception details (`apps/api/src/common/errors/errors.filter.ts:38`, `:61`). No new error-description leak was found in inspected paths.
+- Register, authorize, token and revoke are throttled (`apps/api/src/oauth/oauth-register.controller.ts:11`, `apps/api/src/oauth/oauth.controller.ts:34`, `:68`, `:98`). Public discovery endpoints are not (`apps/api/src/oauth/oauth-metadata.controller.ts:6`, `:24`); they are static, but deployment-wide rate limiting remains an operational choice. Consent GET requires JWT (`apps/api/src/oauth/oauth-requests.controller.ts:11`), and decision is additionally throttled (`:22`). No driver error codes were found outside repositories; controllers mostly map requests and responses.
+
+### Done well
+
+- Strict boolean validation runs before consent is claimed, and the tests try malformed values against a still-decidable request (`apps/api/test/oauth.e2e-spec.ts:222`).
+- Replay evidence is kept for live grants and the isolated approval rollback test checks both the claim and authorization (`apps/api/src/oauth/oauth-persistence.repository.spec.ts:307`, `:335`).
+
+### Verification and limits
+
+`npm test -- --runInBand --silent` passed: 29 suites, 218 tests. E2E and coverage were not run: the e2e suite uses Supertest listeners and the assignment forbids servers and ports; `test:cov` also runs e2e. No formatter check was run: no formatter is configured and `docs/agent-rules.md:43` reserves formatting for the architect. The knowledge graph has no Taskory index, so this review used direct source reads and `rg` for the scoped paths. No real client or future consent UI was tested. The transaction interference is derived from the installed driver's shared runner and savepoint implementation; a controlled concurrent failure was not executed in this review.
+
+### Scores (orientative)
+
+| Category | Weight | Score | Why |
+|---|---:|---:|---|
+| Architecture | 20% | 4/10 | Two must-fix findings. |
+| Bad practices | 15% | 4/10 | One must-fix and two should-fix findings. |
+| Antipatterns | 15% | 10/10 | No separate finding. |
+| Design patterns | 15% | 10/10 | No separate finding. |
+| Naming | 15% | 10/10 | No separate finding. |
+| Tests | 15% | 8.5/10 | One should-fix finding. |
+| Formatting | 5% | 8.5/10 | One should-fix finding. |
+
+**Global: 7.6/10 — Verdict: approve with changes.** The numeric verdict follows the prescribed rubric; the must-fix findings should be resolved before deployment.

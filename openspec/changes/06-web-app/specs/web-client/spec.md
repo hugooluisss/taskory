@@ -106,3 +106,14 @@ When a report is generated in chunks, the web client SHALL show a progress indic
 #### Scenario: Leave and return
 - **WHEN** the user reloads the page while a job is active
 - **THEN** the page resumes showing that job's progress
+
+### Requirement: Consent page hardening
+The consent page SHALL forbid being framed (`Content-Security-Policy: frame-ancestors 'none'` and `X-Frame-Options: DENY`), SHALL show the client's name labelled as unverified together with its `client_id` and the full redirect destination, and SHALL state that approving grants full access to the user's Taskory data.
+
+#### Scenario: Framed consent page
+- **WHEN** a third-party site tries to embed the consent page in a frame
+- **THEN** the browser refuses to render it
+
+#### Scenario: Unverified client
+- **WHEN** the consent page is shown for a dynamically registered client
+- **THEN** the name is labelled as unverified and the client id and the complete redirect destination are visible

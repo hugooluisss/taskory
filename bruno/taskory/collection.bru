@@ -1,0 +1,4 @@
+script:pre-request {
+  const baseUrl = bru.getEnvVar("baseUrl");
+  if (baseUrl) bru.setVar("origin", baseUrl.replace(/\/api\/v1\/?$/, ""));
+}

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { unlink } from "node:fs/promises";
 import { DataSource, IsNull, Repository } from "typeorm";
+import { TransactionRunner } from "../common/database/transaction-runner";
 import { User } from "../users/entities/user.entity";
 import { ApiKey } from "./entities/api-key.entity";
 import { ApiKeysRepository } from "./api-keys.repository";
@@ -39,7 +40,7 @@ describe("API key authentication", () => {
     keys = dataSource.getRepository(ApiKey);
     repository = new ApiKeysRepository(
       dataSource.getRepository(ApiKey),
-      dataSource,
+      new TransactionRunner(dataSource),
     );
   });
 

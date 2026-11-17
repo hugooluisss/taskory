@@ -1,0 +1,26 @@
+meta {
+  name: revoke-unknown-token
+  type: http
+  seq: 7
+}
+post {
+  url: {{origin}}/oauth/revoke
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  flow.setFormBody(req, { token: "unknown-token", client_id: "unknown-client" });
+}
+docs {
+  Spec scenario: oauth-authorization / Revocation / unknown token.
+}
+tests {
+  test("revoke-unknown-token", function() {
+    expect(res.status).to.equal(200);
+  });
+}

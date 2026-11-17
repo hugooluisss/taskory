@@ -1,0 +1,30 @@
+meta {
+  name: authorization-code-exchange
+  type: http
+  seq: 1
+}
+post {
+  url: {{origin}}/oauth/token
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "code");
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthVerifier", setup.pair.verifier);
+  bru.setVar("oauthCode", setup.code);
+  flow.setFormBody(req, { grant_type: "authorization_code", code: setup.code, client_id: setup.client.id, redirect_uri: flow.redirectUri, code_verifier: setup.pair.verifier });
+}
+docs {
+  Spec scenario: oauth-authorization / Token issuance / Valid exchange.
+}
+tests {
+  test("authorization-code-exchange", function() {
+    expect([res.status, /^to_/.test(res.body.access_token), /^tr_/.test(res.body.refresh_token), res.headers["cache-control"].includes("no-store")]).to.eql([200, true, true, true]);
+  });
+}

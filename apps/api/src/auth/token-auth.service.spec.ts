@@ -15,6 +15,7 @@ describe("API key authentication", () => {
     const service = new TokenAuthService(
       auth as unknown as AuthService,
       apiKeys as unknown as ApiKeysService,
+      { resolveAccessToken: jest.fn() },
     );
 
     await expect(service.authenticate("tk_secret")).resolves.toEqual(user);
@@ -34,10 +35,30 @@ describe("API key authentication", () => {
     const service = new TokenAuthService(
       auth as unknown as AuthService,
       apiKeys as unknown as ApiKeysService,
+      { resolveAccessToken: jest.fn() },
     );
 
     await expect(service.authenticate("jwt-token")).resolves.toEqual(user);
     expect(auth.authenticate).toHaveBeenCalledWith("jwt-token");
     expect(apiKeys.authenticate).not.toHaveBeenCalled();
+  });
+});
+
+describe("OAuth access token authentication", () => {
+  it("Resolves a to_ token with the OAuth service", async () => {
+    const user = {
+      id: "u1",
+      email: "oauth@example.com",
+      name: "OAuth User",
+      language: "en" as const,
+    };
+    const oauth = { resolveAccessToken: jest.fn().mockResolvedValue(user) };
+    const service = new TokenAuthService(
+      { authenticate: jest.fn() } as unknown as AuthService,
+      { authenticate: jest.fn() } as unknown as ApiKeysService,
+      oauth,
+    );
+    await expect(service.authenticate("to_secret")).resolves.toEqual(user);
+    expect(oauth.resolveAccessToken).toHaveBeenCalledWith("to_secret");
   });
 });

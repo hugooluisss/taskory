@@ -1,0 +1,25 @@
+meta {
+  name: bad-redirect-external-http
+  type: http
+  seq: 3
+}
+post {
+  url: {{origin}}/oauth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {"client_name":"Unsafe client","redirect_uris":["http://evil.com/callback"]}
+}
+docs {
+  Spec scenario: oauth-authorization / Dynamic client registration / Unsafe redirect URI.
+}
+tests {
+  test("bad-redirect-external-http", function() {
+    expect([res.status, res.body.error]).to.eql([400, "invalid_redirect_uri"]);
+  });
+}

@@ -3,11 +3,13 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { LessThan, QueryFailedError, Repository } from "typeorm";
 import { ReportJob } from "./entities/report-job.entity";
 import { ActiveReportExistsError } from "./errors/active-report-exists.error";
+import { TransactionRunner } from "../common/database/transaction-runner";
 
 @Injectable()
 export class ReportJobsRepository {
   constructor(
     @InjectRepository(ReportJob) private readonly jobs: Repository<ReportJob>,
+    private readonly transactions: TransactionRunner,
   ) {}
 
   create(values: Partial<ReportJob>): Promise<ReportJob> {
@@ -97,7 +99,7 @@ export class ReportJobsRepository {
   }
 
   async remove(userId: string, id: string): Promise<boolean> {
-    return this.jobs.manager.transaction(async (manager) => {
+    return this.transactions.run(async (manager) => {
       const result = await manager
         .getRepository(ReportJob)
         .delete({ userId, id });

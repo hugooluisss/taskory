@@ -1,0 +1,34 @@
+meta {
+  name: foreign-delete-404
+  type: http
+  seq: 4
+}
+delete {
+  url: {{baseUrl}}/connected-apps/{{oauthAuthorizationId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{oauthForeignToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  const foreign = await flow.registerUser(bru, setup.api);
+  bru.setVar("oauthForeignToken", foreign.token);
+  const apps = await bru.sendRequest({ method: "GET", url: setup.api + "/connected-apps", headers: { Authorization: "Bearer " + setup.user.token } });
+  const app = apps.data.find(function(item) { return item.clientName === setup.client.name; });
+  bru.setVar("oauthAuthorizationId", app.id);
+  bru.setVar("oauthClientName", setup.client.name);
+}
+docs {
+  Spec scenario: connected-apps / Revoke a connected app / Another user's app.
+}
+tests {
+  test("foreign-delete-404", function() {
+    expect([res.status, res.body.code]).to.eql([404, "NOT_FOUND"]);
+  });
+}

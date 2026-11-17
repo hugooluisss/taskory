@@ -1,0 +1,37 @@
+meta {
+  name: refresh-reuse-invalid-grant
+  type: http
+  seq: 5
+}
+post {
+  url: {{origin}}/oauth/token
+  body: none
+  auth: none
+}
+headers {
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+}
+script:pre-request {
+  const flow = require("./oauth/lib/oauth-flow");
+  const setup = await flow.prepare(bru, "token");
+  await flow.refresh(bru, setup.origin, setup.client, setup.tokens.refresh_token);
+  bru.setVar("oauthClientId", setup.client.id);
+  bru.setVar("oauthRefresh", setup.tokens.refresh_token);
+  bru.setVar("oauthAccess", setup.tokens.access_token);
+  flow.setFormBody(req, { grant_type: "refresh_token", refresh_token: setup.tokens.refresh_token, client_id: setup.client.id });
+}
+script:post-response {
+  const flow = require("./oauth/lib/oauth-flow");
+  const { api } = flow.urls(bru);
+  const revoked = await flow.checkAccess(bru, api, bru.getVar("oauthAccess"));
+  bru.setVar("oauthRevokedStatus", revoked.status);
+}
+docs {
+  Spec scenario: oauth-authorization / Reused refresh token.
+}
+tests {
+  test("refresh-reuse-invalid-grant", function() {
+    expect([res.status, res.body.error, bru.getVar("oauthRevokedStatus")]).to.eql([400, "invalid_grant", 401]);
+  });
+}

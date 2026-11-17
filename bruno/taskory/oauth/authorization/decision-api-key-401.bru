@@ -1,0 +1,26 @@
+meta {
+  name: decision-api-key-401
+  type: http
+  seq: 7
+}
+post {
+  url: {{baseUrl}}/oauth/requests/unknown/decision
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: Bearer tk_invalid
+}
+body:json {
+  {"approve":true}
+}
+docs {
+  Spec scenario: oauth-authorization / User consent / Authentication required.
+}
+tests {
+  test("decision-api-key-401", function() {
+    expect(res.status).to.equal(401);
+  });
+}
