@@ -47,10 +47,7 @@ describe('Access', () => {
       'errors.INVALID_CREDENTIALS',
     );
   });
-  it('preserves returnUrl in the registration link and rejects hostile return paths', async () => {
-    expect(fixture.nativeElement.querySelector('a').getAttribute('href')).toContain(
-      'returnUrl=%2Freports%3Ffrom%3Dtoday',
-    );
+  it('rejects hostile return paths', async () => {
     returnUrl = '//evil.test/path';
     fixture.componentInstance.form.setValue({ email: 'ada@example.test', password: 'password1' });
     await fixture.componentInstance.submit();

@@ -1,7 +1,7 @@
 import { NgIf } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessageService } from '../../core/services/error-message.service';
@@ -11,7 +11,7 @@ import { LocalPathService } from '../../core/services/local-path.service';
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [NgIf, RouterLink, ReactiveFormsModule, TranslocoPipe, LanguageSwitcherComponent],
+  imports: [NgIf, ReactiveFormsModule, TranslocoPipe, LanguageSwitcherComponent],
   templateUrl: './login-page.html',
   styleUrl: './login-page.css',
 })

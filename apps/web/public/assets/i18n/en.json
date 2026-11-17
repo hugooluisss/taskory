@@ -27,7 +27,6 @@
     "passwordLength": "Use at least 8 characters.",
     "login": "Sign in",
     "register": "Create account",
-    "registerLink": "New here? Create an account",
     "loginLink": "Already have an account? Sign in",
     "logout": "Sign out"
   },

@@ -27,8 +27,5 @@
         {{ (loading() ? 'common.loading' : 'auth.login') | transloco }}
       </button>
     </form>
-    <a routerLink="/register" [queryParams]="{ returnUrl: returnUrl }">{{
-      'auth.registerLink' | transloco
-    }}</a>
   </section>
 </main>
