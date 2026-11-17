@@ -1,38 +1,45 @@
-<form class="card" (ngSubmit)="submit()">
-  <h2>{{ 'reports.form.title' | transloco }}</h2>
-  <fieldset>
-    <legend>{{ 'reports.form.range' | transloco }}</legend>
-    <div class="presets">
-      <button type="button" (click)="selectPreset('thisWeek')">
-        {{ 'reports.form.thisWeek' | transloco }}
-      </button>
-      <button type="button" (click)="selectPreset('lastWeek')">
-        {{ 'reports.form.lastWeek' | transloco }}
-      </button>
-      <button type="button" (click)="selectPreset('thisMonth')">
-        {{ 'reports.form.thisMonth' | transloco }}
-      </button>
-      <button type="button" (click)="selectPreset('lastMonth')">
+<form class="card mt-6 gap-5 bg-base-100 p-5 shadow sm:p-6" (ngSubmit)="submit()">
+  <h2 class="text-xl font-semibold">{{ 'reports.form.title' | transloco }}</h2>
+  <fieldset class="grid gap-3">
+    <legend class="mb-2 font-medium">{{ 'reports.form.range' | transloco }}</legend>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('thisWeek')">
+        {{ 'reports.form.thisWeek' | transloco }}</button
+      ><button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('lastWeek')">
+        {{ 'reports.form.lastWeek' | transloco }}</button
+      ><button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('thisMonth')">
+        {{ 'reports.form.thisMonth' | transloco }}</button
+      ><button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('lastMonth')">
         {{ 'reports.form.lastMonth' | transloco }}
       </button>
     </div>
   </fieldset>
-  <div class="dates">
-    <label
-      >{{ 'reports.form.from' | transloco
-      }}<input type="date" name="from" [ngModel]="from()" (ngModelChange)="from.set($event)"
-    /></label>
-    <label
-      >{{ 'reports.form.to' | transloco
-      }}<input type="date" name="to" [ngModel]="to()" (ngModelChange)="to.set($event)"
+  <div class="grid gap-4 sm:grid-cols-2">
+    <label class="form-control gap-1"
+      ><span>{{ 'reports.form.from' | transloco }}</span
+      ><input
+        class="input input-bordered w-full"
+        type="date"
+        name="from"
+        [ngModel]="from()"
+        (ngModelChange)="from.set($event)" /></label
+    ><label class="form-control gap-1"
+      ><span>{{ 'reports.form.to' | transloco }}</span
+      ><input
+        class="input input-bordered w-full"
+        type="date"
+        name="to"
+        [ngModel]="to()"
+        (ngModelChange)="to.set($event)"
     /></label>
   </div>
   @if (rangeError()) {
-    <p class="error" role="alert">{{ 'reports.form.invalidRange' | transloco }}</p>
+    <p class="text-error" role="alert">{{ 'reports.form.invalidRange' | transloco }}</p>
   }
-  <label
-    >{{ 'reports.form.project' | transloco
-    }}<input
+  <label class="form-control gap-1"
+    ><span>{{ 'reports.form.project' | transloco }}</span
+    ><input
+      class="input input-bordered w-full"
       name="project"
       list="report-projects"
       [ngModel]="project()"
@@ -44,37 +51,51 @@
     }
   </datalist>
   @if (projectsUnavailable()) {
-    <p class="hint">{{ 'reports.form.projectsUnavailable' | transloco }}</p>
+    <p class="text-base-content/70">{{ 'reports.form.projectsUnavailable' | transloco }}</p>
   }
-  <div class="columns">
-    <label
-      >{{ 'reports.form.language' | transloco }}
-      <select name="language" [ngModel]="language()" (ngModelChange)="language.set($event)">
-        <option value="es">Español</option>
-        <option value="en">English</option>
-      </select>
-    </label>
-    <label
-      >{{ 'reports.form.style' | transloco }}
-      <select name="style" [ngModel]="style()" (ngModelChange)="style.set($event)">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <label class="form-control gap-1"
+      ><span>{{ 'reports.form.language' | transloco }}</span
+      ><select
+        class="select select-bordered w-full"
+        name="language"
+        [ngModel]="language()"
+        (ngModelChange)="language.set($event)"
+      >
+        <option value="es">{{ 'reports.form.spanish' | transloco }}</option>
+        <option value="en">{{ 'reports.form.english' | transloco }}</option>
+      </select></label
+    ><label class="form-control gap-1"
+      ><span>{{ 'reports.form.style' | transloco }}</span
+      ><select
+        class="select select-bordered w-full"
+        name="style"
+        [ngModel]="style()"
+        (ngModelChange)="style.set($event)"
+      >
         <option value="summary">{{ 'reports.form.summary' | transloco }}</option>
         <option value="detailed">{{ 'reports.form.detailed' | transloco }}</option>
-      </select>
-    </label>
+      </select></label
+    >
   </div>
   <button
-    class="advanced-toggle"
+    class="advanced-toggle btn btn-ghost w-fit"
     type="button"
     [attr.aria-expanded]="advanced()"
     (click)="advanced.set(!advanced())"
   >
-    {{ 'reports.form.advanced' | transloco }}
+    <app-icon name="chevron" />{{ 'reports.form.advanced' | transloco }}
   </button>
   @if (advanced()) {
-    <div class="columns">
-      <label
-        >{{ 'reports.form.provider' | transloco }}
-        <select name="provider" [ngModel]="provider()" (ngModelChange)="provider.set($event)">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="form-control gap-1"
+        ><span>{{ 'reports.form.provider' | transloco }}</span
+        ><select
+          class="select select-bordered w-full"
+          name="provider"
+          [ngModel]="provider()"
+          (ngModelChange)="provider.set($event)"
+        >
           <option value="">{{ 'reports.form.defaultProvider' | transloco }}</option>
           @for (item of providers(); track item.id) {
             <option [value]="item.id" [disabled]="!item.available">
@@ -82,20 +103,20 @@
               }}{{ item.available ? '' : ' — ' + ('reports.form.unavailable' | transloco) }}
             </option>
           }
-        </select>
-      </label>
-      <label
-        >{{ 'reports.form.model' | transloco
-        }}<input
+        </select></label
+      ><label class="form-control gap-1"
+        ><span>{{ 'reports.form.model' | transloco }}</span
+        ><input
+          class="input input-bordered w-full"
           name="model"
           maxlength="100"
           [ngModel]="model()"
           (ngModelChange)="model.set($event)"
       /></label>
     </div>
-    <p class="hint">{{ 'reports.form.unavailableHint' | transloco }}</p>
+    <p class="text-sm text-base-content/70">{{ 'reports.form.unavailableHint' | transloco }}</p>
     @if (providersUnavailable()) {
-      <p class="error" role="alert">{{ 'reports.form.providersUnavailable' | transloco }}</p>
+      <p class="text-error" role="alert">{{ 'reports.form.providersUnavailable' | transloco }}</p>
     }
   }
   <app-button type="submit" [loading]="loading()">{{

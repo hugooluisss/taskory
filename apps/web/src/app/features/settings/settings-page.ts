@@ -36,7 +36,6 @@ import { ApiKeysSectionComponent } from './api-keys-section';
     }),
   ],
   templateUrl: './settings-page.html',
-  styleUrl: './settings-page.css',
 })
 export class SettingsPage {
   private auth = inject(AuthService);

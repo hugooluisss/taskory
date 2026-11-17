@@ -1,34 +1,58 @@
-<main class="consent">
-  <p *ngIf="framed()" role="alert">{{ 'consent.framed' | transloco }}</p>
+<main class="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
+  <p class="alert alert-error" *ngIf="framed()" role="alert">
+    <app-icon name="warning" />{{ 'consent.framed' | transloco }}
+  </p>
   <ng-container *ngIf="!framed()">
-    <p *ngIf="loading()" role="status">{{ 'consent.loading' | transloco }}</p>
-    <ng-container *ngIf="request() as consent">
-      <h1>{{ 'consent.question' | transloco: { name: consent.clientName } }}</h1>
-      <app-consent-details [request]="consent" />
-      <p>{{ 'consent.grants' | transloco }}</p>
-      <p *ngIf="error()" role="alert">{{ 'consent.retry' | transloco }}</p>
-      <button
-        *ngIf="error()"
-        type="button"
-        [disabled]="loading()"
-        (click)="decide(lastDecision() ?? true)"
-      >
+    <p class="alert" *ngIf="loading()" role="status">
+      <span class="loading loading-spinner"></span>{{ 'consent.loading' | transloco }}
+    </p>
+    <section class="card bg-base-100 shadow-xl" *ngIf="request() as consent">
+      <div class="card-body gap-5 p-5 sm:p-8">
+        <h1 class="text-2xl font-semibold">
+          {{ 'consent.question' | transloco: { name: consent.clientName } }}
+        </h1>
+        <app-consent-details [request]="consent" />
+        <p class="alert alert-warning">
+          <app-icon name="warning" />{{ 'consent.grants' | transloco }}
+        </p>
+        <p class="text-error" *ngIf="error()" role="alert">{{ 'consent.retry' | transloco }}</p>
+        <button
+          class="btn btn-outline w-fit"
+          *ngIf="error()"
+          type="button"
+          [disabled]="loading()"
+          (click)="decide(lastDecision() ?? true)"
+        >
+          <app-icon name="reports" />{{ 'consent.load' | transloco }}
+        </button>
+        <div class="flex flex-wrap gap-3">
+          <button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="loading()"
+            (click)="decide(true)"
+          >
+            <app-icon name="check" />{{ 'consent.allow' | transloco }}</button
+          ><button
+            class="btn btn-outline"
+            type="button"
+            [disabled]="loading()"
+            (click)="decide(false)"
+          >
+            <app-icon name="close" />{{ 'consent.deny' | transloco }}
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="card mt-5 bg-base-100 p-6 shadow" *ngIf="unavailable()" role="status">
+      <h1 class="text-xl font-semibold">{{ 'consent.unavailable' | transloco }}</h1>
+      <a class="link link-primary" routerLink="/activities">{{ 'consent.home' | transloco }}</a>
+    </section>
+    <section class="alert alert-error mt-5" *ngIf="error() && !request()" role="alert">
+      <span>{{ 'consent.retry' | transloco }}</span
+      ><button class="btn btn-sm" type="button" (click)="load()">
         {{ 'consent.load' | transloco }}
       </button>
-      <button type="button" [disabled]="loading()" (click)="decide(true)">
-        {{ 'consent.allow' | transloco }}
-      </button>
-      <button type="button" [disabled]="loading()" (click)="decide(false)">
-        {{ 'consent.deny' | transloco }}
-      </button>
-    </ng-container>
-    <section *ngIf="unavailable()" role="status">
-      <h1>{{ 'consent.unavailable' | transloco }}</h1>
-      <a routerLink="/activities">{{ 'consent.home' | transloco }}</a>
-    </section>
-    <section *ngIf="error() && !request()" role="alert">
-      <p>{{ 'consent.retry' | transloco }}</p>
-      <button type="button" (click)="load()">{{ 'consent.load' | transloco }}</button>
     </section>
   </ng-container>
 </main>

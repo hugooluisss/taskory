@@ -10,6 +10,7 @@ import { AppPageHeaderComponent } from '../../shared/app-page-header';
 import { ReportFormComponent } from './report-form';
 import { ReportProgressComponent } from './report-progress';
 import { ReportResultComponent } from './report-result';
+import { AppIconComponent } from '../../shared/app-icon';
 
 const JOB_KEY = 'taskory_report_job_';
 
@@ -22,6 +23,7 @@ const JOB_KEY = 'taskory_report_job_';
     ReportFormComponent,
     ReportProgressComponent,
     ReportResultComponent,
+    AppIconComponent,
   ],
   providers: [
     provideTranslocoScope({
@@ -33,7 +35,6 @@ const JOB_KEY = 'taskory_report_job_';
     }),
   ],
   templateUrl: './reports-page.html',
-  styleUrl: './reports-page.css',
 })
 export class ReportsPage {
   private reports = inject(ReportsService);

@@ -1,33 +1,42 @@
-<section aria-labelledby="profile-heading">
-  <h2 id="profile-heading">{{ 'settings.profile' | transloco }}</h2>
-  <form (ngSubmit)="submit()" novalidate>
-    <label for="profile-name">{{ 'settings.name' | transloco }}</label>
-    <input
-      id="profile-name"
-      name="profileName"
-      [ngModel]="name()"
-      (ngModelChange)="name.set($event)"
-      required
-      maxlength="100"
-      [attr.aria-invalid]="submitted() && nameInvalid"
-      aria-describedby="profile-name-error"
-      (blur)="submitted.set(true)"
-    />
-    <p id="profile-name-error" aria-live="polite" *ngIf="submitted() && nameInvalid">
-      {{ 'settings.nameRequired' | transloco }}
-    </p>
-    <label for="profile-language">{{ 'settings.language' | transloco }}</label>
-    <select
-      id="profile-language"
-      name="profileLanguage"
-      [ngModel]="language()"
-      (ngModelChange)="language.set($event)"
+<section class="card gap-4 bg-base-100 p-5 shadow sm:p-6" aria-labelledby="profile-heading">
+  <h2 id="profile-heading" class="text-xl font-semibold">{{ 'settings.profile' | transloco }}</h2>
+  <form class="grid max-w-xl gap-4" (ngSubmit)="submit()" novalidate>
+    <label class="form-control gap-1" for="profile-name"
+      ><span>{{ 'settings.name' | transloco }}</span
+      ><input
+        class="input input-bordered w-full"
+        id="profile-name"
+        name="profileName"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        required
+        maxlength="100"
+        [attr.aria-invalid]="submitted() && nameInvalid"
+        aria-describedby="profile-name-error"
+        (blur)="submitted.set(true)"
+      /><span
+        id="profile-name-error"
+        class="text-error"
+        aria-live="polite"
+        *ngIf="submitted() && nameInvalid"
+        >{{ 'settings.nameRequired' | transloco }}</span
+      ></label
     >
-      <option value="en">English</option>
-      <option value="es">Español</option>
-    </select>
-    <button type="submit" [disabled]="saving">
-      {{ (saving ? 'settings.saving' : 'settings.save') | transloco }}
+    <label class="form-control gap-1" for="profile-language"
+      ><span>{{ 'settings.language' | transloco }}</span
+      ><select
+        class="select select-bordered w-full"
+        id="profile-language"
+        name="profileLanguage"
+        [ngModel]="language()"
+        (ngModelChange)="language.set($event)"
+      >
+        <option value="en">{{ 'settings.english' | transloco }}</option>
+        <option value="es">{{ 'settings.spanish' | transloco }}</option>
+      </select></label
+    >
+    <button class="btn btn-primary w-fit" type="submit" [disabled]="saving">
+      <app-icon name="check" />{{ (saving ? 'settings.saving' : 'settings.save') | transloco }}
     </button>
   </form>
 </section>

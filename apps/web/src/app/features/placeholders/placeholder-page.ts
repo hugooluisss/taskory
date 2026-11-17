@@ -7,7 +7,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
   standalone: true,
   imports: [TranslocoPipe],
   templateUrl: './placeholder-page.html',
-  styleUrl: './placeholder-page.css',
 })
 export class PlaceholderPage {
   title = inject(ActivatedRoute).snapshot.data['title'] as string;

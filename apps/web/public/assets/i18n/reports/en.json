@@ -35,14 +35,20 @@
     "failedWithoutChunk": "The report could not be completed. You can retry it.",
     "retry": "Retry",
     "delete": "Delete report",
-    "cancel": "Cancel report"
+    "cancel": "Cancel report",
+    "status": {
+      "queued": "Waiting",
+      "running": "In progress",
+      "failed": "Could not finish"
+    }
   },
   "result": {
     "title": "Your report",
     "copy": "Copy as Markdown",
     "metadata": "{{provider}} · {{model}} · {{count}} activities",
     "copied": "Report copied.",
-    "copyFailed": "Could not copy the report."
+    "copyFailed": "Could not copy the report.",
+    "download": "Download report"
   },
   "errors": {
     "NO_ACTIVITIES": "No activities were found for these dates. Choose another date range or project.",

@@ -1,16 +1,36 @@
-<section class="card" aria-labelledby="result-title">
-  <div class="heading">
-    <h2 id="result-title">{{ 'reports.result.title' | transloco }}</h2>
-    <app-button variant="secondary" [loading]="copying()" (click)="copy()"
-      ><app-icon name="copy" />{{ 'reports.result.copy' | transloco }}</app-button
-    >
+<section class="card mt-6 gap-4 bg-base-100 p-5 shadow sm:p-6" aria-labelledby="result-title">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 id="result-title" class="text-xl font-semibold">
+      {{ 'reports.result.title' | transloco }}
+    </h2>
+    <div class="flex gap-2">
+      <button
+        class="btn btn-outline btn-sm"
+        type="button"
+        [attr.aria-label]="'reports.result.copy' | transloco"
+        [disabled]="copying()"
+        (click)="copy()"
+      >
+        <app-icon name="copy" /></button
+      ><button
+        class="btn btn-outline btn-sm"
+        type="button"
+        [attr.aria-label]="'reports.result.download' | transloco"
+        (click)="download()"
+      >
+        <app-icon name="download" />
+      </button>
+    </div>
   </div>
-  <p class="metadata">
+  <p class="text-sm text-base-content/70">
     {{
       'reports.result.metadata'
         | transloco: { provider: report.provider, model: report.model, count: report.activityCount }
     }}
   </p>
-  <article class="markdown" [innerHTML]="html"></article>
+  <article
+    class="markdown max-w-none break-words [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-5 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:ml-6 [&_li]:list-disc [&_ol_li]:list-decimal [&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-box [&_pre]:bg-base-200 [&_pre]:p-3 [&_ul]:my-3"
+    [innerHTML]="html"
+  ></article>
   <ng-content />
 </section>

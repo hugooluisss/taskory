@@ -7,7 +7,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
   standalone: true,
   imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './connect-assistant-card.html',
-  styleUrl: './connect-assistant-card.css',
 })
 export class ConnectAssistantCardComponent {
   @Input() serverUrl = '';

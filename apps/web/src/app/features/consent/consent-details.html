@@ -1,12 +1,17 @@
-<dl>
-  <dt>{{ 'consent.unverified' | transloco }}</dt>
-  <dd>{{ request.clientName }}</dd>
-  <dt>{{ 'consent.clientId' | transloco }}</dt>
-  <dd>{{ request.clientId }}</dd>
-  <dt>{{ 'consent.redirect' | transloco }}</dt>
+<dl class="grid min-w-0 gap-2 sm:grid-cols-[10rem_minmax(0,1fr)]">
+  <dt class="font-semibold">{{ 'consent.unverified' | transloco }}</dt>
   <dd>
+    <span class="badge badge-warning gap-1"
+      ><app-icon name="warning" />{{ 'consent.unverified' | transloco }}</span
+    >
+    <span class="break-words">{{ request.clientName }}</span>
+  </dd>
+  <dt class="font-semibold">{{ 'consent.clientId' | transloco }}</dt>
+  <dd class="break-all font-mono text-sm">{{ request.clientId }}</dd>
+  <dt class="font-semibold">{{ 'consent.redirect' | transloco }}</dt>
+  <dd class="break-all font-mono text-sm">
     <code>{{ request.redirectUri }}</code>
   </dd>
-  <dt>{{ 'consent.grants' | transloco }}</dt>
+  <dt class="font-semibold">{{ 'consent.grants' | transloco }}</dt>
   <dd>{{ request.scope }}</dd>
 </dl>

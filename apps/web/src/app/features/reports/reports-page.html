@@ -1,13 +1,15 @@
-<main class="page">
+<main class="mx-auto grid w-full max-w-5xl gap-5 px-4 py-6 sm:px-6">
   <app-page-header
     [title]="'reports.title' | transloco"
     [description]="'reports.description' | transloco"
   />
   <app-report-form (generate)="generate($event)" />
   @if (errorKey()) {
-    <p class="error" role="alert">{{ errorKey() | transloco }}</p>
+    <div class="alert alert-error mt-4">
+      <app-icon name="error" /><span>{{ errorKey() | transloco }}</span>
+    </div>
     @if (activeReportId()) {
-      <button class="open-report" type="button" (click)="openActiveReport()">
+      <button class="open-report btn btn-primary w-fit" type="button" (click)="openActiveReport()">
         {{ 'reports.errors.openActiveReport' | transloco }}
       </button>
     }

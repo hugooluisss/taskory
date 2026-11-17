@@ -2,13 +2,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ReportJob } from '../../core/models';
 import { AppButtonComponent } from '../../shared/app-button';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'app-report-progress',
   standalone: true,
-  imports: [TranslocoPipe, AppButtonComponent],
+  imports: [TranslocoPipe, AppButtonComponent, AppIconComponent],
   templateUrl: './report-progress.html',
-  styleUrl: './report-progress.css',
 })
 export class ReportProgressComponent {
   @Input({ required: true }) job!: ReportJob;

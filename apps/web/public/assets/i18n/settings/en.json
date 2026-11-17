@@ -38,5 +38,7 @@
   "stepThree": "Sign in when Taskory asks.",
   "dismissKey": "Dismiss key",
   "copied": "Copied to clipboard.",
-  "copyFailed": "Could not copy. Check clipboard permissions and try again."
+  "copyFailed": "Could not copy. Check clipboard permissions and try again.",
+  "english": "English",
+  "spanish": "Spanish"
 }

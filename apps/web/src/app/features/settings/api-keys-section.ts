@@ -10,7 +10,6 @@ import '../../core/i18n/date-locales';
   standalone: true,
   imports: [DatePipe, NgFor, NgIf, TranslocoPipe, AppIconComponent],
   templateUrl: './api-keys-section.html',
-  styleUrl: './api-keys-section.css',
 })
 export class ApiKeysSectionComponent {
   private transloco = inject(TranslocoService);

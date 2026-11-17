@@ -8,6 +8,7 @@ import { OAuthRequestsService } from '../../core/services/oauth-requests.service
 import { RedirectService } from '../../core/services/redirect.service';
 import { ConsentRedirectService } from './consent-redirect.service';
 import { ConsentDetailsComponent } from './consent-details';
+import { AppIconComponent } from '../../shared/app-icon';
 
 export const CONSENT_WINDOW = new InjectionToken<Pick<Window, 'top' | 'self'>>('CONSENT_WINDOW', {
   providedIn: 'root',
@@ -17,7 +18,7 @@ export const CONSENT_WINDOW = new InjectionToken<Pick<Window, 'top' | 'self'>>('
 @Component({
   selector: 'app-consent-page',
   standalone: true,
-  imports: [NgIf, RouterLink, TranslocoPipe, ConsentDetailsComponent],
+  imports: [NgIf, RouterLink, TranslocoPipe, ConsentDetailsComponent, AppIconComponent],
   providers: [
     provideTranslocoScope({
       scope: 'consent',
@@ -28,7 +29,6 @@ export const CONSENT_WINDOW = new InjectionToken<Pick<Window, 'top' | 'self'>>('
     }),
   ],
   templateUrl: './consent-page.html',
-  styleUrl: './consent-page.css',
 })
 export class ConsentPage {
   private browser = inject(CONSENT_WINDOW);

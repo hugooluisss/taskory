@@ -7,13 +7,20 @@ import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessageService } from '../../core/services/error-message.service';
 import { LanguageSwitcherComponent } from '../../shared/language-switcher';
 import { LocalPathService } from '../../core/services/local-path.service';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [NgIf, RouterLink, ReactiveFormsModule, TranslocoPipe, LanguageSwitcherComponent],
+  imports: [
+    NgIf,
+    RouterLink,
+    ReactiveFormsModule,
+    TranslocoPipe,
+    LanguageSwitcherComponent,
+    AppIconComponent,
+  ],
   templateUrl: './register-page.html',
-  styleUrl: './register-page.css',
 })
 export class RegisterPage {
   private fb = inject(FormBuilder);
@@ -32,6 +39,7 @@ export class RegisterPage {
   });
   readonly loading = signal(false);
   readonly errorKey = signal('');
+  readonly showPassword = signal(false);
   async submit(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;

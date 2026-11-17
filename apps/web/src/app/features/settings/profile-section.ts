@@ -2,14 +2,14 @@ import { NgIf } from '@angular/common';
 import { Component, EventEmitter, Input, Output, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { AppIconComponent } from '../../shared/app-icon';
 import { Language } from '../../core/models';
 
 @Component({
   selector: 'app-profile-section',
   standalone: true,
-  imports: [FormsModule, NgIf, TranslocoPipe],
+  imports: [FormsModule, NgIf, TranslocoPipe, AppIconComponent],
   templateUrl: './profile-section.html',
-  styleUrl: './profile-section.css',
 })
 export class ProfileSectionComponent {
   readonly name = model('');

@@ -1,7 +1,17 @@
-<section class="card" aria-labelledby="progress-title">
-  <h2 id="progress-title">{{ 'reports.progress.title' | transloco }}</h2>
+<section class="card mt-6 gap-4 bg-base-100 p-5 shadow sm:p-6" aria-labelledby="progress-title">
+  <h2 id="progress-title" class="text-xl font-semibold">
+    {{ 'reports.progress.title' | transloco }}
+    <span class="badge" [class.badge-error]="job.status === 'failed'" [class.badge-info]="active">{{
+      (job.status === 'queued'
+        ? 'reports.progress.status.queued'
+        : job.status === 'running'
+          ? 'reports.progress.status.running'
+          : 'reports.progress.status.failed'
+      ) | transloco
+    }}</span>
+  </h2>
   <div
-    class="progress"
+    class="progress progress-primary h-3 w-full"
     role="progressbar"
     [attr.aria-valuenow]="job.progress.done"
     [attr.aria-valuemin]="0"
@@ -17,17 +27,18 @@
   </p>
   @if (job.status === 'failed') {
     @if (job.error?.chunk !== null && job.error?.chunk !== undefined) {
-      <p class="error" role="alert">
+      <p class="text-error" role="alert">
         {{ 'reports.progress.failed' | transloco: { chunk: job.error?.chunk } }}
       </p>
     } @else {
-      <p class="error" role="alert">{{ 'reports.progress.failedWithoutChunk' | transloco }}</p>
+      <p class="text-error" role="alert">{{ 'reports.progress.failedWithoutChunk' | transloco }}</p>
     }
-    <div class="actions">
-      <app-button (click)="retry.emit()">{{ 'reports.progress.retry' | transloco }}</app-button>
-      <app-button variant="danger" (click)="delete.emit()">{{
-        'reports.progress.delete' | transloco
-      }}</app-button>
+    <div class="flex flex-wrap gap-2">
+      <app-button (click)="retry.emit()"
+        ><app-icon name="reports" />{{ 'reports.progress.retry' | transloco }}</app-button
+      ><app-button variant="danger" (click)="delete.emit()"
+        ><app-icon name="delete" />{{ 'reports.progress.delete' | transloco }}</app-button
+      >
     </div>
   } @else if (active) {
     <app-button variant="secondary" (click)="cancel.emit()">{{

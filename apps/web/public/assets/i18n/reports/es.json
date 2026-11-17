@@ -35,14 +35,20 @@
     "failedWithoutChunk": "No se pudo completar el informe. Puedes intentarlo de nuevo.",
     "retry": "Reintentar",
     "delete": "Eliminar informe",
-    "cancel": "Cancelar informe"
+    "cancel": "Cancelar informe",
+    "status": {
+      "queued": "En espera",
+      "running": "En proceso",
+      "failed": "No se pudo completar"
+    }
   },
   "result": {
     "title": "Tu informe",
     "copy": "Copiar como Markdown",
     "metadata": "{{provider}} · {{model}} · {{count}} actividades",
     "copied": "Informe copiado.",
-    "copyFailed": "No se pudo copiar el informe."
+    "copyFailed": "No se pudo copiar el informe.",
+    "download": "Descargar informe"
   },
   "errors": {
     "NO_ACTIVITIES": "No encontramos actividades en estas fechas. Elige otro periodo o proyecto.",

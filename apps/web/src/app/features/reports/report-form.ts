@@ -6,13 +6,13 @@ import { ReportsService } from '../../core/services/reports.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { AppButtonComponent } from '../../shared/app-button';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'app-report-form',
   standalone: true,
-  imports: [FormsModule, TranslocoPipe, AppButtonComponent],
+  imports: [FormsModule, TranslocoPipe, AppButtonComponent, AppIconComponent],
   templateUrl: './report-form.html',
-  styleUrl: './report-form.css',
 })
 export class ReportFormComponent {
   private reports = inject(ReportsService);

@@ -4,14 +4,12 @@ import { ReportResult } from '../../core/models';
 import { ReportsService } from '../../core/services/reports.service';
 import { ToastService } from '../../shared/toast.service';
 import { AppIconComponent } from '../../shared/app-icon';
-import { AppButtonComponent } from '../../shared/app-button';
 
 @Component({
   selector: 'app-report-result',
   standalone: true,
-  imports: [TranslocoPipe, AppButtonComponent, AppIconComponent],
+  imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './report-result.html',
-  styleUrl: './report-result.css',
 })
 export class ReportResultComponent {
   private reports = inject(ReportsService);
@@ -33,5 +31,13 @@ export class ReportResultComponent {
     } finally {
       this.copying.set(false);
     }
+  }
+  download(): void {
+    const url = URL.createObjectURL(new Blob([this.report.markdown], { type: 'text/markdown' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'taskory-report.md';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 }

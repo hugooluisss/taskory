@@ -71,6 +71,18 @@ describe('Report generation', () => {
     fixture.detectChanges();
     expect(reports.renderMarkdown).toHaveBeenCalledWith(expect.stringContaining('<script>'));
     expect(fixture.nativeElement.querySelector('.markdown').innerHTML).toBe('<p>safe</p>');
+    const objectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:report');
+    const revokeUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    fixture.componentInstance.download();
+    expect(objectUrl).toHaveBeenCalledWith(expect.any(Blob));
+    expect(click).toHaveBeenCalled();
+    expect(revokeUrl).toHaveBeenCalledWith('blob:report');
+    objectUrl.mockRestore();
+    revokeUrl.mockRestore();
+    click.mockRestore();
     await fixture.componentInstance.copy();
     expect(reports.copyMarkdown).toHaveBeenCalledWith(fixture.componentInstance.report.markdown);
     expect(toast.success).toHaveBeenCalledWith('reports.result.copied');

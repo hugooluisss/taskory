@@ -1,46 +1,78 @@
-<details>
-  <summary>{{ 'settings.advanced' | transloco }}</summary>
-  <h2><app-icon name="key" />{{ 'settings.keys' | transloco }}</h2>
-  <label for="key-name">{{ 'settings.keyName' | transloco }}</label>
-  <input
-    id="key-name"
-    [value]="keyName"
-    required
-    aria-required="true"
-    (input)="keyNameChange.emit($any($event.target).value)"
-    required
-  />
-  <button type="button" (click)="create.emit()" [disabled]="!keyName.trim() || creating">
-    {{ (creating ? 'settings.saving' : 'settings.create') | transloco }}
-  </button>
-  <div class="secret" *ngIf="newKey">
-    <p>{{ 'settings.newKey' | transloco }}</p>
-    <code>{{ newKey }}</code>
-    <button type="button" (click)="copy.emit(newKey)">
-      <app-icon name="copy" />{{ 'settings.copy' | transloco }}
+<details class="collapse collapse-arrow rounded-box border border-base-300 bg-base-100 shadow">
+  <summary class="collapse-title text-lg font-semibold">
+    {{ 'settings.advanced' | transloco }}
+  </summary>
+  <div class="collapse-content grid gap-4">
+    <h2 class="flex items-center gap-2 text-xl font-semibold">
+      <app-icon name="key" />{{ 'settings.keys' | transloco }}
+    </h2>
+    <label class="form-control max-w-xl gap-1" for="key-name"
+      ><span>{{ 'settings.keyName' | transloco }}</span
+      ><input
+        class="input input-bordered w-full"
+        id="key-name"
+        [value]="keyName"
+        required
+        aria-required="true"
+        (input)="keyNameChange.emit($any($event.target).value)"
+    /></label>
+    <button
+      class="btn btn-primary w-fit"
+      type="button"
+      (click)="create.emit()"
+      [disabled]="!keyName.trim() || creating"
+    >
+      <app-icon name="add" />{{ (creating ? 'settings.saving' : 'settings.create') | transloco }}
     </button>
-    <button type="button" (click)="dismiss.emit()">{{ 'settings.dismissKey' | transloco }}</button>
-  </div>
-  <p>{{ 'settings.clients' | transloco }}</p>
-  <ul>
-    <li *ngFor="let key of keys">
-      <strong>{{ key.name }}</strong>
-      <span>{{ 'settings.prefix' | transloco }}: {{ key.prefix }}</span>
-      <span
-        >{{ 'settings.created' | transloco }}:
-        {{ key.createdAt | date: undefined : undefined : locale }}</span
+    <div class="secret alert alert-info flex-wrap break-all" *ngIf="newKey">
+      <div>
+        <p class="font-semibold">{{ 'settings.newKey' | transloco }}</p>
+        <code>{{ newKey }}</code>
+      </div>
+      <button
+        class="btn btn-ghost btn-square"
+        type="button"
+        [attr.aria-label]="'settings.copy' | transloco"
+        (click)="copy.emit(newKey)"
       >
-      <span
-        >{{ 'settings.lastUsed' | transloco }}:
-        {{
-          key.lastUsedAt
-            ? (key.lastUsedAt | date: undefined : undefined : locale)
-            : ('settings.lastUsedUnknown' | transloco)
-        }}</span
+        <app-icon name="copy" /></button
+      ><button
+        class="btn btn-ghost btn-square"
+        type="button"
+        [attr.aria-label]="'settings.dismissKey' | transloco"
+        (click)="dismiss.emit()"
       >
-      <button type="button" (click)="revoke.emit(key.id)">
-        {{ 'settings.revoke' | transloco }}
+        <app-icon name="close" />
       </button>
-    </li>
-  </ul>
+    </div>
+    <p>{{ 'settings.clients' | transloco }}</p>
+    <ul class="divide-y divide-base-300">
+      <li class="flex flex-wrap items-center justify-between gap-3 py-4" *ngFor="let key of keys">
+        <div class="grid gap-1">
+          <strong>{{ key.name }}</strong
+          ><span class="text-sm text-base-content/70"
+            >{{ 'settings.prefix' | transloco }}: {{ key.prefix }}</span
+          ><span class="text-sm text-base-content/70"
+            >{{ 'settings.created' | transloco }}:
+            {{ key.createdAt | date: undefined : undefined : locale }}</span
+          ><span class="text-sm text-base-content/70"
+            >{{ 'settings.lastUsed' | transloco }}:
+            {{
+              key.lastUsedAt
+                ? (key.lastUsedAt | date: undefined : undefined : locale)
+                : ('settings.lastUsedUnknown' | transloco)
+            }}</span
+          >
+        </div>
+        <button
+          class="btn btn-ghost btn-square text-error"
+          type="button"
+          [attr.aria-label]="'settings.revoke' | transloco"
+          (click)="revoke.emit(key.id)"
+        >
+          <app-icon name="delete" />
+        </button>
+      </li>
+    </ul>
+  </div>
 </details>

@@ -29,7 +29,11 @@
     "login": "Entrar",
     "register": "Crear cuenta",
     "loginLink": "¿Ya tienes cuenta? Entra",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "registerLink": "Crear una cuenta",
+    "brand": "Taskory"
   },
   "errors": {
     "validation": "Revisa la información.",

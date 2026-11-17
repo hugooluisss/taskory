@@ -1,13 +1,23 @@
-<section aria-labelledby="connect-heading">
-  <h2 id="connect-heading">{{ 'settings.connect' | transloco }}</h2>
-  <label for="server-address">{{ 'settings.serverAddress' | transloco }}</label>
-  <div class="address-row">
-    <input id="server-address" readonly [value]="serverUrl" />
-    <button type="button" (click)="copy.emit(serverUrl)">
-      <app-icon name="copy" />{{ 'settings.copy' | transloco }}
-    </button>
-  </div>
-  <ol>
+<section class="card gap-4 bg-base-100 p-5 shadow sm:p-6" aria-labelledby="connect-heading">
+  <h2 id="connect-heading" class="text-xl font-semibold">{{ 'settings.connect' | transloco }}</h2>
+  <label class="form-control gap-1" for="server-address"
+    ><span>{{ 'settings.serverAddress' | transloco }}</span>
+    <div class="flex min-w-0 flex-wrap gap-2">
+      <input
+        class="input input-bordered min-w-0 flex-1"
+        id="server-address"
+        readonly
+        [value]="serverUrl"
+      /><button
+        class="btn btn-outline"
+        type="button"
+        [attr.aria-label]="'settings.copy' | transloco"
+        (click)="copy.emit(serverUrl)"
+      >
+        <app-icon name="copy" />
+      </button></div
+  ></label>
+  <ol class="list-decimal space-y-2 pl-6">
     <li>{{ 'settings.stepOne' | transloco }}</li>
     <li>{{ 'settings.stepTwo' | transloco }}</li>
     <li>{{ 'settings.stepThree' | transloco }}</li>
