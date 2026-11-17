@@ -1,10 +1,7 @@
 {
   "pageTitle": "Actividades",
   "pageDescription": "Lleva un registro claro de lo que hiciste en el trabajo.",
-  "quickTitle": "¿En qué trabajaste?",
   "add": "Añadir actividad",
-  "moreDetails": "Más detalles",
-  "hideDetails": "Ocultar detalles",
   "date": "Fecha",
   "title": "Título",
   "description": "Descripción",
@@ -27,7 +24,7 @@
   "noResults": "Ninguna actividad coincide con estos filtros",
   "emptyFilteredMessage": "Prueba a cambiar o limpiar los filtros.",
   "emptyTitle": "Tu lista de actividades está vacía",
-  "emptyMessage": "Añade arriba tu primera actividad para empezar.",
+  "emptyMessage": "Añade tu primera actividad para empezar.",
   "resultCount": "{{count}} actividades",
   "newActivity": "Nueva actividad",
   "editActivity": "Editar actividad",
@@ -44,5 +41,8 @@
   "deleted": "Actividad eliminada.",
   "deleteError": "No se pudo eliminar la actividad. Inténtalo de nuevo.",
   "confirmDeleteTitle": "¿Eliminar esta actividad?",
-  "confirmDeleteMessage": "“{{title}}” se eliminará de forma permanente."
+  "confirmDeleteMessage": "“{{title}}” se eliminará de forma permanente.",
+  "moreFilters": "Más filtros",
+  "closeDialog": "Cerrar diálogo de actividad",
+  "clearSearch": "Borrar búsqueda por título"
 }

@@ -1,21 +1,32 @@
 <dialog
-  role="dialog"
-  aria-modal="true"
   #dialog
+  class="modal"
   aria-labelledby="confirm-title"
   (cancel)="cancel()"
   (click)="backdropClick($event)"
 >
-  @if (confirm.options(); as options) {
-    <h2 id="confirm-title">{{ options.title }}</h2>
-    <p>{{ options.message }}</p>
-    <div class="actions">
-      <button type="button" data-safe (click)="confirm.answer(false)">
-        {{ options.cancelLabel }}
-      </button>
-      <button type="button" [class.danger]="options.danger" (click)="confirm.answer(true)">
-        {{ options.confirmLabel }}
+  <div class="modal-box">
+    <h2 class="text-xl font-semibold" id="confirm-title">{{ confirm.options()?.title }}</h2>
+    <p class="py-4">{{ confirm.options()?.message }}</p>
+    <div class="modal-action">
+      <button class="btn btn-ghost" type="button" data-safe (click)="confirm.answer(false)">
+        {{ confirm.options()?.cancelLabel }}</button
+      ><button
+        class="btn"
+        [class.btn-error]="confirm.options()?.danger"
+        type="button"
+        (click)="confirm.answer(true)"
+      >
+        {{ confirm.options()?.confirmLabel }}
       </button>
     </div>
-  }
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button
+      [attr.aria-label]="confirm.options()?.cancelLabel"
+      (click)="$event.preventDefault(); cancel()"
+    >
+      <app-icon name="close" />
+    </button>
+  </form>
 </dialog>

@@ -6,7 +6,6 @@ let nextTextareaId = 0;
   selector: 'app-textarea',
   standalone: true,
   templateUrl: './app-textarea.html',
-  styleUrl: './app-textarea.css',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

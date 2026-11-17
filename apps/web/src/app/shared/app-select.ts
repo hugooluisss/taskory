@@ -6,7 +6,6 @@ let nextSelectId = 0;
   selector: 'app-select',
   standalone: true,
   templateUrl: './app-select.html',
-  styleUrl: './app-select.css',
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => AppSelectComponent), multi: true },
   ],

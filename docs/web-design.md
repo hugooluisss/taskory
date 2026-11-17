@@ -3,7 +3,7 @@
 Audience: people who are NOT technical. They log what they did at work and later ask for a report. Plain words, no jargon (say "Connect your assistant", not "OAuth" or "MCP"; API keys live under "Advanced").
 
 ## Principles
-- Logging an activity takes at most two actions: a quick-add bar on the main page (title + Enter, date defaults to today, everything else optional behind "More details").
+- Logging an activity starts from one obvious “Add activity” action and uses the shared create/edit dialog; the date defaults to today and optional fields stay available in the form.
 - Every screen has one obvious primary action. Destructive actions (delete, disconnect, revoke) use an accessible confirmation dialog (native `<dialog>` element, focus trapped, Escape closes, default focus on the safe button) and never `window.confirm`.
 - Always show state: loading skeleton or spinner, friendly empty state with a next step, translated error with a retry when it makes sense, success feedback that does not block (toast/inline).
 - Forms: inline validation on blur and on submit, errors next to the field and announced with `aria-live`, never lose typed data on an error.
@@ -21,7 +21,13 @@ Audience: people who are NOT technical. They log what they did at work and later
 
 ## Key screens
 1. Login / Register (single card, switch link, language switcher visible before login).
-2. Activities: quick-add bar, filters (collapsed on phones), list grouped by day with title, project chip, tags and links, edit in a side panel or dialog, pagination.
+2. Activities: “Add activity” action opens a modal, title search stays visible, optional filters can expand, and the list groups entries by day with title, project, tags and links, edit/delete actions, and pagination.
 3. Reports: range picker with presets (this week, last week, this month, last month), project, language, style; "Generate"; progress bar for long reports with a plain sentence ("Reading your activities, part 3 of 11"); result rendered as formatted Markdown with Copy; retry and delete for failed or old reports.
 4. Settings: profile (name, language); "Connect your assistant" card with the server address, copy button and 3 plain steps; connected assistants list with Disconnect; Advanced (collapsed): personal access keys.
 5. Consent (`/oauth/consent?request=<id>`): clear question "Allow <name> to access your Taskory?", what is granted (full access to your activities), the client id and the full redirect destination, the name labelled "not verified", Allow / Deny buttons, never frameable.
+
+## Tailwind, DaisyUI and activity patterns
+
+Use Tailwind utility classes and DaisyUI components in external Angular templates for shared controls and page layouts. The web client uses one light DaisyUI theme with the existing blue brand color; keep focus indicators visible and text contrast at WCAG AA. Use `app-icon` for the small set of inline outline icons, keeping translated accessible names on icon-only controls.
+
+Create and edit activities in the same native `<dialog>` with DaisyUI `modal` styling. Keep title search visible, and place date, project and tag controls behind a “More filters” button whose `aria-expanded` state matches the visibility of its controlled region. Show the number of active filters and a clear action.

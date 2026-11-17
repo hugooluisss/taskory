@@ -5,6 +5,7 @@ import { AppEmptyStateComponent } from '../../shared/app-empty-state';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 import { ActivityListComponent } from './activity-list';
 import { ActivityItemComponent } from './activity-item';
+import { AppSpinnerComponent } from '../../shared/app-spinner';
 
 describe('Activity management', () => {
   it('Empty states, loading state, and live result announcements', async () => {
@@ -17,6 +18,10 @@ describe('Activity management', () => {
         add: { imports: [TestTranslocoPipe] },
       })
       .overrideComponent(AppEmptyStateComponent, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
+      .overrideComponent(AppSpinnerComponent, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },
       })

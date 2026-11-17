@@ -6,7 +6,6 @@ let nextFieldId = 0;
   selector: 'app-field',
   standalone: true,
   templateUrl: './app-field.html',
-  styleUrl: './app-field.css',
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => AppFieldComponent), multi: true },
   ],

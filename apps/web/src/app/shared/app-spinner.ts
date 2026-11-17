@@ -6,6 +6,5 @@ import { TranslocoPipe } from '@jsverse/transloco';
   standalone: true,
   imports: [TranslocoPipe],
   templateUrl: './app-spinner.html',
-  styleUrl: './app-spinner.css',
 })
 export class AppSpinnerComponent {}

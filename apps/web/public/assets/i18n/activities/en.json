@@ -1,10 +1,7 @@
 {
   "pageTitle": "Activities",
   "pageDescription": "Keep a clear record of what you worked on.",
-  "quickTitle": "What did you work on?",
   "add": "Add activity",
-  "moreDetails": "More details",
-  "hideDetails": "Hide details",
   "date": "Date",
   "title": "Title",
   "description": "Description",
@@ -27,7 +24,7 @@
   "noResults": "No activities match these filters",
   "emptyFilteredMessage": "Try changing or clearing your filters.",
   "emptyTitle": "Your activity list is empty",
-  "emptyMessage": "Add your first activity above to get started.",
+  "emptyMessage": "Add your first activity to get started.",
   "resultCount": "{{count}} activities",
   "newActivity": "New activity",
   "editActivity": "Edit activity",
@@ -44,5 +41,8 @@
   "deleted": "Activity deleted.",
   "deleteError": "We couldn't delete this activity. Please try again.",
   "confirmDeleteTitle": "Delete this activity?",
-  "confirmDeleteMessage": "“{{title}}” will be permanently deleted."
+  "confirmDeleteMessage": "“{{title}}” will be permanently deleted.",
+  "moreFilters": "More filters",
+  "closeDialog": "Close activity dialog",
+  "clearSearch": "Clear title search"
 }

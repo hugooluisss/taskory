@@ -1,4 +1,3 @@
-import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { of } from 'rxjs';
@@ -33,7 +32,6 @@ describe('Activity management', () => {
   };
   let ask: ReturnType<typeof vi.fn>;
   let page: ActivitiesPage;
-  let quickAdd: { pending: WritableSignal<boolean>; clearIfUnchanged: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     repositoryService = {
       list: vi.fn(() => of({ items: [activity], total: 1, page: 1, limit: 20 })),
@@ -61,29 +59,6 @@ describe('Activity management', () => {
       ],
     });
     page = TestBed.runInInjectionContext(() => new ActivitiesPage());
-    quickAdd = { pending: signal(false), clearIfUnchanged: vi.fn() };
-    (page as unknown as { quickAdd: typeof quickAdd }).quickAdd = quickAdd;
-  });
-  it('Create with several URLs', () => {
-    const urls = ['https://a.test', 'https://b.test', 'https://c.test'];
-    page.create({ title: 'Work', referenceUrls: urls });
-    expect(repositoryService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceUrls: urls }),
-    );
-    expect(repositoryService.list).toHaveBeenCalledTimes(2);
-  });
-  it('does not clear edits made while create is pending', () => {
-    const response = new Subject<Activity>();
-    repositoryService.create.mockReturnValue(response);
-    const submitted = {
-      title: 'Work',
-      referenceUrls: ['https://a.test', 'https://b.test', 'https://c.test'],
-    };
-    page.create(submitted);
-    expect(quickAdd.pending()).toBe(true);
-    response.next(activity);
-    expect(quickAdd.clearIfUnchanged).toHaveBeenCalledWith(expect.objectContaining(submitted));
-    expect(quickAdd.pending()).toBe(false);
   });
   it('keeps only the latest activity list response', () => {
     const initial = new Subject<{

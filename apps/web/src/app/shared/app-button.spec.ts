@@ -10,10 +10,10 @@ describe('AppButtonComponent', () => {
     fixture.componentInstance.fullWidth = true;
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button');
-    expect(button.classList.contains('danger')).toBe(true);
-    expect(button.classList.contains('full-width')).toBe(true);
+    expect(button.classList.contains('btn-error')).toBe(true);
+    expect(button.classList.contains('w-full')).toBe(true);
     expect(button.disabled).toBe(true);
     expect(button.getAttribute('aria-busy')).toBe('true');
-    expect(button.querySelector('.spinner').getAttribute('aria-hidden')).toBe('true');
+    expect(button.querySelector('.loading-spinner').getAttribute('aria-hidden')).toBe('true');
   });
 });

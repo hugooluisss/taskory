@@ -1,14 +1,14 @@
-import { Component, EventEmitter, Output, input, signal } from '@angular/core';
+import { Component, EventEmitter, Output, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ActivityFilters } from '../../core/models';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'activities-filters-bar',
   standalone: true,
-  imports: [FormsModule, TranslocoPipe],
+  imports: [FormsModule, TranslocoPipe, AppIconComponent],
   templateUrl: './activities-filters-bar.html',
-  styleUrl: './activities-filters-bar.css',
 })
 export class ActivitiesFiltersBarComponent {
   readonly projects = input<string[]>([]);
@@ -20,6 +20,9 @@ export class ActivitiesFiltersBarComponent {
   readonly tag = signal('');
   readonly q = signal('');
   readonly expanded = signal(false);
+  readonly activeCount = computed(
+    () => [this.from(), this.to(), this.project(), this.tag(), this.q()].filter(Boolean).length,
+  );
   submit(): void {
     this.apply.emit({
       from: this.from(),

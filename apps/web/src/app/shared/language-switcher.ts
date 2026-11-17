@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { AppIconComponent } from './app-icon';
 import { TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../core/services/auth.service';
 import { Language } from '../core/models';
@@ -11,9 +12,8 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-language-switcher',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './language-switcher.html',
-  styleUrl: './language-switcher.css',
 })
 export class LanguageSwitcherComponent {
   private transloco = inject(TranslocoService);

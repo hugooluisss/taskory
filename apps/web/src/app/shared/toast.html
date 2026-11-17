@@ -1,17 +1,24 @@
-<div class="toast-list" aria-live="polite">
+<div class="toast toast-end z-50" aria-live="polite">
   @for (message of toast.messages(); track message.id) {
     <div
-      class="toast"
-      [class.error]="message.kind === 'error'"
+      class="alert shadow-lg"
+      [class.alert-success]="message.kind === 'success'"
+      [class.alert-error]="message.kind === 'error'"
+      [class.alert-info]="message.kind === 'info'"
       [attr.role]="message.kind === 'error' ? 'alert' : 'status'"
     >
+      <app-icon
+        [name]="message.kind === 'error' ? 'error' : message.kind === 'success' ? 'check' : 'info'"
+      />
       <span>{{ message.message }}</span>
       <button
+        class="btn btn-ghost btn-sm btn-square"
         type="button"
         [attr.aria-label]="'common.dismiss' | transloco"
+        [attr.data-tip]="'common.dismiss' | transloco"
         (click)="toast.dismiss(message.id)"
       >
-        ×
+        <app-icon name="close" />
       </button>
     </div>
   }

@@ -3,14 +3,14 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Activity } from '../../core/models';
 import { ActivityDayGroup } from '../../core/services/activities.service';
 import { AppEmptyStateComponent } from '../../shared/app-empty-state';
+import { AppSpinnerComponent } from '../../shared/app-spinner';
 import { ActivityItemComponent } from './activity-item';
 
 @Component({
   selector: 'activities-list',
   standalone: true,
-  imports: [TranslocoPipe, AppEmptyStateComponent, ActivityItemComponent],
+  imports: [TranslocoPipe, AppEmptyStateComponent, ActivityItemComponent, AppSpinnerComponent],
   templateUrl: './activity-list.html',
-  styleUrl: './activity-list.css',
 })
 export class ActivityListComponent {
   private transloco = inject(TranslocoService);

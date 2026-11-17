@@ -3,12 +3,13 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ReportResult } from '../../core/models';
 import { ReportsService } from '../../core/services/reports.service';
 import { ToastService } from '../../shared/toast.service';
+import { AppIconComponent } from '../../shared/app-icon';
 import { AppButtonComponent } from '../../shared/app-button';
 
 @Component({
   selector: 'app-report-result',
   standalone: true,
-  imports: [TranslocoPipe, AppButtonComponent],
+  imports: [TranslocoPipe, AppButtonComponent, AppIconComponent],
   templateUrl: './report-result.html',
   styleUrl: './report-result.css',
 })

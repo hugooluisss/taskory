@@ -1,11 +1,12 @@
 import { AfterViewInit, Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { ConfirmService } from './confirm.service';
+import { AppIconComponent } from './app-icon';
 
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
+  imports: [AppIconComponent],
   templateUrl: './confirm-dialog.html',
-  styleUrl: './confirm-dialog.css',
 })
 export class ConfirmDialogComponent implements AfterViewInit {
   confirm = inject(ConfirmService);

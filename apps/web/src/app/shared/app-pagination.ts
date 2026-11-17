@@ -6,7 +6,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
   standalone: true,
   imports: [TranslocoPipe],
   templateUrl: './app-pagination.html',
-  styleUrl: './app-pagination.css',
 })
 export class AppPaginationComponent {
   @Input() page = 1;

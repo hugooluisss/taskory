@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Activity } from '../../core/models';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'activities-item',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './activity-item.html',
-  styleUrl: './activity-item.css',
 })
 export class ActivityItemComponent {
   @Input({ required: true }) activity!: Activity;

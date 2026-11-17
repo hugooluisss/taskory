@@ -1,43 +1,106 @@
-<section class="filters" aria-label="{{ 'activities.filters' | transloco }}">
-  <button
-    class="mobile-toggle"
-    type="button"
-    [attr.aria-expanded]="expanded()"
-    (click)="expanded.update((value) => !value)"
-  >
-    {{ 'activities.filters' | transloco }}
-  </button>
-  <form [class.expanded]="expanded()" (ngSubmit)="submit()">
-    <label for="filter-from">{{ 'activities.from' | transloco }}</label>
-    <input
-      id="filter-from"
-      name="from"
-      type="date"
-      [ngModel]="from()"
-      (ngModelChange)="from.set($event)"
-    />
-    <label for="filter-to">{{ 'activities.to' | transloco }}</label>
-    <input id="filter-to" name="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" />
-    <label for="filter-project">{{ 'activities.project' | transloco }}</label>
-    <select
-      id="filter-project"
-      name="project"
-      [ngModel]="project()"
-      (ngModelChange)="project.set($event)"
-    >
-      <option value="">{{ 'activities.allProjects' | transloco }}</option>
-      @for (item of projects(); track item) {
-        <option [value]="item">{{ item }}</option>
+<section
+  class="mb-6 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+  [attr.aria-label]="'activities.filters' | transloco"
+>
+  <form (ngSubmit)="submit()">
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="form-control min-w-56 flex-1" for="filter-query"
+        ><span class="label-text mb-1">{{ 'activities.search' | transloco }}</span
+        ><span class="input input-bordered flex items-center gap-2"
+          ><app-icon name="search" /><input
+            class="grow border-0 outline-none"
+            id="filter-query"
+            name="q"
+            type="search"
+            [ngModel]="q()"
+            (ngModelChange)="q.set($event)"
+          />
+          @if (q()) {
+            <button
+              class="btn btn-ghost btn-xs btn-square tooltip"
+              type="button"
+              [attr.aria-label]="'activities.clearSearch' | transloco"
+              [attr.data-tip]="'activities.clearSearch' | transloco"
+              (click)="q.set('')"
+            >
+              <app-icon name="close" />
+            </button>
+          }</span
+      ></label>
+      <button class="btn btn-primary" type="submit">
+        <app-icon name="search" />{{ 'activities.search' | transloco }}
+      </button>
+      <button
+        class="btn btn-ghost"
+        type="button"
+        aria-controls="activity-extra-filters"
+        [attr.aria-expanded]="expanded()"
+        (click)="expanded.update((value) => !value)"
+      >
+        <app-icon name="filter" /><span class="transition-transform" [class.rotate-180]="expanded()"
+          ><app-icon name="chevron" /></span
+        >{{ 'activities.moreFilters' | transloco
+        }}<span class="badge badge-primary" [class.hidden]="!activeCount()">{{
+          activeCount()
+        }}</span>
+      </button>
+      @if (activeCount()) {
+        <button class="btn btn-ghost" type="button" (click)="reset()">
+          <app-icon name="close" />{{ 'activities.clearFilters' | transloco }}
+        </button>
       }
-    </select>
-    <label for="filter-tag">{{ 'activities.tag' | transloco }}</label>
-    <input id="filter-tag" name="tag" [ngModel]="tag()" (ngModelChange)="tag.set($event)" />
-    <label for="filter-query">{{ 'activities.search' | transloco }}</label>
-    <input id="filter-query" name="q" [ngModel]="q()" (ngModelChange)="q.set($event)" />
-    <div class="actions">
-      <button type="submit">{{ 'activities.applyFilters' | transloco }}</button>
-      <button type="button" class="clear" (click)="reset()">
-        {{ 'activities.clearFilters' | transloco }}
+    </div>
+    <div
+      id="activity-extra-filters"
+      class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      [class.hidden]="!expanded()"
+    >
+      <label class="form-control"
+        ><span class="label-text mb-1">{{ 'activities.from' | transloco }}</span
+        ><input
+          class="input input-bordered"
+          id="filter-from"
+          name="from"
+          type="date"
+          [ngModel]="from()"
+          (ngModelChange)="from.set($event)"
+      /></label>
+      <label class="form-control"
+        ><span class="label-text mb-1">{{ 'activities.to' | transloco }}</span
+        ><input
+          class="input input-bordered"
+          id="filter-to"
+          name="to"
+          type="date"
+          [ngModel]="to()"
+          (ngModelChange)="to.set($event)"
+      /></label>
+      <label class="form-control"
+        ><span class="label-text mb-1">{{ 'activities.project' | transloco }}</span
+        ><select
+          class="select select-bordered"
+          id="filter-project"
+          name="project"
+          [ngModel]="project()"
+          (ngModelChange)="project.set($event)"
+        >
+          <option value="">{{ 'activities.allProjects' | transloco }}</option>
+          @for (item of projects(); track item) {
+            <option [value]="item">{{ item }}</option>
+          }
+        </select></label
+      >
+      <label class="form-control"
+        ><span class="label-text mb-1">{{ 'activities.tag' | transloco }}</span
+        ><input
+          class="input input-bordered"
+          id="filter-tag"
+          name="tag"
+          [ngModel]="tag()"
+          (ngModelChange)="tag.set($event)"
+      /></label>
+      <button class="btn btn-primary sm:col-span-2 lg:col-span-4" type="submit">
+        {{ 'activities.applyFilters' | transloco }}
       </button>
     </div>
   </form>

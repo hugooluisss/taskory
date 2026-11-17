@@ -1,24 +1,30 @@
-<label [for]="id">
-  {{ label }}
-  @if (required) {
-    <span aria-hidden="true">*</span>
-  }
-</label>
-<div class="chips" [attr.aria-describedby]="describedBy">
+<label class="label" [for]="id"
+  ><span class="label-text"
+    >{{ label }}
+    @if (required) {
+      <span aria-hidden="true">*</span>
+    }
+  </span></label
+>
+<div
+  class="input input-bordered flex h-auto min-h-12 flex-wrap gap-2 py-2"
+  [attr.aria-describedby]="describedBy"
+>
   @for (item of value(); track item) {
-    <span class="chip">
-      {{ item }}
-      <button
+    <span class="badge badge-outline gap-1"
+      >{{ item
+      }}<button
+        class="btn btn-ghost btn-xs"
         type="button"
         [disabled]="disabled()"
         [attr.aria-label]="'shared.removeItem' | transloco: { item: item }"
         (click)="remove(item)"
       >
-        ×
-      </button>
-    </span>
+        <app-icon name="close" /></button
+    ></span>
   }
   <input
+    class="min-w-32 flex-1 border-0 outline-none"
     [id]="id"
     [value]="inputValue()"
     [disabled]="disabled() || value().length >= maxItems"
@@ -32,5 +38,11 @@
   />
 </div>
 @if (hint || visibleError) {
-  <small [id]="id + '-help'" aria-live="polite">{{ visibleError || hint }}</small>
+  <small
+    class="label-text-alt"
+    [class.text-error]="visibleError"
+    [id]="id + '-help'"
+    aria-live="polite"
+    >{{ visibleError || hint }}</small
+  >
 }

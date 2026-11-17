@@ -1,45 +1,66 @@
-<article class="activity">
-  <div class="heading">
-    <h3>{{ activity.title }}</h3>
-    <div class="actions">
-      <button type="button" (click)="edit.emit(activity)">
-        {{ 'activities.edit' | transloco }}
-      </button>
-      <button type="button" class="delete" (click)="remove.emit(activity)">
-        {{ 'activities.delete' | transloco }}
-      </button>
+<article class="card mb-3 border border-base-300 bg-base-100 shadow-sm">
+  <div class="card-body gap-3 p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <h3 class="card-title text-lg">{{ activity.title }}</h3>
+      <div class="flex gap-1">
+        <button
+          class="btn btn-ghost btn-sm tooltip"
+          type="button"
+          [attr.aria-label]="'activities.edit' | transloco"
+          [attr.data-tip]="'activities.edit' | transloco"
+          (click)="edit.emit(activity)"
+        >
+          <app-icon name="edit" />{{ 'activities.edit' | transloco }}</button
+        ><button
+          class="btn btn-ghost btn-sm text-error tooltip"
+          type="button"
+          [attr.aria-label]="'activities.delete' | transloco"
+          [attr.data-tip]="'activities.delete' | transloco"
+          (click)="remove.emit(activity)"
+        >
+          <app-icon name="delete" />{{ 'activities.delete' | transloco }}
+        </button>
+      </div>
     </div>
-  </div>
-  @if (activity.project) {
-    <span class="project">{{ activity.project }}</span>
-  }
-  @if (activity.tags.length) {
-    <ul class="tags" [attr.aria-label]="'activities.tags' | transloco">
+    <div class="flex flex-wrap items-center gap-2">
+      @if (activity.project) {
+        <span class="badge badge-primary badge-outline">{{ activity.project }}</span>
+      }
       @for (tag of activity.tags; track tag) {
-        <li>{{ tag }}</li>
+        <span class="badge badge-secondary badge-outline">{{ tag }}</span>
       }
-    </ul>
-  }
-  @if (activity.description) {
-    <button
-      class="description-toggle"
-      type="button"
-      [attr.aria-expanded]="expanded()"
-      (click)="expanded.update((value) => !value)"
-    >
-      {{ (expanded() ? 'activities.hideDescription' : 'activities.showDescription') | transloco }}
-    </button>
-    @if (expanded()) {
-      <p>{{ activity.description }}</p>
+    </div>
+    @if (activity.description) {
+      <button
+        class="btn btn-ghost btn-sm w-fit"
+        type="button"
+        [attr.aria-expanded]="expanded()"
+        (click)="expanded.update((value) => !value)"
+      >
+        <span class="transition-transform" [class.rotate-180]="expanded()"
+          ><app-icon name="chevron" /></span
+        >{{
+          (expanded() ? 'activities.hideDescription' : 'activities.showDescription') | transloco
+        }}
+      </button>
+      @if (expanded()) {
+        <p class="whitespace-pre-wrap">{{ activity.description }}</p>
+      }
     }
-  }
-  @if (activity.referenceUrls.length) {
-    <ul class="links" [attr.aria-label]="'activities.referenceUrls' | transloco">
-      @for (url of activity.referenceUrls; track $index) {
-        <li>
-          <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
-        </li>
-      }
-    </ul>
-  }
+    @if (activity.referenceUrls.length) {
+      <ul class="flex flex-wrap gap-2" [attr.aria-label]="'activities.referenceUrls' | transloco">
+        @for (url of activity.referenceUrls; track $index) {
+          <li>
+            <a
+              class="link link-primary inline-flex items-center gap-1 break-all"
+              [href]="url"
+              target="_blank"
+              rel="noopener noreferrer"
+              ><app-icon name="external" />{{ url }}</a
+            >
+          </li>
+        }
+      </ul>
+    }
+  </div>
 </article>

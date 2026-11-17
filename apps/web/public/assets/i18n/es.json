@@ -14,7 +14,8 @@
     "reports": "Informes",
     "settings": "Ajustes",
     "consent": "Conectar asistente",
-    "label": "Navegación principal"
+    "label": "Navegación principal",
+    "menu": "Abrir menú de navegación"
   },
   "auth": {
     "loginTitle": "Inicia sesión",

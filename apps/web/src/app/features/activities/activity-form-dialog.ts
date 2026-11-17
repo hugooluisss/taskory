@@ -14,13 +14,19 @@ import { Activity } from '../../core/models';
 import { ActivityFormValue, ActivitiesService } from '../../core/services/activities.service';
 import { AppChipsInputComponent } from '../../shared/app-chips-input';
 import { AppTextareaComponent } from '../../shared/app-textarea';
+import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'activities-form-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, TranslocoPipe, AppChipsInputComponent, AppTextareaComponent],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    AppChipsInputComponent,
+    AppTextareaComponent,
+    AppIconComponent,
+  ],
   templateUrl: './activity-form-dialog.html',
-  styleUrl: './activity-form-dialog.css',
 })
 export class ActivityFormDialogComponent {
   private activities = inject(ActivitiesService);

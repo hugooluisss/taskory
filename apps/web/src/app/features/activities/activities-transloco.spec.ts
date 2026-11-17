@@ -54,18 +54,14 @@ describe('Activity management', () => {
     expect(fixture.nativeElement.querySelector('app-page-header h1').textContent).toContain(
       'Activities',
     );
-    expect(fixture.nativeElement.querySelector('.visually-hidden').textContent).toContain(
-      '0 activities',
-    );
+    expect(fixture.nativeElement.querySelector('.sr-only').textContent).toContain('0 activities');
 
     TestBed.inject(TranslocoService).setActiveLang('es');
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('app-page-header h1').textContent).toContain(
       'Actividades',
     );
-    expect(fixture.nativeElement.querySelector('.visually-hidden').textContent).toContain(
-      '0 actividades',
-    );
+    expect(fixture.nativeElement.querySelector('.sr-only').textContent).toContain('0 actividades');
     fixture.destroy();
   });
 });

@@ -14,7 +14,8 @@
     "reports": "Reports",
     "settings": "Settings",
     "consent": "Connect assistant",
-    "label": "Main navigation"
+    "label": "Main navigation",
+    "menu": "Open navigation menu"
   },
   "auth": {
     "loginTitle": "Sign in",

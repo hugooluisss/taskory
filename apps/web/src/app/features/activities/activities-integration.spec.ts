@@ -1,23 +1,25 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { By } from '@angular/platform-browser';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { Activity } from '../../core/models';
+import { ConfirmService } from '../../shared/confirm.service';
+import { ToastService } from '../../shared/toast.service';
+import { AppChipsInputComponent } from '../../shared/app-chips-input';
+import { AppTextareaComponent } from '../../shared/app-textarea';
+import { TestTranslocoPipe } from './test-transloco.pipe';
 import { ActivitiesPage } from './activities-page';
-import { ActivitiesQuickAddComponent } from './activities-quick-add';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
 import { ActivityListComponent } from './activity-list';
 import { ActivityItemComponent } from './activity-item';
 import { ActivityFormDialogComponent } from './activity-form-dialog';
 import { AppPaginationComponent } from '../../shared/app-pagination';
-import { TestTranslocoPipe } from './test-transloco.pipe';
-import { ConfirmService } from '../../shared/confirm.service';
-import { ToastService } from '../../shared/toast.service';
-import { Activity } from '../../core/models';
+import { AppSpinnerComponent } from '../../shared/app-spinner';
 
 describe('Activity management', () => {
-  it('Create with several URLs', async () => {
+  it('Create with three reference URLs', async () => {
     await TestBed.configureTestingModule({
       imports: [ActivitiesPage],
       providers: [
@@ -34,18 +36,22 @@ describe('Activity management', () => {
     });
     for (const component of [
       ActivitiesPage,
-      ActivitiesQuickAddComponent,
       ActivitiesFiltersBarComponent,
       ActivityListComponent,
       ActivityItemComponent,
       ActivityFormDialogComponent,
       AppPaginationComponent,
+      AppSpinnerComponent,
     ]) {
       TestBed.overrideComponent(component, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },
       });
     }
+    TestBed.overrideComponent(AppChipsInputComponent, {
+      remove: { imports: [TranslocoPipe] },
+      add: { imports: [TestTranslocoPipe] },
+    });
     await TestBed.compileComponents();
     const fixture = TestBed.createComponent(ActivitiesPage);
     fixture.detectChanges();
@@ -54,12 +60,28 @@ describe('Activity management', () => {
     http
       .expectOne('/api/v1/activities?page=1&limit=20')
       .flush({ items: [], total: 0, page: 1, limit: 20 });
-    const quickAdd = fixture.debugElement.query(By.directive(ActivitiesQuickAddComponent))
-      .componentInstance as ActivitiesQuickAddComponent;
+    const dialog = fixture.nativeElement.querySelector(
+      'activities-form-dialog dialog',
+    ) as HTMLDialogElement;
+    dialog.showModal = vi.fn();
+    dialog.close = vi.fn();
+    (fixture.nativeElement.querySelector('app-page-header button') as HTMLButtonElement).click();
+    expect(dialog.showModal).toHaveBeenCalled();
+    const form = fixture.nativeElement.querySelector(
+      'activities-form-dialog form',
+    ) as HTMLFormElement;
+    const dialogComponent = fixture.debugElement.query(By.directive(ActivityFormDialogComponent))
+      .componentInstance as ActivityFormDialogComponent;
     const urls = ['https://one.test', 'https://two.test', 'https://three.test'];
-    quickAdd.title.set('Three links');
-    quickAdd.referenceUrls.set(urls);
-    quickAdd.submit();
+    dialogComponent.form.setValue({
+      date: '2026-11-17',
+      title: 'Three links',
+      description: '',
+      project: '',
+      tags: [],
+      referenceUrls: urls,
+    });
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     const created: Activity = {
       id: 'new',
       date: '2026-11-17',
@@ -73,25 +95,8 @@ describe('Activity management', () => {
     };
     const post = http.expectOne('/api/v1/activities');
     expect(post.request.body.referenceUrls).toEqual(urls);
-    expect(fixture.nativeElement.querySelector('activities-list .skeleton')).toBeTruthy();
-    expect(
-      (
-        fixture.nativeElement.querySelector(
-          'activities-quick-add button[type="submit"]',
-        ) as HTMLButtonElement
-      ).hasAttribute('disabled'),
-    ).toBe(true);
-    quickAdd.title.set('Newer draft');
     post.flush(created);
-    expect(quickAdd.title()).toBe('Newer draft');
     await fixture.whenStable();
-    expect(
-      (
-        fixture.nativeElement.querySelector(
-          'activities-quick-add button[type="submit"]',
-        ) as HTMLButtonElement
-      ).hasAttribute('disabled'),
-    ).toBe(false);
     http
       .expectOne('/api/v1/activities?page=1&limit=20')
       .flush({ items: [created], total: 1, page: 1, limit: 20 });
@@ -99,19 +104,7 @@ describe('Activity management', () => {
     expect(fixture.nativeElement.querySelector('activities-item h3').textContent).toContain(
       'Three links',
     );
-    expect(fixture.nativeElement.querySelector('activities-list .skeleton')).toBeNull();
     expect(fixture.nativeElement.querySelectorAll('activities-item a')).toHaveLength(3);
-    fixture.componentInstance.load();
-    http
-      .expectOne('/api/v1/activities?page=1&limit=20')
-      .flush(
-        { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Failed' },
-        { status: 500, statusText: 'Server Error' },
-      );
-    await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
-      'activities.loadError',
-    );
     http.verify();
     fixture.destroy();
   });

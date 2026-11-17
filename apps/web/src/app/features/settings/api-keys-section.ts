@@ -2,12 +2,13 @@ import { DatePipe, NgFor, NgIf } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiKey } from '../../core/models';
+import { AppIconComponent } from '../../shared/app-icon';
 import '../../core/i18n/date-locales';
 
 @Component({
   selector: 'app-api-keys-section',
   standalone: true,
-  imports: [DatePipe, NgFor, NgIf, TranslocoPipe],
+  imports: [DatePipe, NgFor, NgIf, TranslocoPipe, AppIconComponent],
   templateUrl: './api-keys-section.html',
   styleUrl: './api-keys-section.css',
 })

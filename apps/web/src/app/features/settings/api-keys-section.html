@@ -1,6 +1,6 @@
 <details>
   <summary>{{ 'settings.advanced' | transloco }}</summary>
-  <h2>{{ 'settings.keys' | transloco }}</h2>
+  <h2><app-icon name="key" />{{ 'settings.keys' | transloco }}</h2>
   <label for="key-name">{{ 'settings.keyName' | transloco }}</label>
   <input
     id="key-name"
@@ -16,7 +16,9 @@
   <div class="secret" *ngIf="newKey">
     <p>{{ 'settings.newKey' | transloco }}</p>
     <code>{{ newKey }}</code>
-    <button type="button" (click)="copy.emit(newKey)">{{ 'settings.copy' | transloco }}</button>
+    <button type="button" (click)="copy.emit(newKey)">
+      <app-icon name="copy" />{{ 'settings.copy' | transloco }}
+    </button>
     <button type="button" (click)="dismiss.emit()">{{ 'settings.dismissKey' | transloco }}</button>
   </div>
   <p>{{ 'settings.clients' | transloco }}</p>

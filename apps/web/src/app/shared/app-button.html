@@ -1,12 +1,16 @@
 <button
   [type]="type"
-  [class]="variant"
-  [class.full-width]="fullWidth"
+  class="btn"
+  [class.btn-primary]="variant === 'primary'"
+  [class.btn-secondary]="variant === 'secondary'"
+  [class.btn-error]="variant === 'danger'"
+  [class.btn-ghost]="variant === 'ghost'"
+  [class.w-full]="fullWidth"
   [disabled]="disabled || loading"
   [attr.aria-busy]="loading"
 >
   @if (loading) {
-    <span class="spinner" aria-hidden="true"></span>
+    <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
   }
   <ng-content />
 </button>

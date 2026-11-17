@@ -1,15 +1,15 @@
 import { Component, Input, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { AppIconComponent } from './app-icon';
 
 export type ChipValidator = (value: string) => boolean;
 let nextChipsId = 0;
 @Component({
   selector: 'app-chips-input',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './app-chips-input.html',
-  styleUrl: './app-chips-input.css',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

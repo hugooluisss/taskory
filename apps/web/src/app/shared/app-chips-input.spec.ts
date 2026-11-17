@@ -48,7 +48,7 @@ describe('AppChipsInputComponent', () => {
     component.add(['second', 'third']);
     expect(control.value).toEqual(['first', 'second,third', 'second', 'third']);
     fixture.detectChanges();
-    const removeButton = fixture.nativeElement.querySelector('.chip button');
+    const removeButton = fixture.nativeElement.querySelector('.badge button');
     removeButton.click();
     expect(control.value).toEqual(['second,third', 'second', 'third']);
     const input = fixture.nativeElement.querySelector('input#reactive-tags');

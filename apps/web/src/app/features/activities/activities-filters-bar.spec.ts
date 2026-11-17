@@ -3,8 +3,29 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
 
-describe('Activity management', () => {
-  it('emits optional filters and can clear them', async () => {
+describe('Activity filters', () => {
+  it('Expand and collapse additional filters', async () => {
+    await TestBed.configureTestingModule({ imports: [ActivitiesFiltersBarComponent] })
+      .overrideComponent(ActivitiesFiltersBarComponent, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
+      .compileComponents();
+    const fixture = TestBed.createComponent(ActivitiesFiltersBarComponent);
+    fixture.detectChanges();
+    const toggle = fixture.nativeElement.querySelector(
+      '[aria-controls="activity-extra-filters"]',
+    ) as HTMLButtonElement;
+    const extra = fixture.nativeElement.querySelector('#activity-extra-filters') as HTMLDivElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(extra.classList.contains('hidden')).toBe(true);
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(extra.classList.contains('hidden')).toBe(false);
+  });
+
+  it('Clear active filters', async () => {
     await TestBed.configureTestingModule({ imports: [ActivitiesFiltersBarComponent] })
       .overrideComponent(ActivitiesFiltersBarComponent, {
         remove: { imports: [TranslocoPipe] },
@@ -13,13 +34,14 @@ describe('Activity management', () => {
       .compileComponents();
     const fixture = TestBed.createComponent(ActivitiesFiltersBarComponent);
     const component = fixture.componentInstance;
-    const apply = vi.spyOn(component.apply, 'emit');
-    const clear = vi.spyOn(component.clear, 'emit');
+    const clear = vi.fn();
+    component.clear.subscribe(clear);
     fixture.detectChanges();
-    component.from.set('2026-11-01');
-    component.submit();
-    expect(apply).toHaveBeenCalledWith({ from: '2026-11-01', to: '', project: '', tag: '', q: '' });
+    component.q.set('planning');
+    fixture.detectChanges();
+    expect(component.activeCount()).toBe(1);
     component.reset();
+    expect(component.activeCount()).toBe(0);
     expect(clear).toHaveBeenCalled();
   });
 });

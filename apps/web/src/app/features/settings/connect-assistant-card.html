@@ -3,7 +3,9 @@
   <label for="server-address">{{ 'settings.serverAddress' | transloco }}</label>
   <div class="address-row">
     <input id="server-address" readonly [value]="serverUrl" />
-    <button type="button" (click)="copy.emit(serverUrl)">{{ 'settings.copy' | transloco }}</button>
+    <button type="button" (click)="copy.emit(serverUrl)">
+      <app-icon name="copy" />{{ 'settings.copy' | transloco }}
+    </button>
   </div>
   <ol>
     <li>{{ 'settings.stepOne' | transloco }}</li>

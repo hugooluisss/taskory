@@ -6,11 +6,11 @@ import { ActivityFormValue, ActivitiesService } from '../../core/services/activi
 import { ConfirmService } from '../../shared/confirm.service';
 import { ToastService } from '../../shared/toast.service';
 import { AppPageHeaderComponent } from '../../shared/app-page-header';
+import { AppIconComponent } from '../../shared/app-icon';
 import { AppPaginationComponent } from '../../shared/app-pagination';
 import { ActivityFormDialogComponent } from './activity-form-dialog';
 import { ActivityListComponent } from './activity-list';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
-import { ActivitiesQuickAddComponent } from './activities-quick-add';
 
 const PAGE_LIMIT = 20;
 
@@ -20,11 +20,11 @@ const PAGE_LIMIT = 20;
   imports: [
     TranslocoPipe,
     AppPageHeaderComponent,
+    AppIconComponent,
     AppPaginationComponent,
     ActivityFormDialogComponent,
     ActivityListComponent,
     ActivitiesFiltersBarComponent,
-    ActivitiesQuickAddComponent,
   ],
   providers: [provideTranslocoScope('activities')],
   templateUrl: './activities-page.html',
@@ -36,7 +36,6 @@ export class ActivitiesPage {
   private toast = inject(ToastService);
   private transloco = inject(TranslocoService);
   private destroyRef = inject(DestroyRef);
-  @ViewChild(ActivitiesQuickAddComponent) private quickAdd!: ActivitiesQuickAddComponent;
   @ViewChild(ActivityFormDialogComponent) private formDialog!: ActivityFormDialogComponent;
   readonly items = signal<Activity[]>([]);
   readonly groups = signal(this.activities.groupByDay([]));
@@ -104,25 +103,8 @@ export class ActivitiesPage {
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     });
   }
-  create(value: ActivityFormValue): void {
-    const snapshot = {
-      ...value,
-      tags: [...(value.tags ?? [])],
-      referenceUrls: [...(value.referenceUrls ?? [])],
-    };
-    this.quickAdd.pending.set(true);
-    this.activities.create(value).subscribe({
-      next: () => {
-        this.quickAdd.clearIfUnchanged(snapshot);
-        this.quickAdd.pending.set(false);
-        this.toast.success(this.transloco.translate('activities.created'));
-        this.load();
-      },
-      error: () => {
-        this.quickAdd.pending.set(false);
-        this.toast.error(this.transloco.translate('activities.saveError'));
-      },
-    });
+  create(): void {
+    this.formDialog.open();
   }
   edit(activity: Activity): void {
     this.formDialog.open(activity);
@@ -134,7 +116,9 @@ export class ActivitiesPage {
     request.subscribe({
       next: () => {
         this.formDialog.close();
-        this.toast.success(this.transloco.translate('activities.saved'));
+        this.toast.success(
+          this.transloco.translate(event.id ? 'activities.saved' : 'activities.created'),
+        );
         this.load();
       },
       error: () => this.formDialog.saveFailed(),

@@ -1,10 +1,11 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AppIconComponent } from '../../shared/app-icon';
 import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-connect-assistant-card',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, AppIconComponent],
   templateUrl: './connect-assistant-card.html',
   styleUrl: './connect-assistant-card.css',
 })
