@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Language } from '../../core/models';
@@ -12,17 +12,17 @@ import { Language } from '../../core/models';
   styleUrl: './profile-section.css',
 })
 export class ProfileSectionComponent {
-  @Input() name = '';
-  @Input() language: Language = 'en';
+  readonly name = model('');
+  readonly language = model<Language>('en');
   @Input() saving = false;
   @Output() save = new EventEmitter<{ name: string; language: Language }>();
-  submitted = false;
+  readonly submitted = signal(false);
   get nameInvalid(): boolean {
-    return !this.name.trim();
+    return !this.name().trim();
   }
   submit(): void {
-    this.submitted = true;
+    this.submitted.set(true);
     if (this.nameInvalid || this.saving) return;
-    this.save.emit({ name: this.name.trim(), language: this.language });
+    this.save.emit({ name: this.name().trim(), language: this.language() });
   }
 }

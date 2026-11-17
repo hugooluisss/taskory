@@ -2,9 +2,11 @@
   <div class="heading">
     <h3>{{ activity.title }}</h3>
     <div class="actions">
-      <button type="button" (click)="edit.emit(activity)">{{ 'edit' | transloco }}</button>
+      <button type="button" (click)="edit.emit(activity)">
+        {{ 'activities.edit' | transloco }}
+      </button>
       <button type="button" class="delete" (click)="remove.emit(activity)">
-        {{ 'delete' | transloco }}
+        {{ 'activities.delete' | transloco }}
       </button>
     </div>
   </div>
@@ -12,7 +14,7 @@
     <span class="project">{{ activity.project }}</span>
   }
   @if (activity.tags.length) {
-    <ul class="tags" [attr.aria-label]="'tags' | transloco">
+    <ul class="tags" [attr.aria-label]="'activities.tags' | transloco">
       @for (tag of activity.tags; track tag) {
         <li>{{ tag }}</li>
       }
@@ -22,17 +24,17 @@
     <button
       class="description-toggle"
       type="button"
-      [attr.aria-expanded]="expanded"
-      (click)="expanded = !expanded"
+      [attr.aria-expanded]="expanded()"
+      (click)="expanded.update((value) => !value)"
     >
-      {{ (expanded ? 'hideDescription' : 'showDescription') | transloco }}
+      {{ (expanded() ? 'activities.hideDescription' : 'activities.showDescription') | transloco }}
     </button>
-    @if (expanded) {
+    @if (expanded()) {
       <p>{{ activity.description }}</p>
     }
   }
   @if (activity.referenceUrls.length) {
-    <ul class="links" [attr.aria-label]="'referenceUrls' | transloco">
+    <ul class="links" [attr.aria-label]="'activities.referenceUrls' | transloco">
       @for (url of activity.referenceUrls; track $index) {
         <li>
           <a [href]="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>

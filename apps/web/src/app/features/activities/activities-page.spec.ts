@@ -1,3 +1,4 @@
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { of } from 'rxjs';
@@ -32,7 +33,7 @@ describe('Activity management', () => {
   };
   let ask: ReturnType<typeof vi.fn>;
   let page: ActivitiesPage;
-  let quickAdd: { pending: boolean; clearIfUnchanged: ReturnType<typeof vi.fn> };
+  let quickAdd: { pending: WritableSignal<boolean>; clearIfUnchanged: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     repositoryService = {
       list: vi.fn(() => of({ items: [activity], total: 1, page: 1, limit: 20 })),
@@ -60,7 +61,7 @@ describe('Activity management', () => {
       ],
     });
     page = TestBed.runInInjectionContext(() => new ActivitiesPage());
-    quickAdd = { pending: false, clearIfUnchanged: vi.fn() };
+    quickAdd = { pending: signal(false), clearIfUnchanged: vi.fn() };
     (page as unknown as { quickAdd: typeof quickAdd }).quickAdd = quickAdd;
   });
   it('Create with several URLs', () => {
@@ -79,10 +80,10 @@ describe('Activity management', () => {
       referenceUrls: ['https://a.test', 'https://b.test', 'https://c.test'],
     };
     page.create(submitted);
-    expect(quickAdd.pending).toBe(true);
+    expect(quickAdd.pending()).toBe(true);
     response.next(activity);
     expect(quickAdd.clearIfUnchanged).toHaveBeenCalledWith(expect.objectContaining(submitted));
-    expect(quickAdd.pending).toBe(false);
+    expect(quickAdd.pending()).toBe(false);
   });
   it('keeps only the latest activity list response', () => {
     const initial = new Subject<{
@@ -97,8 +98,8 @@ describe('Activity management', () => {
     page.applyFilters({ q: 'latest' });
     newer.next({ items: [activity], total: 1, page: 1, limit: 20 });
     initial.next({ items: [], total: 0, page: 1, limit: 20 });
-    expect(page.items).toEqual([activity]);
-    expect(page.loading).toBe(false);
+    expect(page.items()).toEqual([activity]);
+    expect(page.loading()).toBe(false);
   });
   it('Delete confirmation', async () => {
     await page.remove(activity);
@@ -118,7 +119,7 @@ describe('Activity management', () => {
     const calls = repositoryService.list.mock.calls.length;
     page.applyFilters({ from: '2026-11-20', to: '2026-11-01' });
     expect(repositoryService.list).toHaveBeenCalledTimes(calls);
-    expect(page.error).toBe('invalidRange');
+    expect(page.error()).toBe('activities.invalidRange');
   });
   it('Pagination keeps filters and scrolls to the top', () => {
     page.applyFilters({ q: 'docs', project: 'Taskory' });

@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef } from '@angular/core';
+import { Component, Input, forwardRef, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 
@@ -29,20 +29,20 @@ export class AppChipsInputComponent implements ControlValueAccessor {
   @Input() maxLength = 50;
   @Input() mode: 'tags' | 'urls' = 'tags';
   @Input() validator: ChipValidator | null = null;
-  value: string[] = [];
-  inputValue = '';
-  disabled = false;
-  touched = false;
+  readonly value = signal<string[]>([]);
+  readonly inputValue = signal('');
+  readonly disabled = signal(false);
+  readonly touched = signal(false);
   private onChange: (value: string[]) => void = () => undefined;
   private onTouched: () => void = () => undefined;
   get visibleError(): string {
-    return this.touched || this.submitted ? this.error : '';
+    return this.touched() || this.submitted ? this.error : '';
   }
   get describedBy(): string | null {
     return this.hint || this.visibleError ? `${this.id}-help` : null;
   }
   writeValue(value: string[] | null): void {
-    this.value = value ? [...value] : [];
+    this.value.set(value ? [...value] : []);
   }
   registerOnChange(fn: (value: string[]) => void): void {
     this.onChange = fn;
@@ -51,20 +51,20 @@ export class AppChipsInputComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
   setDisabledState(disabled: boolean): void {
-    this.disabled = disabled;
+    this.disabled.set(disabled);
   }
   addOnKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ',') {
       event.preventDefault();
-      this.add([this.inputValue]);
-      this.inputValue = '';
-    } else if (event.key === 'Backspace' && !this.inputValue && this.value.length) {
-      this.remove(this.value[this.value.length - 1]);
+      this.add([this.inputValue()]);
+      this.inputValue.set('');
+    } else if (event.key === 'Backspace' && !this.inputValue() && this.value().length) {
+      this.remove(this.value()[this.value().length - 1]);
     }
   }
   addOnBlur(): void {
-    this.add([this.inputValue]);
-    this.inputValue = '';
+    this.add([this.inputValue()]);
+    this.inputValue.set('');
     this.markTouched();
   }
   paste(event: ClipboardEvent): void {
@@ -74,7 +74,7 @@ export class AppChipsInputComponent implements ControlValueAccessor {
     this.add(text.split(/[\n,]+/));
   }
   add(values: string[]): void {
-    const next = [...this.value];
+    const next = [...this.value()];
     for (const raw of values) {
       const value = this.normalize(raw);
       if (
@@ -90,10 +90,10 @@ export class AppChipsInputComponent implements ControlValueAccessor {
     this.update(next);
   }
   remove(value: string): void {
-    this.update(this.value.filter((item) => item !== value));
+    this.update(this.value().filter((item) => item !== value));
   }
   markTouched(): void {
-    this.touched = true;
+    this.touched.set(true);
     this.onTouched();
   }
   private normalize(value: string): string {
@@ -117,7 +117,7 @@ export class AppChipsInputComponent implements ControlValueAccessor {
     );
   }
   private update(value: string[]): void {
-    this.value = value;
+    this.value.set(value);
     this.onChange(value);
   }
 }

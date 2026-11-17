@@ -72,14 +72,14 @@ describe('AppChipsInputComponent', () => {
     const component = fixture.debugElement.queryAll(By.directive(AppChipsInputComponent))[2]
       .componentInstance as AppChipsInputComponent;
     component.add(['https://good.test', 'javascript:bad', 'ftp://bad.test']);
-    expect(component.value).toEqual(['https://good.test']);
+    expect(component.value()).toEqual(['https://good.test']);
     component.maxItems = 1;
     component.add(['https://next.test']);
-    expect(component.value).toEqual(['https://good.test']);
+    expect(component.value()).toEqual(['https://good.test']);
     component.maxLength = 3;
     component.mode = 'tags';
     component.add(['longer']);
-    expect(component.value).toEqual(['https://good.test']);
+    expect(component.value()).toEqual(['https://good.test']);
   });
   it('adds comma-separated and blur values, and respects a custom validator', async () => {
     await TestBed.configureTestingModule({ imports: [AppChipsInputTestHost] })
@@ -91,15 +91,15 @@ describe('AppChipsInputComponent', () => {
     const fixture = TestBed.createComponent(AppChipsInputTestHost);
     const component = fixture.debugElement.queryAll(By.directive(AppChipsInputComponent))[1]
       .componentInstance as AppChipsInputComponent;
-    component.inputValue = 'valid';
+    component.inputValue.set('valid');
     component.addOnKey(new KeyboardEvent('keydown', { key: ',' }));
-    expect(component.value).toEqual(['valid']);
+    expect(component.value()).toEqual(['valid']);
     component.validator = (value) => value.startsWith('ok');
     component.add(['invalid', 'ok-value']);
-    expect(component.value).toEqual(['valid', 'ok-value']);
-    component.inputValue = 'ok-blur';
+    expect(component.value()).toEqual(['valid', 'ok-value']);
+    component.inputValue.set('ok-blur');
     component.addOnBlur();
-    expect(component.value).toEqual(['valid', 'ok-value', 'ok-blur']);
+    expect(component.value()).toEqual(['valid', 'ok-value', 'ok-blur']);
   });
   it('reflects disabled and touched validation accessibly', async () => {
     await TestBed.configureTestingModule({ imports: [AppChipsInputTestHost] })

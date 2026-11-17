@@ -2,10 +2,11 @@ import {
   Component,
   ElementRef,
   EventEmitter,
-  Input,
   Output,
   ViewChild,
   inject,
+  input,
+  signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -23,7 +24,7 @@ import { AppTextareaComponent } from '../../shared/app-textarea';
 })
 export class ActivityFormDialogComponent {
   private activities = inject(ActivitiesService);
-  @Input() projects: string[] = [];
+  readonly projects = input<string[]>([]);
   @ViewChild('dialog', { static: true }) private dialog!: ElementRef<HTMLDialogElement>;
   @Output() saveActivity = new EventEmitter<{ id?: string; value: ActivityFormValue }>();
   form = new FormGroup({
@@ -37,17 +38,17 @@ export class ActivityFormDialogComponent {
     tags: new FormControl<string[]>([], { nonNullable: true }),
     referenceUrls: new FormControl<string[]>([], { nonNullable: true }),
   });
-  currentId?: string;
-  saving = false;
-  submitted = false;
-  error = '';
+  readonly currentId = signal<string | undefined>(undefined);
+  readonly saving = signal(false);
+  readonly submitted = signal(false);
+  readonly error = signal('');
   private opener: HTMLElement | null = null;
   open(activity?: Activity): void {
     this.opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    this.currentId = activity?.id;
-    this.submitted = false;
-    this.saving = false;
-    this.error = '';
+    this.currentId.set(activity?.id);
+    this.submitted.set(false);
+    this.saving.set(false);
+    this.error.set('');
     this.form.reset({
       date: activity?.date ?? this.activities.todayLocal(),
       title: activity?.title ?? '',
@@ -60,34 +61,36 @@ export class ActivityFormDialogComponent {
     queueMicrotask(() => this.dialog.nativeElement.querySelector<HTMLElement>('input')?.focus());
   }
   submit(): void {
-    this.submitted = true;
+    this.submitted.set(true);
     this.form.markAllAsTouched();
-    if (this.form.invalid || this.saving) return;
-    this.saving = true;
-    this.error = '';
-    this.saveActivity.emit({ id: this.currentId, value: this.form.getRawValue() });
+    if (this.form.invalid || this.saving()) return;
+    this.saving.set(true);
+    this.error.set('');
+    this.saveActivity.emit({ id: this.currentId(), value: this.form.getRawValue() });
   }
   saveFailed(): void {
-    this.saving = false;
-    this.error = 'saveError';
+    this.saving.set(false);
+    this.error.set('activities.saveError');
   }
   close(): void {
     this.dialog.nativeElement.close();
-    this.saving = false;
+    this.saving.set(false);
     this.opener?.focus();
     this.opener = null;
   }
   get titleError(): string {
     const control = this.form.controls.title;
-    if (!control.touched && !this.submitted) return '';
+    if (!control.touched && !this.submitted()) return '';
     return control.hasError('required')
-      ? 'required'
+      ? 'activities.required'
       : control.hasError('maxlength')
-        ? 'titleTooLong'
+        ? 'activities.titleTooLong'
         : '';
   }
   get dateError(): string {
     const control = this.form.controls.date;
-    return (control.touched || this.submitted) && control.hasError('required') ? 'required' : '';
+    return (control.touched || this.submitted()) && control.hasError('required')
+      ? 'activities.required'
+      : '';
   }
 }

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Activity } from '../../core/models';
 
@@ -13,5 +13,5 @@ export class ActivityItemComponent {
   @Input({ required: true }) activity!: Activity;
   @Output() edit = new EventEmitter<Activity>();
   @Output() remove = new EventEmitter<Activity>();
-  expanded = false;
+  readonly expanded = signal(false);
 }

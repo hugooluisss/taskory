@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Output, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ActivityFilters } from '../../core/models';
@@ -11,30 +11,30 @@ import { ActivityFilters } from '../../core/models';
   styleUrl: './activities-filters-bar.css',
 })
 export class ActivitiesFiltersBarComponent {
-  @Input() projects: string[] = [];
+  readonly projects = input<string[]>([]);
   @Output() apply = new EventEmitter<ActivityFilters>();
   @Output() clear = new EventEmitter<void>();
-  from = '';
-  to = '';
-  project = '';
-  tag = '';
-  q = '';
-  expanded = false;
+  readonly from = signal('');
+  readonly to = signal('');
+  readonly project = signal('');
+  readonly tag = signal('');
+  readonly q = signal('');
+  readonly expanded = signal(false);
   submit(): void {
     this.apply.emit({
-      from: this.from,
-      to: this.to,
-      project: this.project,
-      tag: this.tag,
-      q: this.q,
+      from: this.from(),
+      to: this.to(),
+      project: this.project(),
+      tag: this.tag(),
+      q: this.q(),
     });
   }
   reset(): void {
-    this.from = '';
-    this.to = '';
-    this.project = '';
-    this.tag = '';
-    this.q = '';
+    this.from.set('');
+    this.to.set('');
+    this.project.set('');
+    this.tag.set('');
+    this.q.set('');
     this.clear.emit();
   }
 }

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe, TranslocoService, provideTranslocoScope } from '@jsverse/transloco';
 import { Activity, ActivityFilters, Paginated } from '../../core/models';
@@ -38,62 +38,66 @@ export class ActivitiesPage {
   private destroyRef = inject(DestroyRef);
   @ViewChild(ActivitiesQuickAddComponent) private quickAdd!: ActivitiesQuickAddComponent;
   @ViewChild(ActivityFormDialogComponent) private formDialog!: ActivityFormDialogComponent;
-  items: Activity[] = [];
-  groups = this.activities.groupByDay([]);
-  total = 0;
-  page = 1;
-  pages = 1;
-  loading = true;
-  error = '';
+  readonly items = signal<Activity[]>([]);
+  readonly groups = signal(this.activities.groupByDay([]));
+  readonly total = signal(0);
+  readonly page = signal(1);
+  readonly pages = signal(1);
+  readonly loading = signal(true);
+  readonly error = signal('');
   private requestId = 0;
-  filters: ActivityFilters = { limit: PAGE_LIMIT };
-  projects: string[] = [];
+  readonly filters = signal<ActivityFilters>({ limit: PAGE_LIMIT });
+  readonly projects = signal<string[]>([]);
+  readonly hasFilters = computed(() => {
+    const filters = this.filters();
+    return Boolean(filters.from || filters.to || filters.project || filters.tag || filters.q);
+  });
   constructor() {
     this.activities.meta().subscribe({
-      next: (meta) => (this.projects = meta.projects),
-      error: () => (this.error = 'loadError'),
+      next: (meta) => this.projects.set(meta.projects),
+      error: () => this.error.set('activities.loadError'),
     });
     this.load();
   }
   load(): void {
     const requestId = ++this.requestId;
-    this.loading = true;
-    this.error = '';
+    this.loading.set(true);
+    this.error.set('');
     this.activities
-      .list({ ...this.filters, page: this.page, limit: PAGE_LIMIT })
+      .list({ ...this.filters(), page: this.page(), limit: PAGE_LIMIT })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result: Paginated<Activity>) => {
           if (requestId !== this.requestId) return;
-          this.items = result.items;
-          this.total = result.total;
-          this.pages = Math.max(1, Math.ceil(result.total / PAGE_LIMIT));
-          this.groups = this.activities.groupByDay(result.items);
-          this.loading = false;
+          this.items.set(result.items);
+          this.total.set(result.total);
+          this.pages.set(Math.max(1, Math.ceil(result.total / PAGE_LIMIT)));
+          this.groups.set(this.activities.groupByDay(result.items));
+          this.loading.set(false);
         },
         error: () => {
           if (requestId !== this.requestId) return;
-          this.error = 'loadError';
-          this.loading = false;
+          this.error.set('activities.loadError');
+          this.loading.set(false);
         },
       });
   }
   applyFilters(raw: ActivityFilters): void {
     try {
-      this.filters = this.activities.buildFilters(raw);
-      this.page = 1;
+      this.filters.set(this.activities.buildFilters(raw));
+      this.page.set(1);
       this.load();
     } catch {
-      this.error = 'invalidRange';
+      this.error.set('activities.invalidRange');
     }
   }
   clearFilters(): void {
-    this.filters = { limit: PAGE_LIMIT };
-    this.page = 1;
+    this.filters.set({ limit: PAGE_LIMIT });
+    this.page.set(1);
     this.load();
   }
   changePage(page: number): void {
-    this.page = page;
+    this.page.set(page);
     this.load();
     window.scrollTo({
       top: 0,
@@ -106,16 +110,16 @@ export class ActivitiesPage {
       tags: [...(value.tags ?? [])],
       referenceUrls: [...(value.referenceUrls ?? [])],
     };
-    this.quickAdd.pending = true;
+    this.quickAdd.pending.set(true);
     this.activities.create(value).subscribe({
       next: () => {
         this.quickAdd.clearIfUnchanged(snapshot);
-        this.quickAdd.pending = false;
+        this.quickAdd.pending.set(false);
         this.toast.success(this.transloco.translate('activities.created'));
         this.load();
       },
       error: () => {
-        this.quickAdd.pending = false;
+        this.quickAdd.pending.set(false);
         this.toast.error(this.transloco.translate('activities.saveError'));
       },
     });
@@ -154,14 +158,5 @@ export class ActivitiesPage {
       },
       error: () => this.toast.error(this.transloco.translate('activities.deleteError')),
     });
-  }
-  get hasFilters(): boolean {
-    return Boolean(
-      this.filters.from ||
-      this.filters.to ||
-      this.filters.project ||
-      this.filters.tag ||
-      this.filters.q,
-    );
   }
 }

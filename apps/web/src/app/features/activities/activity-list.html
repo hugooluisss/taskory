@@ -1,24 +1,24 @@
 <p class="visually-hidden" role="status" aria-live="polite">
-  {{ 'resultCount' | transloco: { count: totalCount } }}
+  {{ 'activities.resultCount' | transloco: { count: totalCount() } }}
 </p>
 <section class="results">
-  @if (loading) {
-    <div class="skeleton" role="status" aria-label="{{ 'loading' | transloco }}">
+  @if (loading()) {
+    <div class="skeleton" role="status" aria-label="{{ 'activities.loading' | transloco }}">
       <span></span><span></span><span></span>
     </div>
-  } @else if (!groups.length && hasFilters) {
+  } @else if (!groups().length && hasFilters()) {
     <app-empty-state
-      [title]="'noResults' | transloco"
-      [message]="'emptyFilteredMessage' | transloco"
+      [title]="'activities.noResults' | transloco"
+      [message]="'activities.emptyFilteredMessage' | transloco"
     ></app-empty-state>
-  } @else if (!groups.length) {
+  } @else if (!groups().length) {
     <app-empty-state
-      [title]="'emptyTitle' | transloco"
-      [message]="'emptyMessage' | transloco"
+      [title]="'activities.emptyTitle' | transloco"
+      [message]="'activities.emptyMessage' | transloco"
     ></app-empty-state>
   } @else {
-    <p class="count">{{ 'resultCount' | transloco: { count: totalCount } }}</p>
-    @for (group of groups; track group.date) {
+    <p class="count">{{ 'activities.resultCount' | transloco: { count: totalCount() } }}</p>
+    @for (group of groups(); track group.date) {
       <section class="day-group">
         <h2>{{ formatDate(group.date) }}</h2>
         @for (activity of group.items; track activity.id) {

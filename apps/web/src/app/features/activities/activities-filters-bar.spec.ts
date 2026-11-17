@@ -16,7 +16,7 @@ describe('Activity management', () => {
     const apply = vi.spyOn(component.apply, 'emit');
     const clear = vi.spyOn(component.clear, 'emit');
     fixture.detectChanges();
-    component.from = '2026-11-01';
+    component.from.set('2026-11-01');
     component.submit();
     expect(apply).toHaveBeenCalledWith({ from: '2026-11-01', to: '', project: '', tag: '', q: '' });
     component.reset();

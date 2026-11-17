@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ActivitiesPage } from './activities-page';
@@ -20,6 +21,7 @@ describe('Activity management', () => {
     await TestBed.configureTestingModule({
       imports: [ActivitiesPage],
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         {
@@ -55,10 +57,9 @@ describe('Activity management', () => {
     const quickAdd = fixture.debugElement.query(By.directive(ActivitiesQuickAddComponent))
       .componentInstance as ActivitiesQuickAddComponent;
     const urls = ['https://one.test', 'https://two.test', 'https://three.test'];
-    quickAdd.title = 'Three links';
-    quickAdd.referenceUrls = urls;
+    quickAdd.title.set('Three links');
+    quickAdd.referenceUrls.set(urls);
     quickAdd.submit();
-    fixture.detectChanges();
     const created: Activity = {
       id: 'new',
       date: '2026-11-17',
@@ -72,19 +73,45 @@ describe('Activity management', () => {
     };
     const post = http.expectOne('/api/v1/activities');
     expect(post.request.body.referenceUrls).toEqual(urls);
-    quickAdd.title = 'Newer draft';
+    expect(fixture.nativeElement.querySelector('activities-list .skeleton')).toBeTruthy();
+    expect(
+      (
+        fixture.nativeElement.querySelector(
+          'activities-quick-add button[type="submit"]',
+        ) as HTMLButtonElement
+      ).hasAttribute('disabled'),
+    ).toBe(true);
+    quickAdd.title.set('Newer draft');
     post.flush(created);
-    expect(quickAdd.title).toBe('Newer draft');
+    expect(quickAdd.title()).toBe('Newer draft');
+    await fixture.whenStable();
+    expect(
+      (
+        fixture.nativeElement.querySelector(
+          'activities-quick-add button[type="submit"]',
+        ) as HTMLButtonElement
+      ).hasAttribute('disabled'),
+    ).toBe(false);
     http
       .expectOne('/api/v1/activities?page=1&limit=20')
       .flush({ items: [created], total: 1, page: 1, limit: 20 });
     await fixture.whenStable();
-    fixture.changeDetectorRef.markForCheck();
-    fixture.detectChanges(false);
     expect(fixture.nativeElement.querySelector('activities-item h3').textContent).toContain(
       'Three links',
     );
+    expect(fixture.nativeElement.querySelector('activities-list .skeleton')).toBeNull();
     expect(fixture.nativeElement.querySelectorAll('activities-item a')).toHaveLength(3);
+    fixture.componentInstance.load();
+    http
+      .expectOne('/api/v1/activities?page=1&limit=20')
+      .flush(
+        { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Failed' },
+        { status: 500, statusText: 'Server Error' },
+      );
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'activities.loadError',
+    );
     http.verify();
     fixture.destroy();
   });

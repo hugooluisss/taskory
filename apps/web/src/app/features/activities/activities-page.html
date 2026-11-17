@@ -1,42 +1,42 @@
 <main class="page">
   <app-page-header
-    [title]="'pageTitle' | transloco"
-    [description]="'pageDescription' | transloco"
+    [title]="'activities.pageTitle' | transloco"
+    [description]="'activities.pageDescription' | transloco"
   ></app-page-header>
   <activities-quick-add
-    [projects]="projects"
+    [projects]="projects()"
     (createActivity)="create($event)"
   ></activities-quick-add>
   <activities-filters-bar
-    [projects]="projects"
+    [projects]="projects()"
     (apply)="applyFilters($event)"
     (clear)="clearFilters()"
   ></activities-filters-bar>
-  @if (error) {
+  @if (error()) {
     <div class="error" role="alert">
-      <span>{{ error | transloco }}</span>
-      @if (error === 'loadError') {
-        <button type="button" (click)="load()">{{ 'retry' | transloco }}</button>
+      <span>{{ error() | transloco }}</span>
+      @if (error() === 'activities.loadError') {
+        <button type="button" (click)="load()">{{ 'activities.retry' | transloco }}</button>
       }
     </div>
   }
   <activities-list
-    [groups]="groups"
-    [loading]="loading"
-    [hasFilters]="hasFilters"
-    [totalCount]="total"
+    [groups]="groups()"
+    [loading]="loading()"
+    [hasFilters]="hasFilters()"
+    [totalCount]="total()"
     (edit)="edit($event)"
     (remove)="remove($event)"
   ></activities-list>
-  @if (!loading && total > 0) {
+  @if (!loading() && total() > 0) {
     <app-pagination
-      [page]="page"
-      [pages]="pages"
+      [page]="page()"
+      [pages]="pages()"
       (pageChange)="changePage($event)"
     ></app-pagination>
   }
   <activities-form-dialog
-    [projects]="projects"
+    [projects]="projects()"
     (saveActivity)="save($event)"
   ></activities-form-dialog>
 </main>

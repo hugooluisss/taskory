@@ -26,7 +26,7 @@ describe('Activity management', () => {
       })
       .compileComponents();
     const loadingFixture = TestBed.createComponent(ActivityListComponent);
-    loadingFixture.componentInstance.loading = true;
+    loadingFixture.componentRef.setInput('loading', true);
     loadingFixture.detectChanges();
     expect(loadingFixture.nativeElement.querySelector('[role="status"]')).toBeTruthy();
     loadingFixture.destroy();
@@ -35,7 +35,7 @@ describe('Activity management', () => {
     expect(emptyFixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
     emptyFixture.destroy();
     const filteredFixture = TestBed.createComponent(ActivityListComponent);
-    filteredFixture.componentInstance.hasFilters = true;
+    filteredFixture.componentRef.setInput('hasFilters', true);
     filteredFixture.detectChanges();
     expect(filteredFixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
     expect(filteredFixture.nativeElement.querySelector('[aria-live="polite"]')).toBeTruthy();

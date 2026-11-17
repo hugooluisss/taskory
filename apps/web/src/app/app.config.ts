@@ -13,6 +13,7 @@ const translocoConfig = {
   availableLangs: ['es', 'en'],
   defaultLang: 'en',
   reRenderOnLangChange: true,
+  scopes: { autoPrefixKeys: false },
   prodMode: false,
 } as TranslocoConfig;
 

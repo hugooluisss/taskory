@@ -31,9 +31,9 @@ describe('Activity management', () => {
     const emit = vi.spyOn(component.createActivity, 'emit');
     fixture.detectChanges();
     const title = fixture.nativeElement.querySelector('#quick-title') as HTMLInputElement;
-    expect(component.date).toBe('2026-11-17');
+    expect(component.date()).toBe('2026-11-17');
     expect(fixture.nativeElement.querySelector('label[for="quick-title"]')).toBeTruthy();
-    component.title = 'Ship the page';
+    component.title.set('Ship the page');
     title.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
     );
@@ -54,8 +54,8 @@ describe('Activity management', () => {
     const fixture = TestBed.createComponent(ActivitiesQuickAddComponent);
     const component = fixture.componentInstance;
     const emit = vi.spyOn(component.createActivity, 'emit');
-    component.title = 'Pending';
-    component.pending = true;
+    component.title.set('Pending');
+    component.pending.set(true);
     fixture.detectChanges();
     const title = fixture.nativeElement.querySelector('#quick-title') as HTMLInputElement;
     title.dispatchEvent(

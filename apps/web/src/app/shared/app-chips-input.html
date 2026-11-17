@@ -5,12 +5,12 @@
   }
 </label>
 <div class="chips" [attr.aria-describedby]="describedBy">
-  @for (item of value; track item) {
+  @for (item of value(); track item) {
     <span class="chip">
       {{ item }}
       <button
         type="button"
-        [disabled]="disabled"
+        [disabled]="disabled()"
         [attr.aria-label]="'shared.removeItem' | transloco: { item: item }"
         (click)="remove(item)"
       >
@@ -20,12 +20,12 @@
   }
   <input
     [id]="id"
-    [value]="inputValue"
-    [disabled]="disabled || value.length >= maxItems"
+    [value]="inputValue()"
+    [disabled]="disabled() || value().length >= maxItems"
     [required]="required"
     [attr.aria-invalid]="visibleError ? 'true' : null"
     [attr.aria-describedby]="describedBy"
-    (input)="inputValue = $any($event.target).value"
+    (input)="inputValue.set($any($event.target).value)"
     (keydown)="addOnKey($event)"
     (blur)="addOnBlur()"
     (paste)="paste($event)"

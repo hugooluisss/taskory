@@ -7,9 +7,9 @@
 <input
   [id]="id"
   [type]="type"
-  [value]="value"
+  [value]="value()"
   [required]="required"
-  [disabled]="disabled"
+  [disabled]="disabled()"
   [attr.aria-invalid]="visibleError ? 'true' : null"
   [attr.aria-describedby]="describedBy"
   (input)="updateValue($event)"

@@ -12,7 +12,7 @@ describe('Settings', () => {
       })
       .compileComponents();
     const fixture = TestBed.createComponent(ProfileSectionComponent);
-    fixture.componentInstance.submitted = true;
+    fixture.componentInstance.submitted.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('label[for="profile-name"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('label[for="profile-language"]')).toBeTruthy();
@@ -26,8 +26,8 @@ describe('Settings', () => {
       })
       .compileComponents();
     const fixture = TestBed.createComponent(ProfileSectionComponent);
-    fixture.componentInstance.name = '  Grace  ';
-    fixture.componentInstance.language = 'es';
+    fixture.componentInstance.name.set('  Grace  ');
+    fixture.componentInstance.language.set('es');
     const save = vi.fn();
     fixture.componentInstance.save.subscribe(save);
     fixture.componentInstance.submit();

@@ -6,9 +6,9 @@
 </label>
 <select
   [id]="id"
-  [value]="value"
+  [value]="value()"
   [required]="required"
-  [disabled]="disabled"
+  [disabled]="disabled()"
   [attr.aria-invalid]="visibleError ? 'true' : null"
   [attr.aria-describedby]="describedBy"
   (change)="updateValue($event)"

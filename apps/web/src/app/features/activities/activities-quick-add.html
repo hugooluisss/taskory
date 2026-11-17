@@ -1,30 +1,46 @@
 <form class="quick-add" (ngSubmit)="submit()">
-  <label for="quick-title">{{ 'quickTitle' | transloco }}</label>
+  <label for="quick-title">{{ 'activities.quickTitle' | transloco }}</label>
   <div class="title-row">
     <input
       id="quick-title"
       name="title"
-      [(ngModel)]="title"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
       required
       maxlength="200"
       (keydown.enter)="submit(); $event.preventDefault()"
     />
-    <button type="submit" [disabled]="!title.trim() || pending">{{ 'add' | transloco }}</button>
+    <button type="submit" [disabled]="!title().trim() || pending()">
+      {{ 'activities.add' | transloco }}
+    </button>
   </div>
   <button
     class="details-toggle"
     type="button"
-    [attr.aria-expanded]="expanded"
-    (click)="expanded = !expanded"
+    [attr.aria-expanded]="expanded()"
+    (click)="expanded.update((value) => !value)"
   >
-    {{ (expanded ? 'hideDetails' : 'moreDetails') | transloco }}
+    {{ (expanded() ? 'activities.hideDetails' : 'activities.moreDetails') | transloco }}
   </button>
-  @if (expanded) {
+  @if (expanded()) {
     <div class="details">
-      <label for="quick-date">{{ 'date' | transloco }}</label>
-      <input id="quick-date" name="date" type="date" [(ngModel)]="date" required />
-      <label for="quick-project">{{ 'project' | transloco }}</label>
-      <input id="quick-project" name="project" list="quick-projects" [(ngModel)]="project" />
+      <label for="quick-date">{{ 'activities.date' | transloco }}</label>
+      <input
+        id="quick-date"
+        name="date"
+        type="date"
+        [ngModel]="date()"
+        (ngModelChange)="date.set($event)"
+        required
+      />
+      <label for="quick-project">{{ 'activities.project' | transloco }}</label>
+      <input
+        id="quick-project"
+        name="project"
+        list="quick-projects"
+        [ngModel]="project()"
+        (ngModelChange)="project.set($event)"
+      />
       <datalist id="quick-projects">
         @for (suggestion of projects; track suggestion) {
           <option [value]="suggestion"></option>
@@ -33,22 +49,25 @@
       <app-textarea
         id="quick-description"
         name="description"
-        [label]="'description' | transloco"
-        [(ngModel)]="description"
+        [label]="'activities.description' | transloco"
+        [ngModel]="description()"
+        (ngModelChange)="description.set($event)"
       ></app-textarea>
       <app-chips-input
         id="quick-tags"
         name="tags"
         mode="tags"
-        [label]="'tags' | transloco"
-        [(ngModel)]="tags"
+        [label]="'activities.tags' | transloco"
+        [ngModel]="tags()"
+        (ngModelChange)="tags.set($event)"
       ></app-chips-input>
       <app-chips-input
         id="quick-urls"
         name="urls"
         mode="urls"
-        [label]="'referenceUrls' | transloco"
-        [(ngModel)]="referenceUrls"
+        [label]="'activities.referenceUrls' | transloco"
+        [ngModel]="referenceUrls()"
+        (ngModelChange)="referenceUrls.set($event)"
       ></app-chips-input>
     </div>
   }
