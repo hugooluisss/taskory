@@ -1,0 +1,33 @@
+meta {
+  name: Title too long
+  type: http
+  seq: 26
+}
+post {
+  url: {{baseUrl}}/activities
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept-Language: es
+}
+body:json {
+  {
+    "date": "2026-11-16",
+    "title": "{{title201}}"
+  }
+}
+script:pre-request {
+  bru.setVar("title201", "x".repeat(201));
+}
+tests {
+  test("rejects 201 character title with Spanish message", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+    expect(res.body.message).to.equal("La solicitud no es válida");
+  });
+}

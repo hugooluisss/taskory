@@ -1,0 +1,32 @@
+meta {
+  name: Empty patch
+  type: http
+  seq: 34
+}
+patch {
+  url: {{baseUrl}}/activities/{{emptyPatchId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+}
+body:json {
+  {}
+}
+script:pre-request {
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "Empty patch" } });
+  bru.setVar("emptyPatchId", created.data.id);
+  bru.setVar("emptyPatchUpdatedAt", created.data.updatedAt);
+}
+tests {
+  test("rejects empty patch without changing updatedAt", async function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+    const current = await bru.sendRequest({ method: "GET", url: bru.getEnvVar("baseUrl") + "/activities/" + bru.getVar("emptyPatchId"), headers: { Accept: "application/json", Authorization: "Bearer " + bru.getVar("token") } });
+    expect(current.data.updatedAt).to.equal(bru.getVar("emptyPatchUpdatedAt"));
+  });
+}

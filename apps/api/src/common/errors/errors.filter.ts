@@ -15,10 +15,7 @@ export class ErrorsFilter implements ExceptionFilter {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
-    const statusCode =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const statusCode = this.statusCode(exception);
     const body =
       exception instanceof HttpException ? exception.getResponse() : {};
     const suppliedCode =
@@ -26,14 +23,17 @@ export class ErrorsFilter implements ExceptionFilter {
         ? String(body.code)
         : undefined;
     let code = suppliedCode;
-    if (!code && statusCode === HttpStatus.TOO_MANY_REQUESTS) {
-      code = ERROR_CODES.TOO_MANY_REQUESTS;
-    } else if (!code && statusCode === HttpStatus.UNAUTHORIZED) {
-      code = ERROR_CODES.UNAUTHORIZED;
-    } else if (!code && statusCode === HttpStatus.NOT_FOUND) {
-      code = ERROR_CODES.NOT_FOUND;
-    } else if (!code && statusCode === HttpStatus.BAD_REQUEST) {
-      code = ERROR_CODES.VALIDATION_ERROR;
+    if (!code && statusCode === HttpStatus.PAYLOAD_TOO_LARGE) {
+      code = ERROR_CODES.PAYLOAD_TOO_LARGE;
+    } else if (!code && statusCode >= 400 && statusCode < 500) {
+      code =
+        statusCode === HttpStatus.TOO_MANY_REQUESTS
+          ? ERROR_CODES.TOO_MANY_REQUESTS
+          : statusCode === HttpStatus.UNAUTHORIZED
+            ? ERROR_CODES.UNAUTHORIZED
+            : statusCode === HttpStatus.NOT_FOUND
+              ? ERROR_CODES.NOT_FOUND
+              : ERROR_CODES.VALIDATION_ERROR;
     } else if (!code) {
       code = ERROR_CODES.INTERNAL_ERROR;
     }
@@ -46,5 +46,17 @@ export class ErrorsFilter implements ExceptionFilter {
       messages[language][code] ??
       messages[language][ERROR_CODES.INTERNAL_ERROR];
     response.status(statusCode).json({ statusCode, code, message });
+  }
+
+  private statusCode(exception: unknown): number {
+    if (exception instanceof HttpException) return exception.getStatus();
+    if (typeof exception !== "object" || exception === null) {
+      return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+    const error = exception as { status?: unknown; statusCode?: unknown };
+    const status = error.statusCode ?? error.status;
+    return typeof status === "number" && status >= 400 && status < 600
+      ? status
+      : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

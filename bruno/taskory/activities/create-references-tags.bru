@@ -1,0 +1,41 @@
+meta {
+  name: Create with references and tags
+  type: http
+  seq: 2
+}
+post {
+  url: {{baseUrl}}/activities
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "date": "2026-11-15",
+    "title": "Bruno references activity",
+    "description": "Multiple reference URLs",
+    "referenceUrls": ["https://example.com/one", "https://example.com/two"],
+    "tags": ["docs", "review"],
+    "project": "Bruno project"
+  }
+}
+script:post-response {
+  bru.setVar("referencesActivityId", res.body.id);
+}
+docs {
+  Spec scenario: activities / Activity creation / Multiple reference URLs. Run after Create minimal activity; expects both URLs returned in order.
+}
+tests {
+  test("returns all reference URLs in order", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.referenceUrls).to.eql(["https://example.com/one", "https://example.com/two"]);
+    expect(res.body.tags).to.eql(["docs", "review"]);
+    expect(res.body.project).to.equal("Bruno project");
+  });
+}

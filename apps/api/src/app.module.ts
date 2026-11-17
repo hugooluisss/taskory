@@ -6,6 +6,8 @@ import { ApiKeysModule } from "./api-keys/api-keys.module";
 import { HealthModule } from "./health/health.module";
 import { User } from "./users/entities/user.entity";
 import { ApiKey } from "./api-keys/entities/api-key.entity";
+import { ActivitiesModule } from "./activities/activities.module";
+import { Activity } from "./activities/entities/activity.entity";
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === "true" ||
@@ -18,7 +20,7 @@ export function databaseOptions(
   return {
     type: "better-sqlite3" as const,
     database: databasePath,
-    entities: [User, ApiKey],
+    entities: [User, ApiKey, Activity],
     // ponytail: synchronization only supports early deployments; use migrations as the upgrade path.
     synchronize,
   };
@@ -31,6 +33,7 @@ export function databaseOptions(
     ApiKeysModule,
     AuthModule,
     HealthModule,
+    ActivitiesModule,
   ],
 })
 export class AppModule {}

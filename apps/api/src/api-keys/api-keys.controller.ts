@@ -7,13 +7,13 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
   UseGuards,
 } from "@nestjs/common";
 import { ApiKeysService } from "./api-keys.service";
 import { CreateApiKeyDto } from "./dto/create-api-key.dto";
 import { AuthGuard } from "../auth/guards/auth.guard";
-import { AuthRequest } from "../common/auth/auth-request";
+import { CurrentUser } from "../common/auth/current-user.decorator";
+import { AuthUser } from "../common/auth/auth-user";
 
 @Controller("api-keys")
 @UseGuards(AuthGuard)
@@ -21,19 +21,19 @@ export class ApiKeysController {
   constructor(private readonly keys: ApiKeysService) {}
 
   @Get()
-  list(@Req() request: AuthRequest) {
-    return this.keys.list(request.user.id);
+  list(@CurrentUser() user: AuthUser) {
+    return this.keys.list(user.id);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Req() request: AuthRequest, @Body() body: CreateApiKeyDto) {
-    return this.keys.create(request.user.id, body.name);
+  create(@CurrentUser() user: AuthUser, @Body() body: CreateApiKeyDto) {
+    return this.keys.create(user.id, body.name);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  revoke(@Req() request: AuthRequest, @Param("id") id: string) {
-    return this.keys.revoke(request.user.id, id);
+  revoke(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.keys.revoke(user.id, id);
   }
 }

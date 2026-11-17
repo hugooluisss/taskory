@@ -1,0 +1,25 @@
+meta {
+  name: Search description only
+  type: http
+  seq: 22
+}
+get {
+  url: {{baseUrl}}/activities?q={{descriptionMarker}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+script:pre-request {
+  const marker = "description-only-" + Date.now();
+  bru.setVar("descriptionMarker", marker);
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "unrelated", description: marker } });
+  bru.setVar("descriptionOnlyId", created.data.id);
+}
+tests {
+  test("matches description only", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map(function(item) { return item.id; })).to.eql([bru.getVar("descriptionOnlyId")]);
+  });
+}

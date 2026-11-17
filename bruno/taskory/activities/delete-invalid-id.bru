@@ -1,0 +1,19 @@
+meta {
+  name: Delete invalid id
+  type: http
+  seq: 30
+}
+delete {
+  url: {{baseUrl}}/activities/not-a-uuid
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+tests {
+  test("rejects non UUID delete id", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+  });
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Get deleted activity
+  type: http
+  seq: 14
+}
+get {
+  url: {{baseUrl}}/activities/{{deletedActivityId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "deleted-" + Date.now() } });
+  bru.setVar("deletedActivityId", created.data.id);
+  await bru.sendRequest({ method: "DELETE", url: bru.getEnvVar("baseUrl") + "/activities/" + created.data.id, headers: { Authorization: "Bearer " + bru.getVar("token") } });
+}
+docs {
+  Spec scenario: activities / Activity read, update and delete / Delete. Run after Delete activity; expects 404 NOT_FOUND.
+}
+tests {
+  test("returns not found after deletion", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal("NOT_FOUND");
+  });
+}

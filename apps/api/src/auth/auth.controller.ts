@@ -6,7 +6,6 @@ import {
   HttpStatus,
   Patch,
   Post,
-  Req,
   UseGuards,
 } from "@nestjs/common";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
@@ -16,7 +15,8 @@ import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { AuthGuard } from "./guards/auth.guard";
-import { AuthRequest } from "../common/auth/auth-request";
+import { CurrentUser } from "../common/auth/current-user.decorator";
+import { AuthUser } from "../common/auth/auth-user";
 
 @Controller("auth")
 export class AuthController {
@@ -40,13 +40,13 @@ export class AuthController {
 
   @Get("me")
   @UseGuards(AuthGuard)
-  me(@Req() request: AuthRequest) {
-    return this.auth.profile(request.user.id);
+  me(@CurrentUser() user: AuthUser) {
+    return this.auth.profile(user.id);
   }
 
   @Patch("me")
   @UseGuards(AuthGuard)
-  update(@Req() request: AuthRequest, @Body() body: UpdateProfileDto) {
-    return this.auth.updateProfile(request.user.id, body);
+  update(@CurrentUser() user: AuthUser, @Body() body: UpdateProfileDto) {
+    return this.auth.updateProfile(user.id, body);
   }
 }

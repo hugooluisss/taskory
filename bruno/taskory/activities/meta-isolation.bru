@@ -1,0 +1,36 @@
+meta {
+  name: Metadata isolation
+  type: http
+  seq: 32
+}
+get {
+  url: {{baseUrl}}/activities/meta
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+script:pre-request {
+  const marker = "meta-" + Date.now();
+  const ownerActivity = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, project: marker, tags: [marker] } });
+  const secondUser = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: marker + "@example.com", name: marker, password: bru.getEnvVar("password") } });
+  bru.setVar("metaForeignToken", secondUser.data.token);
+  const foreignMarker = marker + "-foreign";
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + secondUser.data.token }, data: { date: "2026-11-16", title: "foreign", project: foreignMarker, tags: [foreignMarker] } });
+  bru.setVar("metaMarker", marker);
+  const foreignMetadata = await bru.sendRequest({ method: "GET", url: bru.getEnvVar("baseUrl") + "/activities/meta", headers: { Accept: "application/json", Authorization: "Bearer " + secondUser.data.token } });
+  bru.setVar("foreignProjects", JSON.stringify(foreignMetadata.data.projects));
+  bru.setVar("foreignTags", JSON.stringify(foreignMetadata.data.tags));
+}
+tests {
+  test("metadata includes own markers and excludes foreign values", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.projects).to.include(bru.getVar("metaMarker"));
+    expect(res.body.projects).not.to.include(bru.getVar("metaMarker") + "-foreign");
+    expect(res.body.tags).to.include(bru.getVar("metaMarker"));
+    expect(res.body.tags).not.to.include(bru.getVar("metaMarker") + "-foreign");
+    expect(JSON.parse(bru.getVar("foreignProjects"))).to.eql([bru.getVar("metaMarker") + "-foreign"]);
+    expect(JSON.parse(bru.getVar("foreignTags"))).to.eql([bru.getVar("metaMarker") + "-foreign"]);
+  });
+}

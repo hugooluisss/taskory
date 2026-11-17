@@ -1,0 +1,21 @@
+meta {
+  name: List activities without token
+  type: http
+  seq: 18
+}
+get {
+  url: {{baseUrl}}/activities
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity listing and filters / Authentication required. Expects 401.
+}
+tests {
+  test("requires authentication", function() {
+    expect(res.status).to.equal(401);
+  });
+}

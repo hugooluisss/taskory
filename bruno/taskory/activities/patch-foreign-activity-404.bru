@@ -1,0 +1,47 @@
+meta {
+  name: Patch another user's activity
+  type: http
+  seq: 20
+}
+patch {
+  url: {{baseUrl}}/activities/{{foreignActivityId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{foreignUserToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "title": "Attempted foreign update"
+  }
+}
+script:pre-request {
+  const ownerActivity = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { date: "2026-11-16", title: "First user's private activity" }
+  });
+  const secondUser = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "activity-foreign+" + Date.now() + "@example.com", name: "Foreign activity user", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("foreignActivityId", ownerActivity.data.id);
+  bru.setVar("foreignUserToken", secondUser.data.token);
+}
+docs {
+  Spec scenario: activities / Per-user isolation / Foreign activity. Creates a real activity as the current user and registers a second user; expects 404 NOT_FOUND.
+}
+tests {
+  test("does not modify another user's activity", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal("NOT_FOUND");
+  });
+}

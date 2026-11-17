@@ -1,0 +1,19 @@
+meta {
+  name: Reversed date range
+  type: http
+  seq: 33
+}
+get {
+  url: {{baseUrl}}/activities?from=2026-11-16&to=2026-11-01
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+tests {
+  test("rejects reversed date range", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+  });
+}

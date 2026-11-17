@@ -1,0 +1,42 @@
+meta {
+  name: Patch activity title
+  type: http
+  seq: 11
+}
+patch {
+  url: {{baseUrl}}/activities/{{independentPatchId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "title": "Bruno updated title"
+  }
+}
+docs {
+  Spec scenario: activities / Activity read, update and delete / Partial update. Creates its own activity; expects other fields unchanged and updatedAt changed.
+}
+script:pre-request {
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "Bruno patch original" } });
+  bru.setVar("independentPatchId", created.data.id);
+  bru.setVar("activityUpdatedAt", created.data.updatedAt);
+}
+tests {
+  test("updates only title and updatedAt", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.title).to.equal("Bruno updated title");
+    expect(res.body.date).to.equal("2026-11-16");
+    expect(res.body.description).to.equal(null);
+    expect(res.body.referenceUrls).to.eql([]);
+    expect(res.body.tags).to.eql([]);
+    expect(res.body.project).to.equal(null);
+    expect(res.body.updatedAt).to.not.equal(bru.getVar("activityUpdatedAt"));
+  });
+}

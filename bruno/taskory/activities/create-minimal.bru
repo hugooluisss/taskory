@@ -1,0 +1,41 @@
+meta {
+  name: Create minimal activity
+  type: http
+  seq: 1
+}
+post {
+  url: {{baseUrl}}/activities
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "date": "2026-11-16",
+    "title": "Bruno minimal activity"
+  }
+}
+script:post-response {
+  bru.setVar("activityId", res.body.id);
+}
+docs {
+  Spec scenario: activities / Activity creation / Minimal activity. Run after Register; expects 201 with empty referenceUrls and tags, and null description and project.
+}
+tests {
+  test("creates a minimal activity", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.date).to.equal("2026-11-16");
+    expect(res.body.title).to.equal("Bruno minimal activity");
+    expect(res.body.referenceUrls).to.eql([]);
+    expect(res.body.tags).to.eql([]);
+    expect(res.body.description).to.equal(null);
+    expect(res.body.project).to.equal(null);
+    expect(res.body.id).to.be.a("string");
+  });
+}

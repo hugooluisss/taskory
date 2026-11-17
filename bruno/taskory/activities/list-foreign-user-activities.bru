@@ -1,0 +1,41 @@
+meta {
+  name: Second user's activity listing
+  type: http
+  seq: 22
+}
+get {
+  url: {{baseUrl}}/activities
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{foreignUserToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const ownerActivity = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { date: "2026-11-16", title: "First user's private activity" }
+  });
+  const secondUser = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "activity-foreign+" + Date.now() + "@example.com", name: "Foreign activity user", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("foreignActivityId", ownerActivity.data.id);
+  bru.setVar("foreignUserToken", secondUser.data.token);
+}
+docs {
+  Spec scenario: activities / Per-user isolation / Listing never leaks. Registers a second user and creates a real activity for the first user; expects the second user's list not to contain it.
+}
+tests {
+  test("does not list another user's activity", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map(function(item) { return item.id; })).not.to.include(bru.getVar("foreignActivityId"));
+  });
+}

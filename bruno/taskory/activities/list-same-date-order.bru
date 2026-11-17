@@ -1,0 +1,40 @@
+meta {
+  name: Same date order
+  type: http
+  seq: 21
+}
+docs {
+  Equal-date ordering is fully asserted by the deterministic SQLite repository test. This Bruno request checks both independently created records; when the database timestamps differ, it also checks createdAt DESC without relying on elapsed time.
+}
+get {
+  url: {{baseUrl}}/activities?project={{sameDateMarker}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const marker = "same-date-" + Date.now();
+  bru.setVar("sameDateMarker", marker);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " first", project: marker } });
+  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", project: marker } });
+  bru.setVar("sameDateIds", [first.data.id, second.data.id]);
+  bru.setVar("sameDateCreated", [first.data.createdAt, second.data.createdAt]);
+}
+tests {
+  test("orders equal dates by createdAt descending", function() {
+    expect(res.status).to.equal(200);
+    const items = res.body.items.filter(function(item) {
+      return bru.getVar("sameDateIds").includes(item.id);
+    });
+    expect(items.map(function(item) { return item.id; })).to.have.members(bru.getVar("sameDateIds"));
+    if (Date.parse(bru.getVar("sameDateCreated")[0]) !== Date.parse(bru.getVar("sameDateCreated")[1])) {
+      expect(items.map(function(item) { return item.id; })).to.eql(bru.getVar("sameDateIds").slice().reverse());
+    }
+  });
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Too many tags
+  type: http
+  seq: 27
+}
+post {
+  url: {{baseUrl}}/activities
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+}
+body:json {
+  {
+    "date": "2026-11-16",
+    "title": "Too many tags",
+    "tags": {{tags21}}
+  }
+}
+script:pre-request {
+  bru.setVar("tags21", JSON.stringify(Array.from({ length: 21 }, function(_, index) { return "tag-" + index; })));
+}
+tests {
+  test("rejects 21 tags", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+  });
+}

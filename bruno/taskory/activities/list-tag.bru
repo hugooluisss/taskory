@@ -1,0 +1,31 @@
+meta {
+  name: List by tag
+  type: http
+  seq: 7
+}
+get {
+  url: {{baseUrl}}/activities?tag={{tagMarker}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity listing and filters / Tag filter. Expects only activities containing the normalized api tag.
+}
+script:pre-request {
+  const marker = "tag-" + Date.now();
+  bru.setVar("tagMarker", marker);
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, tags: [marker] } });
+  bru.setVar("tagActivityId", created.data.id);
+}
+tests {
+  test("filters activities by tag", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map(function(item) { return item.id; })).to.eql([bru.getVar("tagActivityId")]);
+  });
+}

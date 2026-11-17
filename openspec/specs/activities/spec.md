@@ -1,4 +1,9 @@
-## ADDED Requirements
+# activities Specification
+
+## Purpose
+TBD - created by archiving change 02-activities. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: Activity creation
 The system SHALL let an authenticated user create an activity with required `date` (YYYY-MM-DD) and `title` (1-200 chars) and optional `description`, `referenceUrls` (valid URLs, max 20), `tags` (max 20) and `project`.
@@ -65,3 +70,26 @@ The system SHALL expose `GET /api/v1/activities/meta` returning the caller's dis
 #### Scenario: Suggestions
 - **WHEN** a user has activities in projects "A" and "B"
 - **THEN** `projects` contains exactly "A" and "B"
+
+### Requirement: Filter and body validation
+The system SHALL validate list filter dates, reject empty updates and respond with a client error to oversized request bodies.
+
+#### Scenario: Invalid filter date
+- **WHEN** `from` or `to` is not a real calendar date in `YYYY-MM-DD`
+- **THEN** the system responds 400 with code `VALIDATION_ERROR`
+
+#### Scenario: Reversed date range
+- **WHEN** `from` is later than `to`
+- **THEN** the system responds 400 with code `VALIDATION_ERROR`
+
+#### Scenario: Empty update
+- **WHEN** a `PATCH` body contains no updatable field
+- **THEN** the system responds 400 with code `VALIDATION_ERROR` and `updatedAt` is not changed
+
+#### Scenario: Oversized body
+- **WHEN** a request body exceeds the server limit
+- **THEN** the system responds 413 with code `PAYLOAD_TOO_LARGE` and a localized message, never 500
+
+#### Scenario: Protected fields are ignored
+- **WHEN** a `PATCH` or `POST` includes `id`, `userId`, `createdAt` or `updatedAt`
+- **THEN** those values are ignored and the stored values are unchanged

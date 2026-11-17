@@ -1,0 +1,58 @@
+meta {
+  name: Ignore protected patch fields
+  type: http
+  seq: 31
+}
+patch {
+  url: {{baseUrl}}/activities/{{protectedPatchId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+}
+body:json {
+  {
+    "title": "Safe update",
+    "id": "bad-id",
+    "userId": "foreign-user",
+    "createdAt": "2000-01-01T00:00:00.000Z",
+    "updatedAt": "2000-01-01T00:00:00.000Z"
+  }
+}
+script:pre-request {
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "Protected original", id: "forged-post-id", userId: "forged-post-user", createdAt: "2000-01-01T00:00:00.000Z", updatedAt: "2000-01-01T00:00:00.000Z" } });
+  const stored = await bru.sendRequest({ method: "GET", url: bru.getEnvVar("baseUrl") + "/activities/" + created.data.id, headers });
+  bru.setVar("protectedPatchId", stored.data.id);
+  bru.setVar("postStoredId", stored.data.id);
+  bru.setVar("postStoredUserId", stored.data.userId);
+  bru.setVar("postStoredCreatedAt", stored.data.createdAt);
+  bru.setVar("postStoredUpdatedAt", stored.data.updatedAt);
+}
+script:post-response {
+  const stored = await bru.sendRequest({ method: "GET", url: bru.getEnvVar("baseUrl") + "/activities/" + bru.getVar("protectedPatchId"), headers: { Accept: "application/json", Authorization: "Bearer " + bru.getVar("token") } });
+  bru.setVar("patchStored", JSON.stringify({ id: stored.data.id, userId: stored.data.userId, createdAt: stored.data.createdAt, updatedAt: stored.data.updatedAt }));
+}
+tests {
+  test("ignores protected fields in patch", function() {
+    expect(res.status).to.equal(200);
+    const stored = JSON.parse(bru.getVar("patchStored"));
+    expect(res.body.id).to.equal(bru.getVar("postStoredId"));
+    expect(res.body.userId).to.equal(bru.getVar("postStoredUserId"));
+    expect(res.body.title).to.equal("Safe update");
+    expect(res.body.createdAt).to.equal(bru.getVar("postStoredCreatedAt"));
+    expect(res.body.updatedAt).to.not.equal("2000-01-01T00:00:00.000Z");
+    expect(stored.id).to.equal(bru.getVar("postStoredId"));
+    expect(stored.userId).to.equal(bru.getVar("postStoredUserId"));
+    expect(stored.createdAt).to.equal(bru.getVar("postStoredCreatedAt"));
+    expect(stored.updatedAt).to.equal(res.body.updatedAt);
+    expect(bru.getVar("postStoredId")).not.to.equal("forged-post-id");
+    expect(bru.getVar("postStoredUserId")).not.to.equal("forged-post-user");
+    expect(bru.getVar("postStoredCreatedAt")).not.to.equal("2000-01-01T00:00:00.000Z");
+    expect(bru.getVar("postStoredUpdatedAt")).not.to.equal("2000-01-01T00:00:00.000Z");
+  });
+}

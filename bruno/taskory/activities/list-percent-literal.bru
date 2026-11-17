@@ -1,0 +1,30 @@
+meta {
+  name: Search percent literally
+  type: http
+  seq: 23
+}
+get {
+  url: {{baseUrl}}/activities?q=%25&project={{percentProject}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+script:pre-request {
+  const marker = "percent-" + Date.now();
+  bru.setVar("percentProject", marker);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const positive = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + "%", project: marker } });
+  const negative = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " without wildcard", project: marker } });
+  bru.setVar("percentPositiveId", positive.data.id);
+  bru.setVar("percentNegativeId", negative.data.id);
+}
+tests {
+  test("treats percent as a literal", function() {
+    expect(res.status).to.equal(200);
+    const ids = res.body.items.map(function(item) { return item.id; });
+    expect(ids).to.eql([bru.getVar("percentPositiveId")]);
+    expect(ids).not.to.include(bru.getVar("percentNegativeId"));
+  });
+}

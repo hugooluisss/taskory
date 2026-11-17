@@ -1,0 +1,31 @@
+meta {
+  name: Activity metadata
+  type: http
+  seq: 12
+}
+get {
+  url: {{baseUrl}}/activities/meta
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity metadata / Suggestions. Creates its own uniquely marked activity.
+}
+script:pre-request {
+  const marker = "meta-basic-" + Date.now();
+  bru.setVar("metaBasicMarker", marker);
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, project: marker, tags: [marker] } });
+}
+tests {
+  test("returns distinct project and tag suggestions", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.projects).to.include(bru.getVar("metaBasicMarker"));
+    expect(res.body.tags).to.include(bru.getVar("metaBasicMarker"));
+  });
+}

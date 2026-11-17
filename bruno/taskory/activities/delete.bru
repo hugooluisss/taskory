@@ -1,0 +1,28 @@
+meta {
+  name: Delete activity
+  type: http
+  seq: 13
+}
+delete {
+  url: {{baseUrl}}/activities/{{independentDeleteId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity read, update and delete / Delete. Creates its own activity; expects 204.
+}
+script:pre-request {
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "independent-delete-" + Date.now() } });
+  bru.setVar("independentDeleteId", created.data.id);
+}
+tests {
+  test("deletes activity", function() {
+    expect(res.status).to.equal(204);
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: List with maximum limit
+  type: http
+  seq: 9
+}
+get {
+  url: {{baseUrl}}/activities?limit=1000
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity listing and filters / Maximum page size. Expects requested limit 1000 to be capped at 200.
+}
+tests {
+  test("caps list limit at 200", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.limit).to.equal(200);
+  });
+}

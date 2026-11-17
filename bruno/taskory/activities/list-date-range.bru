@@ -1,0 +1,35 @@
+meta {
+  name: List by date range
+  type: http
+  seq: 5
+}
+get {
+  url: {{baseUrl}}/activities?from=2026-11-15&to=2026-11-16&project={{rangeMarker}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: activities / Activity listing and filters / Date range. Expects only activities within the inclusive from/to dates.
+}
+script:pre-request {
+  const marker = "range-" + Date.now();
+  bru.setVar("rangeMarker", marker);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const before = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-14", title: marker + " before", project: marker } });
+  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-15", title: marker + " first", project: marker } });
+  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", project: marker } });
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-17", title: marker + " after", project: marker } });
+  bru.setVar("rangeIds", [first.data.id, second.data.id]);
+}
+tests {
+  test("filters activities by inclusive date range", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map(function(item) { return item.id; })).to.have.members(bru.getVar("rangeIds"));
+  });
+}
