@@ -1,0 +1,73 @@
+meta {
+  name: Failed chunk resumes and completes
+  type: http
+  seq: 1
+  tags: [
+    requires-fake-ollama
+    requires-fake-ollama-failure
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-failure+" + Date.now() + "@example.com", name: "Chunked failure", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Failure activity " + i } });
+}
+script:post-response {
+  const axios = require("axios");
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const token = bru.getVar("reportsToken");
+  const reportId = res.body.id;
+  let report;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const response = await axios.get(baseUrl + "/reports/" + reportId, { headers: { Authorization: "Bearer " + token }, validateStatus: () => true });
+    report = response.data;
+    if (["failed", "completed"].includes(report.status)) break;
+  }
+  if (report.status !== "failed") throw new Error("Expected report to fail; ensure FAKE_OLLAMA_FAIL_CHUNK=2: " + JSON.stringify(report));
+  if (report.error.code !== "LLM_UNAVAILABLE" || report.error.chunk !== 1 || report.progress.done !== 1) throw new Error("Unexpected failure: " + JSON.stringify(report));
+  const retry = await axios.post(baseUrl + "/reports/" + reportId + "/retry", {}, { headers: { Authorization: "Bearer " + token }, validateStatus: () => true });
+  if (retry.status !== 202) throw new Error("Retry did not return 202: " + JSON.stringify(retry.data));
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const response = await axios.get(baseUrl + "/reports/" + reportId, { headers: { Authorization: "Bearer " + token }, validateStatus: () => true });
+    report = response.data;
+    if (["failed", "completed"].includes(report.status)) break;
+  }
+  const stats = (await axios.get(bru.getEnvVar("fakeBaseUrl") + "/__stats")).data.chunkEvaluationCalls;
+  bru.setVar("chunkedFailureResult", { report, stats });
+}
+docs {
+  Spec scenario: chunked-report-generation / Failed job / Retry resume. Fake Ollama uses FAKE_OLLAMA_FAIL_CHUNK=2 and FAKE_OLLAMA_FAIL_TIMES=3.
+}
+tests {
+  test("retries the failed second chunk and completes", function() {
+    const result = bru.getVar("chunkedFailureResult");
+    const report = result.report;
+    expect(report.status, "report did not complete after retry: " + JSON.stringify(report)).to.equal("completed");
+    expect(report.markdown).to.include("# Fake report");
+    expect(report.progress.done).to.equal(2);
+    expect(report.progress.total).to.equal(2);
+    expect(result.stats).to.eql([{ chunk: 1, calls: 1 }, { chunk: 2, calls: 4 }]);
+  });
+}

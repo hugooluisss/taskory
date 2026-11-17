@@ -86,8 +86,51 @@ export class ActivitiesRepository {
     return query
       .orderBy("activity.date", "ASC")
       .addOrderBy("activity.createdAt", "ASC")
-      .take(301)
+      .take(3001)
       .getMany();
+  }
+
+  async findReportSnapshot(
+    userId: string,
+    filters: ReportActivityFilters,
+  ): Promise<{ id: string }[]> {
+    const query = this.reportQuery(userId, filters).select("activity.id", "id");
+    return (
+      await query
+        .orderBy("activity.date", "ASC")
+        .addOrderBy("activity.createdAt", "ASC")
+        .take(3001)
+        .getRawMany<{ id: string }>()
+    ).map(({ id }) => ({ id }));
+  }
+
+  findReportChunk(userId: string, ids: string[]): Promise<Activity[]> {
+    if (!ids.length) return Promise.resolve([]);
+    return this.activities
+      .createQueryBuilder("activity")
+      .where("activity.userId = :userId", { userId })
+      .andWhere("activity.id IN (:...ids)", { ids })
+      .getMany();
+  }
+
+  private reportQuery(userId: string, filters: ReportActivityFilters) {
+    const query = this.activities
+      .createQueryBuilder("activity")
+      .where("activity.userId = :userId", { userId })
+      .andWhere("activity.date >= :from", { from: filters.from })
+      .andWhere("activity.date <= :to", { to: filters.to });
+    if (filters.project) {
+      query.andWhere("activity.project = :project", {
+        project: filters.project,
+      });
+    }
+    if (filters.tags?.length) {
+      query.andWhere(
+        "EXISTS (SELECT 1 FROM json_each(activity.tags) WHERE json_each.value IN (:...tags))",
+        { tags: filters.tags },
+      );
+    }
+    return query;
   }
 
   async meta(userId: string): Promise<ActivityMeta> {

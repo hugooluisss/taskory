@@ -1,0 +1,25 @@
+meta {
+  name: Delete chunked report without token returns 401
+  type: http
+  seq: 14
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+delete {
+  url: {{baseUrl}}/reports/00000000-0000-4000-8000-000000000000
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: chunked-report-generation / Delete a report / Authentication required.
+}
+tests {
+  test("requires authentication to delete a report", function() {
+    expect(res.status).to.equal(401);
+  });
+}

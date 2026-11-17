@@ -1,0 +1,42 @@
+meta {
+  name: Completed chunked report cannot be retried
+  type: http
+  seq: 6
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports/{{reportId}}/retry
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-not-retry+" + Date.now() + "@example.com", name: "Chunked not retryable", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Retry activity " + i } });
+  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  let report;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    report = await require("axios").get(bru.getEnvVar("baseUrl") + "/reports/" + job.data.id, { headers: { Authorization: "Bearer " + user.data.token } });
+    if (["completed", "failed"].includes(report.data.status)) break;
+  }
+  if (report.data.status !== "completed") throw new Error("Setup report did not complete: " + JSON.stringify(report.data));
+  bru.setVar("reportId", job.data.id);
+}
+docs {
+  Spec scenario: chunked-report-generation / Retry / Retry of a non-failed job. Completes a job before retry; requires fake Ollama.
+}
+tests {
+  test("rejects retry of a completed report", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal("REPORT_NOT_RETRYABLE");
+  });
+}

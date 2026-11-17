@@ -1,0 +1,34 @@
+meta {
+  name: Create chunked report without token returns 401
+  type: http
+  seq: 15
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+docs {
+  Spec scenario: chunked-report-generation / Chunked generation for large reports / Authentication required.
+}
+tests {
+  test("requires authentication to create a report", function() {
+    expect(res.status).to.equal(401);
+  });
+}

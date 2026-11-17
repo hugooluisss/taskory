@@ -1,0 +1,62 @@
+meta {
+  name: Invalid LLM output is localized
+  type: http
+  seq: 1
+  tags: [
+    requires-fake-ollama
+    requires-fake-ollama-invalid-output
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-invalid+" + Date.now() + "@example.com", name: "Chunked invalid output", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Invalid output activity " + i } });
+}
+script:post-response {
+  const axios = require("axios");
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const token = bru.getVar("reportsToken");
+  let report;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    report = (await axios.get(baseUrl + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + token, "Accept-Language": "en" } })).data;
+    if (["failed", "completed"].includes(report.status)) break;
+  }
+  const spanish = await axios.get(baseUrl + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + token, "Accept-Language": "es" } });
+  const english = await axios.get(baseUrl + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + token, "Accept-Language": "en" } });
+  bru.setVar("invalidOutputResult", { failed: report, spanish: spanish.data, english: english.data });
+}
+docs {
+  Spec scenario: chunked-report-generation / Invalid provider output / localized INVALID_LLM_OUTPUT after all attempts. Fake sends invalid JSON in valid HTTP 200 responses for chunk 2.
+}
+tests {
+  test("fails the second chunk and localizes INVALID_LLM_OUTPUT", function() {
+    const result = bru.getVar("invalidOutputResult");
+    expect(result.failed.status).to.equal("failed");
+    expect(result.failed.error.code).to.equal("INVALID_LLM_OUTPUT");
+    expect(result.failed.error.chunk).to.equal(1);
+    expect(result.spanish.error.message).to.equal("El proveedor de IA devolvió una respuesta no válida");
+    expect(result.english.error.message).to.equal("The LLM returned invalid output");
+  });
+}

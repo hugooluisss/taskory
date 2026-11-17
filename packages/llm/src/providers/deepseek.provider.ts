@@ -74,14 +74,16 @@ export class DeepSeekProvider implements LlmProvider {
             { role: "system", content: input.system },
             { role: "user", content: input.prompt },
           ],
+          ...(input.json ? { response_format: { type: "json_object" } } : {}),
         }),
       },
       timeoutMs: this.timeoutMs,
       provider: this.id,
+      signal: input.signal,
       parse: (data) => {
         const content = (data as DeepSeekResponse).choices?.[0]?.message
           ?.content;
-        if (typeof content !== "string" || !content.trim()) {
+        if (typeof content !== "string" || (!input.json && !content.trim())) {
           throw new Error("Invalid DeepSeek response");
         }
         return content;

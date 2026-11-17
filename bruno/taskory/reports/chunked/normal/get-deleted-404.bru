@@ -1,0 +1,37 @@
+meta {
+  name: Deleted chunked report returns 404
+  type: http
+  seq: 15
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+get {
+  url: {{baseUrl}}/reports/{{deletedReportId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-get-deleted+" + Date.now() + "@example.com", name: "Chunked get deleted", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Deleted activity " + i } });
+  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  await bru.sendRequest({ method: "DELETE", url: bru.getEnvVar("baseUrl") + "/reports/" + job.data.id, headers: { Authorization: "Bearer " + user.data.token } });
+  bru.setVar("deletedReportId", job.data.id);
+}
+docs {
+  Spec scenario: chunked-report-generation / Delete a report / Delete. Verifies the deleted job is no longer retrievable.
+}
+tests {
+  test("does not return a deleted report", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal("NOT_FOUND");
+  });
+}

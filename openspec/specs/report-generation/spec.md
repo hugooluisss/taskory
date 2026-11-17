@@ -46,10 +46,10 @@ The system SHALL reject invalid ranges.
 - **THEN** the system responds 400 with code `VALIDATION_ERROR`
 
 ### Requirement: Report size limit
-The system SHALL refuse to generate a report from more than 300 activities, to stay within model context limits.
+The system SHALL generate reports of up to 3000 matching activities (single pass up to 100, chunked beyond that as defined in `chunked-report-generation`) and SHALL refuse larger ones before calling the provider.
 
 #### Scenario: Range too large
-- **WHEN** the selected range, project and tags match more than 300 activities
+- **WHEN** the selected range, project and tags match more than 3000 activities
 - **THEN** the system responds 422 with code `RANGE_TOO_LARGE` and does not call the provider
 
 #### Scenario: Tag filter

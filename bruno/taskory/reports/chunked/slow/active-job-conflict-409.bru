@@ -1,0 +1,50 @@
+meta {
+  name: Second active chunked job is rejected
+  type: http
+  seq: 1
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-active+" + Date.now() + "@example.com", name: "Chunked active", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) {
+    await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Active activity " + i } });
+  }
+  const first = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  bru.setVar("firstReportId", first.data.id);
+}
+docs {
+  Spec scenario: chunked-report-generation / Concurrency limits / Second job of the same user. Slow fake keeps the first job active during the second POST.
+}
+tests {
+  test("rejects another active job for the same user", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal("REPORT_IN_PROGRESS");
+    expect(res.body.id).to.equal(bru.getVar("firstReportId"));
+  });
+}

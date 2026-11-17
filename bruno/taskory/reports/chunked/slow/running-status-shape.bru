@@ -1,0 +1,63 @@
+meta {
+  name: Running report status shape
+  type: http
+  seq: 3
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-running+" + Date.now() + "@example.com", name: "Chunked running", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Running activity " + i } });
+}
+script:post-response {
+  const axios = require("axios");
+  const baseUrl = bru.getEnvVar("baseUrl");
+  let report;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const response = await axios.get(baseUrl + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + bru.getVar("reportsToken") } });
+    report = response.data;
+    if (report.status === "running") break;
+  }
+  bru.setVar("runningReport", report);
+}
+docs {
+  Spec scenario: chunked-report-generation / Report job status / Running status shape. Slow fake keeps GET within active generation.
+}
+tests {
+  test("returns the complete running status shape with bounded progress", function() {
+    const report = bru.getVar("runningReport");
+    expect(report.id).to.equal(res.body.id);
+    expect(["queued", "running"]).to.include(report.status);
+    expect(report.progress).to.have.all.keys("done", "total");
+    expect(report.progress.done).to.be.at.least(0);
+    expect(report.progress.done).to.be.at.most(report.progress.total);
+    expect(report).to.have.property("createdAt");
+    expect(report.finishedAt == null).to.equal(true);
+    expect(report).not.to.have.property("markdown");
+  });
+}

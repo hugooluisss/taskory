@@ -1,0 +1,57 @@
+meta {
+  name: Transient chunk error is retried to completion
+  type: http
+  seq: 1
+  tags: [
+    requires-fake-ollama
+    requires-fake-ollama-transient
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-transient+" + Date.now() + "@example.com", name: "Chunked transient", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Transient activity " + i } });
+}
+script:post-response {
+  const axios = require("axios");
+  let report;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    report = (await axios.get(bru.getEnvVar("baseUrl") + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + bru.getVar("reportsToken") } })).data;
+    if (["completed", "failed"].includes(report.status)) break;
+  }
+  bru.setVar("transientReportResult", report);
+}
+docs {
+  Spec scenario: chunked-report-generation / Invalid provider output / Retry transient provider failure. The fake fails the first attempt of chunk 2; the library retry should complete it.
+}
+tests {
+  test("completes after the transient chunk evaluation failure", function() {
+    const report = bru.getVar("transientReportResult");
+    expect(report.status).to.equal("completed");
+    expect(report.error).to.equal(undefined);
+    expect(report.progress.done).to.equal(2);
+    expect(report.progress.total).to.equal(2);
+  });
+}

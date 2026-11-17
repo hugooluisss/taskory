@@ -45,7 +45,11 @@ export class ErrorsFilter implements ExceptionFilter {
     const message =
       messages[language][code] ??
       messages[language][ERROR_CODES.INTERNAL_ERROR];
-    response.status(statusCode).json({ statusCode, code, message });
+    const details =
+      typeof body === "object" && body !== null && "id" in body
+        ? { id: body.id }
+        : {};
+    response.status(statusCode).json({ statusCode, code, message, ...details });
   }
 
   private statusCode(exception: unknown): number {

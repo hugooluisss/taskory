@@ -1,0 +1,67 @@
+meta {
+  name: Delete chunked report while active
+  type: http
+  seq: 0
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+delete {
+  url: {{baseUrl}}/reports/{{reportId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-delete-active+" + Date.now() + "@example.com", name: "Chunked delete active", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Active delete activity " + i } });
+  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const axios = require("axios");
+  const reportUrl = baseUrl + "/reports/" + job.data.id;
+  const headers = { Authorization: "Bearer " + user.data.token };
+  let status;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    status = (await axios.get(reportUrl, { headers })).data.status;
+    if (status === "running") break;
+  }
+  if (status !== "running") throw new Error("Report did not enter running state before delete: " + status);
+  bru.setVar("reportsToken", user.data.token);
+  bru.setVar("reportId", job.data.id);
+  const stats = (await axios.get(bru.getEnvVar("fakeBaseUrl") + "/__stats")).data.chunkEvaluationCalls;
+  bru.setVar("chunkCallsBeforeDelete", stats.reduce((total, chunk) => total + chunk.calls, 0));
+}
+script:post-response {
+  const axios = require("axios");
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const fakeUrl = bru.getEnvVar("fakeBaseUrl");
+  const headers = { Authorization: "Bearer " + bru.getVar("reportsToken") };
+  const getResponse = await axios.get(baseUrl + "/reports/" + bru.getVar("reportId"), { headers }).catch((error) => error.response);
+  let callsAfterDelete = bru.getVar("chunkCallsBeforeDelete");
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const statsResponse = await axios.get(fakeUrl + "/__stats").catch((error) => error.response);
+    if (statsResponse.status !== 200) throw new Error("Fake stats returned " + statsResponse.status);
+    const stats = statsResponse.data.chunkEvaluationCalls;
+    callsAfterDelete = stats.reduce((total, chunk) => total + chunk.calls, 0);
+    if (callsAfterDelete > bru.getVar("chunkCallsBeforeDelete")) break;
+  }
+  bru.setVar("deleteActiveResult", { getStatus: getResponse.status, callsAfterDelete });
+}
+docs {
+  Spec scenario: chunked-report-generation / Delete a report / Delete while running. Slow fake allows a running GET before deletion; stats are polled at most 10 times.
+}
+tests {
+  test("deletes the active report and stops further chunk evaluations", function() {
+    expect(res.status).to.equal(204);
+    const result = bru.getVar("deleteActiveResult");
+    expect(result.getStatus).to.equal(404);
+    expect(result.callsAfterDelete).to.equal(bru.getVar("chunkCallsBeforeDelete"));
+  });
+}

@@ -1,0 +1,53 @@
+## Design review: 03b-chunked-reports, round 2
+
+Intent: generate large reports in bounded asynchronous chunks with persisted memory, progress, cancellation and retry.
+
+### Findings (most severe first)
+
+- [must-fix][architecture] `apps/api/src/reports/report-job.runner.ts:236`, `apps/api/src/reports/report-jobs.service.ts:116` — The runner and lifecycle service interpret SQLite driver codes. This leaks persistence details past the repository and makes deletion/collision semantics dependent on the storage implementation, contrary to the specified service/repository boundary. Translate constraint errors into repository-owned domain errors in the repositories and have the service/runner handle those errors. The runner's `saveMemory` call at `report-job.runner.ts:122` is the affected caller.
+- [should-fix][architecture] `apps/api/src/reports/reports.service.ts:125`, `apps/api/src/reports/report-job.runner.ts:44`, `:54`, `:76` — A queued job can be cancelled in memory, then rediscovered by a concurrent `resumeQueued` before its database deletion completes; a previously fetched queued snapshot can also enqueue it after cancellation. The newly created controller is not aborted, so provider work can start after deletion. Coordinate deletion and dispatch, including stale queue snapshots, and add a deferred test covering both orderings. The existing queued cancellation test at `report-job.runner.spec.ts:165` does not delete the persisted row or simulate rediscovery.
+- [should-fix][architecture] `apps/api/src/reports/report-generator.provider.ts:2`, `:10` — The composition provider imports and constructs the library directly outside the adapter, despite the agreed adapter-only library boundary. Move library construction into the adapter's factory or an adapter-owned provider so the port wiring has one library-dependent boundary.
+- [should-fix][bad practices] `packages/llm/src/report/memory-consolidator.ts:15`, `:37`, `:44`, `packages/llm/src/report/final-report.prompt.ts:13` — The budget checks individual chunks rather than the total final memory; many individually small chunks can bypass consolidation. A single oversized chunk is sent intact to consolidation, and grouping measures compact JSON although the prompt serializes indented JSON. Consequently neither consolidation input nor final input is bounded by 12,000 characters. Budget the actual serialized prompt, split or reject oversized individual chunks, and reduce until final input fits; include totals and prompt overhead in the limit. The test at `report-generator.chunked.test.ts:292` verifies a call occurs but not its size.
+- [should-fix][bad practices] `apps/api/src/reports/report-jobs.service.ts:19`, `:21`, `:22`, `apps/api/src/reports/report-jobs.repository.ts:54` — Index creation precedes recovery. A database produced by the previous implementation may already contain two queued/running jobs for a user, so creating the unique index fails and prevents startup before recovery can resolve anything. `IF NOT EXISTS` makes repeat creation harmless only when the existing index is correct; it does not repair duplicates or an index of the same name with a different definition. Define and test a deterministic upgrade/reconciliation before enforcing the index, and verify its definition on existing databases.
+- [should-fix][bad practices] `apps/api/src/reports/report-job.runner.ts:69`, `:76`, `:100` — Slot release is attached only to successful `run` completion. If persisting a failure itself rejects, `finish` never runs; the slot and active ID remain occupied and the rejected task is silently removed. Release the slot in a `finally` path, report the persistence failure, and test a rejected failure update and a rejected queue reload.
+- [should-fix][tests] `packages/llm/test/report-generator.chunked.test.ts:186`, `:197`, `:259`, `:276`, `:281`, `:288` — The final-output assertion still accepts only `# Final`, and the consolidation tests assert call counts and a truthy result without inspecting reduced memory or the serialized budget. These can pass with evidence omitted or unbounded inputs. Assert the memory passed to the final prompt, the actual serialized input bounds and, where the contract requires evidence in output, the observable result or explicitly document that model output is not validated.
+- [should-fix][tests] `packages/llm/test/report-generator.chunked.test.ts:42`, `:186`, `apps/api/test/reports.e2e-spec.ts:138`, `:232` — The required `describe('<Requirement>')` / `it('<Scenario>')` traceability remains incomplete: for example, `Chunk evaluation output` and `Completion` are scenarios, not their enclosing requirements, and `Up to 100 activities` is renamed. Align scenario tests with `openspec/changes/03b-chunked-reports/specs/chunked-report-generation/spec.md:3`, `:10`, `:36` and the rule at `docs/agent-rules.md:29`; auxiliary tests may retain descriptive names.
+- [nit][formatting] `apps/api/test/reports.e2e-spec.ts:233`, `:248`, `apps/api/src/reports/reports.service.ts:117`, `:121` — The new nested test and retry response are visibly misindented, making boundaries harder to scan. Correct indentation and keep separate statements on separate lines. No project formatter command is configured in the reviewed package scripts.
+
+### Previous findings: status
+
+| Previous finding | Status | Evidence and remaining qualification |
+|---|---|---|
+| Owner-scoped memory and deletion | fixed | Composite owner/job foreign key and cascade: `apps/api/src/reports/entities/report-memory.entity.ts:7`; scoped reads/writes: `apps/api/src/reports/report-memory.repository.ts:12`; `prepareDatabase` enables SQLite foreign keys per production connection: `apps/api/src/app.module.ts:20`. Repository test exercises delete-before-save: `apps/api/src/reports/report-jobs.repository.spec.ts:65`. |
+| Atomic active jobs and duplicate enqueue | partially | Conditional retry and partial unique index: `apps/api/src/reports/report-jobs.repository.ts:39`, `:54`; active/queue deduplication: `apps/api/src/reports/report-job.runner.ts:38`. Index upgrade ordering and delete/redispatch remain findings above. Retry during active cleanup is eventually rediscovered by `finish` at `report-job.runner.ts:76`. |
+| Cancellation through internal requests | partially | Signals reach retries and HTTP: `packages/llm/src/report/chunk-evaluation.ts:18`, `packages/llm/src/providers/http-json.ts:21`; consolidation checks between groups: `packages/llm/src/report/memory-consolidator.ts:20`. The queued delete/redispatch race remains above. |
+| Library errors and port contract | partially | Adapter implements the port and maps library errors: `apps/api/src/reports/adapters/llm-report-generator.adapter.ts:11`, `:34`; style is required by the port: `apps/api/src/reports/ports/report-generator.port.ts:35`. The composition provider still imports the library outside the adapter, as above. |
+| Startup recovery and ordering | partially | Bootstrap awaits recovery before queued dispatch: `apps/api/src/reports/report-job.runner.ts:33`; only running jobs are interrupted: `apps/api/src/reports/report-jobs.repository.ts:47`; real restart test: `apps/api/test/reports.e2e-spec.ts:181`. Index creation before recovery remains an upgrade concern above. |
+| Retry provider failures | fixed | Bounded structured-output retry catches provider failures: `packages/llm/src/report/chunk-evaluation.ts:18`; test: `packages/llm/test/report-generator.chunked.test.ts:147`. |
+| Prompt injection in all stages | fixed | Escaped JSON blocks and explicit data instructions: `packages/llm/src/report/chunk-evaluation.prompt.ts:8`, `:30`; `packages/llm/src/report/consolidation.prompt.ts:8`, `:20`; `packages/llm/src/report/final-report.prompt.ts:13`, `:23`. These are prompt-level mitigations, not a guarantee of model compliance. |
+| Memory string and prompt budgets | partially | Summary/reason limits: `packages/llm/src/report/chunk-output-validator.ts:15`, `:40`; grouping budget exists at `packages/llm/src/report/memory-consolidator.ts:38`, but is not a complete input bound as above. |
+| Fake Ollama consolidation | fixed | Fake caps highlights at 15: `tools/fake-ollama/server.mjs:47`. Static inspection confirms the cap; no server was started. |
+| ErrorsFilter overwrites envelope | fixed | Only `id` is forwarded and localized envelope is preserved: `apps/api/src/common/errors/errors.filter.ts:45`; prior HEAD returned only that envelope. Other endpoints continue to receive the same fields unless an exception explicitly supplies an `id`; test: `apps/api/src/common/errors/errors.filter.spec.ts:1`. |
+| Timing-dependent lifecycle tests and startup | partially | Deferred promises and restart coverage replace the cited sleeps: `apps/api/src/reports/report-job.runner.spec.ts:98`, `apps/api/test/reports.e2e-spec.ts:181`; no sleep or wall-clock polling found in these suites. Delete/redispatch and index upgrade interleavings remain untested; see findings. |
+| Weak assertions and spec names | partially | Invalid impact now isolates a valid summary: `packages/llm/test/report-generator.chunked.test.ts:83`; output/budget assertions and scenario naming remain findings above. |
+
+### Done well
+
+- Memory ownership is enforced by a composite foreign key with cascading deletion, backed by a temporary-database interleaving test (`apps/api/src/reports/entities/report-memory.entity.ts:7`, `apps/api/src/reports/report-jobs.repository.spec.ts:65`).
+- The real restart test verifies interrupted running jobs and dispatch of queued jobs against the same database (`apps/api/test/reports.e2e-spec.ts:181`).
+
+### Scores (orientative)
+
+| Category | Weight | Score | Why |
+|---|---:|---:|---|
+| Architecture | 20% | 4/10 | One layer-boundary violation and two contained dispatch/adapter issues. |
+| Bad practices | 15% | 5.5/10 | Budget, upgrade recovery and failure cleanup. |
+| Antipatterns | 15% | 10/10 | No separate structural finding. |
+| Design patterns | 15% | 10/10 | No separate pattern finding. |
+| Naming | 15% | 10/10 | No separate naming finding. |
+| Tests | 15% | 7/10 | Assertion strength and spec traceability. |
+| Formatting | 5% | 9.5/10 | One indentation/readability nit. |
+
+Global: 7.7/10 — Verdict: approve with changes
+
+Review limits: examined the uncommitted working tree including untracked files; the codebase-memory project is not indexed, so structural tracing used source searches. API unit tests passed (94); LLM tests passed (62). No e2e, coverage, formatter, server or Bruno run was performed. The partial-index upgrade and async races are reasoned interleavings, not observed test failures. Commit hygiene is not applicable to this uncommitted review.

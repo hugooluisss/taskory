@@ -78,6 +78,17 @@ export class ActivitiesService {
     });
   }
 
+  findReportSnapshot(userId: string, filters: ReportActivityFilters) {
+    return this.activities.findReportSnapshot(userId, {
+      ...filters,
+      tags: filters.tags ? this.normalizeTags(filters.tags) : undefined,
+    });
+  }
+
+  findReportChunk(userId: string, ids: string[]) {
+    return this.activities.findReportChunk(userId, ids);
+  }
+
   private normalizeTags(tags: string[]): string[] {
     return [
       ...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),

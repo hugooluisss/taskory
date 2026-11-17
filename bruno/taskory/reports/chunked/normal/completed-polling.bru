@@ -1,0 +1,59 @@
+meta {
+  name: Chunked report completes
+  type: http
+  seq: 2
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-complete+" + Date.now() + "@example.com", name: "Chunked complete", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) {
+    await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Chunked activity " + i } });
+  }
+}
+script:post-response {
+  const axios = require("axios");
+  let result;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    result = await axios.get(bru.getEnvVar("baseUrl") + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + bru.getVar("reportsToken"), "Accept-Language": "en" } });
+    if (result.data.status === "completed" || result.data.status === "failed") break;
+  }
+  bru.setVar("chunkedReportResult", result.data);
+}
+docs {
+  Spec scenario: chunked-report-generation / Report job status / Completion. Polls a bounded 60 times; requires fake Ollama.
+}
+tests {
+  test("completes a chunked report", function() {
+    const report = bru.getVar("chunkedReportResult");
+    expect(report.status, "report did not complete within 60 polls: " + JSON.stringify(report)).to.equal("completed");
+    expect(report.markdown).to.include("# Fake report");
+    expect(report.markdown).to.include("Fake summary");
+    expect(report.progress.done).to.equal(2);
+    expect(report.progress.total).to.equal(2);
+  });
+}

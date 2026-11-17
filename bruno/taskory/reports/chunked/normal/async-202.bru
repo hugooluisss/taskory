@@ -1,0 +1,62 @@
+meta {
+  name: Chunked report returns 202
+  type: http
+  seq: 1
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-async+" + Date.now() + "@example.com", name: "Chunked async", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  const axios = require("axios");
+  for (let start = 0; start < 250; start += 20) {
+    await Promise.all(Array.from({ length: Math.min(20, 250 - start) }, (_, offset) => axios.post(bru.getEnvVar("baseUrl") + "/activities", { date: "2026-11-16", title: "Chunked activity " + (start + offset) }, { headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token } })));
+  }
+}
+script:post-response {
+  const axios = require("axios");
+  let report;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    report = (await axios.get(bru.getEnvVar("baseUrl") + "/reports/" + res.body.id, { headers: { Authorization: "Bearer " + bru.getVar("reportsToken") } })).data;
+    if (["completed", "failed"].includes(report.status)) break;
+  }
+  bru.setVar("chunked250Result", report);
+}
+docs {
+  Spec scenario: chunked-report-generation / Chunked generation for large reports / 250 activities. Requires fake Ollama.
+}
+tests {
+  test("queues the report with three chunks", function() {
+    expect(res.status).to.equal(202);
+    expect(res.body).to.have.property("id");
+    expect(["queued", "running"]).to.include(res.body.status);
+    expect(res.body.progress.total).to.equal(3);
+    const report = bru.getVar("chunked250Result");
+    expect(report.status).to.equal("completed");
+    expect(report.progress.total).to.equal(3);
+    expect(report.activityCount).to.equal(250);
+  });
+}

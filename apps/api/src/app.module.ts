@@ -9,6 +9,8 @@ import { ApiKey } from "./api-keys/entities/api-key.entity";
 import { ActivitiesModule } from "./activities/activities.module";
 import { Activity } from "./activities/entities/activity.entity";
 import { ReportsModule } from "./reports/reports.module";
+import { ReportJob } from "./reports/entities/report-job.entity";
+import { ReportMemory } from "./reports/entities/report-memory.entity";
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === "true" ||
@@ -21,7 +23,9 @@ export function databaseOptions(
   return {
     type: "better-sqlite3" as const,
     database: databasePath,
-    entities: [User, ApiKey, Activity],
+    prepareDatabase: (database: { exec(sql: string): void }) =>
+      database.exec("PRAGMA foreign_keys = ON"),
+    entities: [User, ApiKey, Activity, ReportJob, ReportMemory],
     // ponytail: synchronization only supports early deployments; use migrations as the upgrade path.
     synchronize,
   };

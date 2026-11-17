@@ -2,6 +2,8 @@ export interface CompleteInput {
   system: string;
   prompt: string;
   model?: string;
+  json?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface LlmProvider {

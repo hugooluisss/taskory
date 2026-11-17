@@ -1,0 +1,32 @@
+meta {
+  name: Invalid report id returns 400
+  type: http
+  seq: 11
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+get {
+  url: {{baseUrl}}/reports/not-a-uuid
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-invalid-id+" + Date.now() + "@example.com", name: "Chunked invalid id", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: chunked-report-generation / Report job status / Invalid report id.
+}
+tests {
+  test("rejects a non-UUID report id", function() {
+    expect(res.status).to.equal(400);
+  });
+}

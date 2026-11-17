@@ -1,0 +1,25 @@
+meta {
+  name: Get chunked report without token returns 401
+  type: http
+  seq: 12
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+get {
+  url: {{baseUrl}}/reports/00000000-0000-4000-8000-000000000000
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: chunked-report-generation / Report job status / Authentication required.
+}
+tests {
+  test("requires authentication to get a report", function() {
+    expect(res.status).to.equal(401);
+  });
+}

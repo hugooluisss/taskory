@@ -1,0 +1,25 @@
+meta {
+  name: Retry chunked report without token returns 401
+  type: http
+  seq: 13
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports/00000000-0000-4000-8000-000000000000/retry
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: chunked-report-generation / Retry / Authentication required.
+}
+tests {
+  test("requires authentication to retry a report", function() {
+    expect(res.status).to.equal(401);
+  });
+}

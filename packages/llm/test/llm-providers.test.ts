@@ -29,6 +29,31 @@ describe("Provider abstraction", () => {
     });
   });
 
+  it("Ollama provider requests JSON format when requested", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ message: { content: "{}" } })),
+      );
+    const provider = new OllamaProvider({ fetcher, baseUrl: "http://ollama" });
+    await provider.complete({ system: "s", prompt: "p", json: true });
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      format: "json",
+    });
+  });
+
+  it("Ollama provider passes empty JSON-mode content to validation", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ message: { content: "  " } })),
+      );
+    const provider = new OllamaProvider({ fetcher, baseUrl: "http://ollama" });
+    await expect(
+      provider.complete({ system: "s", prompt: "p", json: true }),
+    ).resolves.toBe("  ");
+  });
+
   it("DeepSeek provider generates text through API", async () => {
     const fetcher = vi
       .fn<typeof fetch>()
@@ -47,6 +72,35 @@ describe("Provider abstraction", () => {
         headers: expect.objectContaining({ authorization: "Bearer secret" }),
       }),
     );
+  });
+
+  it("DeepSeek provider requests JSON object mode when requested", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ choices: [{ message: { content: "{}" } }] }),
+        ),
+      );
+    const provider = new DeepSeekProvider({ fetcher, apiKey: "secret" });
+    await provider.complete({ system: "s", prompt: "p", json: true });
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      response_format: { type: "json_object" },
+    });
+  });
+
+  it("DeepSeek provider passes empty JSON-mode content to validation", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ choices: [{ message: { content: "" } }] }),
+        ),
+      );
+    const provider = new DeepSeekProvider({ fetcher, apiKey: "secret" });
+    await expect(
+      provider.complete({ system: "s", prompt: "p", json: true }),
+    ).resolves.toBe("");
   });
 
   it("unreachable provider is listed unavailable", async () => {

@@ -1,0 +1,48 @@
+meta {
+  name: Exactly 100 activities uses single pass
+  type: http
+  seq: 3
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "provider": "ollama"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-single+" + Date.now() + "@example.com", name: "Chunked single pass", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 100; i++) {
+    await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Single pass activity " + i } });
+  }
+}
+docs {
+  Spec scenario: chunked-report-generation / Single pass for small reports / Up to 100 activities. Requires fake Ollama.
+}
+tests {
+  test("generates a synchronous report for exactly 100 activities", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.activityCount).to.equal(100);
+    expect(res.body.markdown).to.be.a("string").and.not.empty;
+    expect(res.body).not.to.have.property("id");
+  });
+}

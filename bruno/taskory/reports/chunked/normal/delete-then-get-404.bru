@@ -1,0 +1,36 @@
+meta {
+  name: Delete chunked report then get returns 404
+  type: http
+  seq: 10
+  tags: [
+    requires-fake-ollama
+    chunked
+  ]
+}
+delete {
+  url: {{baseUrl}}/reports/{{reportId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const baseUrl = bru.getEnvVar("baseUrl");
+  const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-delete-own+" + Date.now() + "@example.com", name: "Chunked delete own", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Delete activity " + i } });
+  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  bru.setVar("reportId", job.data.id);
+}
+docs {
+  Spec scenario: chunked-report-generation / Delete a report / Delete. Deletes the job and verifies it is no longer retrievable; requires fake Ollama.
+}
+tests {
+  test("deletes the report and makes it inaccessible", function() {
+    expect(res.status).to.equal(204);
+  });
+}

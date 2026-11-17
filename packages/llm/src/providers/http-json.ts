@@ -11,13 +11,19 @@ export interface HttpJsonOptions<T> {
   timeoutMs: number;
   provider: string;
   parse?: (data: unknown) => T;
+  signal?: AbortSignal;
 }
 
 export async function fetchJson<T>(options: HttpJsonOptions<T>): Promise<T> {
   try {
     const response = await options.fetcher(options.url, {
       ...options.init,
-      signal: AbortSignal.timeout(options.timeoutMs),
+      signal: options.signal
+        ? AbortSignal.any([
+            options.signal,
+            AbortSignal.timeout(options.timeoutMs),
+          ])
+        : AbortSignal.timeout(options.timeoutMs),
     });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);

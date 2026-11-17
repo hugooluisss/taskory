@@ -58,6 +58,7 @@ export class OllamaProvider implements LlmProvider {
         body: JSON.stringify({
           model: input.model ?? this.defaultModel,
           stream: false,
+          ...(input.json ? { format: "json" } : {}),
           messages: [
             { role: "system", content: input.system },
             { role: "user", content: input.prompt },
@@ -66,9 +67,10 @@ export class OllamaProvider implements LlmProvider {
       },
       timeoutMs: this.timeoutMs,
       provider: this.id,
+      signal: input.signal,
       parse: (data) => {
         const content = (data as OllamaResponse).message?.content;
-        if (typeof content !== "string" || !content.trim()) {
+        if (typeof content !== "string" || (!input.json && !content.trim())) {
           throw new Error("Invalid Ollama response");
         }
         return content;
