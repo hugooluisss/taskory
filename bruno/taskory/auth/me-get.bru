@@ -1,0 +1,25 @@
+meta {
+  name: Get current profile
+  type: http
+  seq: 4
+}
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: user-auth / Authenticated profile / Read profile; Password security / Profile never exposes secrets. Run after Login; expects 200 user {id,email,name,language}.
+}
+tests {
+  test("reads current profile", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.all.keys("id", "email", "name", "language");
+  });
+}

@@ -1,4 +1,9 @@
-## ADDED Requirements
+# api-keys Specification
+
+## Purpose
+TBD - created by archiving change 01-api-foundation-auth. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: API key creation
 The system SHALL let an authenticated user create a named personal API key whose value starts with `tk_` and is returned in plaintext exactly once.
@@ -10,6 +15,17 @@ The system SHALL let an authenticated user create a named personal API key whose
 #### Scenario: Key is never shown again
 - **WHEN** the user lists their keys
 - **THEN** each entry has `id`, `name`, `prefix`, `createdAt` and `lastUsedAt` but never the full key
+
+### Requirement: API key limit
+The system SHALL allow at most 20 active API keys per user.
+
+#### Scenario: Limit reached
+- **WHEN** a user with 20 active keys creates another
+- **THEN** the system responds 409 with code `API_KEY_LIMIT`
+
+#### Scenario: Revoking frees a slot
+- **WHEN** the user revokes a key and creates a new one
+- **THEN** the creation succeeds
 
 ### Requirement: API key storage
 The system MUST store API keys only as hashes.

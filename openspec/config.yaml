@@ -23,6 +23,7 @@ rules:
     - Must state how the change maps to controller -> service -> repository.
   tasks:
     - Group tasks per layer (repository, service, controller) and include tests per layer.
+    - Tests use a framework (Jest for apps/api, Vitest for apps/web, packages/llm and apps/mcp), each spec scenario has a test named after it, and coverage gate is 80%.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

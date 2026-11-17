@@ -1,0 +1,38 @@
+meta {
+  name: Register
+  type: http
+  seq: 2
+}
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "name": "{{name}}"
+  }
+}
+script:pre-request {
+    bru.setVar("email", "user+" + Date.now() + "@example.com");
+}
+script:post-response {
+    bru.setVar("token", res.body.token);
+}
+docs {
+  Spec scenario: user-auth / User registration / Successful registration; Password security / Profile never exposes secrets. Run after health; returns 201 {token,user}. Password hash storage is verified by database tests because it is not observable over HTTP.
+}
+tests {
+  test("registers user with safe profile", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.token).to.be.a("string");
+    expect(res.body.user).to.have.all.keys("id", "email", "name", "language");
+  });
+}

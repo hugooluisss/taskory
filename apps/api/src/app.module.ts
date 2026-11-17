@@ -1,0 +1,36 @@
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { AuthModule } from "./auth/auth.module";
+import { UsersModule } from "./users/users.module";
+import { ApiKeysModule } from "./api-keys/api-keys.module";
+import { HealthModule } from "./health/health.module";
+import { User } from "./users/entities/user.entity";
+import { ApiKey } from "./api-keys/entities/api-key.entity";
+
+const synchronize =
+  process.env.DB_SYNCHRONIZE === "true" ||
+  (process.env.NODE_ENV !== "production" &&
+    process.env.DB_SYNCHRONIZE !== "false");
+
+export function databaseOptions(
+  databasePath = process.env.DATABASE_PATH ?? "taskory.sqlite",
+) {
+  return {
+    type: "better-sqlite3" as const,
+    database: databasePath,
+    entities: [User, ApiKey],
+    // ponytail: synchronization only supports early deployments; use migrations as the upgrade path.
+    synchronize,
+  };
+}
+
+@Module({
+  imports: [
+    TypeOrmModule.forRootAsync({ useFactory: () => databaseOptions() }),
+    UsersModule,
+    ApiKeysModule,
+    AuthModule,
+    HealthModule,
+  ],
+})
+export class AppModule {}

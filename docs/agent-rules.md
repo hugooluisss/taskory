@@ -21,6 +21,15 @@ Ponytail governs how much logic you write, NOT how you organize it. The structur
 - Constants and error codes in their own modules, no magic strings/numbers scattered.
 - Tests next to the unit they cover, named after it.
 
+## Testing (mandatory, with a real framework)
+- `apps/api`: Jest + ts-jest; unit tests per service/repository with fakes; e2e with supertest and the real Nest app on an in-memory/temporary SQLite. Scripts: `npm test`, `npm run test:e2e`, `npm run test:cov`.
+- `apps/web`: Vitest (Angular's default runner) with TestBed for components, services, repositories (HttpTestingController) and the interceptor. Scripts: `npm test`, `npm run test:cov`.
+- `packages/llm` and `apps/mcp`: Vitest, with `fetch` injected/mocked (no real network or LLM calls). Script `npm test`, `npm run test:cov`.
+- Do not use hand-rolled assert scripts as a substitute for the framework.
+- Test names mirror the OpenSpec scenario they verify (`describe('<Requirement>')`, `it('<Scenario>')`) so every scenario is traceable to a test.
+- Coverage gate: configure the framework's coverage threshold at 80% lines/branches for services and controllers; `npm run test:cov` must pass it.
+- Test one layer at a time: services with fake repositories, controllers via e2e, repositories against a temporary database. No test may depend on another test's state or on a fixed port.
+
 ## Quality gates
 - Typed everywhere, no `any` unless justified in a comment.
 - Validate input at the boundary; never swallow exceptions; never log secrets.

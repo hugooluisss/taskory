@@ -15,7 +15,8 @@ Taskory stores a user's daily work activities and generates AI reports from them
 - Every query is scoped to the authenticated user. A user can never read or modify another user's data (return 404, not 403).
 - Dates are `YYYY-MM-DD` strings. Timestamps ISO-8601 UTC.
 - Errors: `{ "statusCode": number, "code": "SNAKE_CASE_CODE", "message": string }`. `message` is localized via `Accept-Language` (`es` | `en`, default `en`); `code` is stable.
-- List endpoints return `{ "items": [], "total": number, "page": number, "limit": number }`; query `page` (default 1), `limit` (default 50, max 200).
+- Paginated list endpoints (activities) return `{ "items": [], "total": number, "page": number, "limit": number }`; query `page` (default 1), `limit` (default 50, max 200). Small bounded lists (api-keys, connected-apps, report providers) return a plain array.
+- A user can have at most 20 active API keys (409 `API_KEY_LIMIT` beyond that).
 - Passwords: argon2 or bcrypt. Never log secrets. API keys are stored hashed; plaintext shown only once at creation.
 - Config via env vars: `JWT_SECRET`, `DATABASE_PATH`, `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`.
 

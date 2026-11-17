@@ -1,0 +1,34 @@
+meta {
+  name: Update current profile
+  type: http
+  seq: 5
+}
+patch {
+  url: {{baseUrl}}/auth/me
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "name": "Taskory Bruno Updated",
+    "language": "en"
+  }
+}
+docs {
+  Spec scenario: user-auth / Authenticated profile / Read profile (profile update contract). Run after Get current profile; expects 200 user {id,email,name,language}.
+}
+tests {
+  test("updates profile", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.all.keys("id", "email", "name", "language");
+    expect(res.body.name).to.equal("Taskory Bruno Updated");
+    expect(res.body.language).to.equal("en");
+  });
+}

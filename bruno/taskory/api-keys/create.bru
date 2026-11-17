@@ -1,0 +1,36 @@
+meta {
+  name: Create API key
+  type: http
+  seq: 1
+}
+post {
+  url: {{baseUrl}}/api-keys
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "name": "{{keyName}}"
+  }
+}
+script:post-response {
+    bru.setVar("apiKey", res.body.key);
+    bru.setVar("keyId", res.body.id);
+}
+docs {
+  Spec scenario: api-keys / API key creation / Create key. Run after Update current profile; expects 201 {id,name,key} with a tk_ key returned once. Hash-only persistence is verified by database tests because it is not observable over HTTP.
+}
+tests {
+  test("creates API key", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.all.keys("id", "name", "key");
+    expect(res.body.key).to.match(/^tk_/);
+  });
+}

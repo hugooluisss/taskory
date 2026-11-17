@@ -1,0 +1,29 @@
+meta {
+  name: List API keys
+  type: http
+  seq: 2
+}
+get {
+  url: {{baseUrl}}/api-keys
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: api-keys / API key creation / Key is never shown again. Run after Create API key; expects an array of {id,name,prefix,createdAt,lastUsedAt} without full key.
+}
+tests {
+  test("lists API keys without plaintext", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
+    expect(res.body.length).to.be.greaterThan(0);
+    res.body.forEach(function(key) {
+      expect(key).to.have.all.keys("id", "name", "prefix", "createdAt", "lastUsedAt");
+    });
+  });
+}

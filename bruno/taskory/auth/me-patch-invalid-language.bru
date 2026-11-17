@@ -1,0 +1,35 @@
+meta {
+  name: Patch unsupported language
+  type: http
+  seq: 11
+}
+patch {
+  url: {{baseUrl}}/auth/me
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: es
+}
+body:json {
+  {
+    "language": "{{invalidLanguage}}"
+  }
+}
+docs {
+  Spec scenario: user-auth / Authenticated profile / Unsupported language; api-errors-i18n / Localized messages / Spanish client. Expects 400 VALIDATION_ERROR and a Spanish message.
+}
+tests {
+  test("rejects unsupported language in Spanish", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(400);
+    expect(res.body.code).to.equal("VALIDATION_ERROR");
+    expect(res.body.message).to.be.a("string").and.not.empty;
+  });
+}

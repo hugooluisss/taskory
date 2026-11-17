@@ -1,0 +1,25 @@
+meta {
+  name: Authenticate with API key
+  type: http
+  seq: 3
+}
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{apiKey}}
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: api-keys / API key authentication / Request with a valid key. Run after Create API key; it uses the live tk_ value returned by that request.
+}
+tests {
+  test("resolves a valid API key to its owner", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.all.keys("id", "email", "name", "language");
+  });
+}

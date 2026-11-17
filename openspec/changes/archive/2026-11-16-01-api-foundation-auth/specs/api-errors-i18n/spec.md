@@ -19,8 +19,15 @@ The system SHALL localize `message` using the `Accept-Language` header, supporti
 - **THEN** `message` is in English
 
 ### Requirement: Pagination envelope
-List endpoints SHALL return `{ items, total, page, limit }`, with `page` default 1, `limit` default 50 and `limit` capped at 200.
+Paginated list endpoints (activities) SHALL return `{ items, total, page, limit }`, with `page` default 1, `limit` default 50 and `limit` capped at 200. Small bounded lists (API keys, connected apps, providers) return a plain array and are not paginated.
 
 #### Scenario: Limit above cap
 - **WHEN** a client requests `limit=1000`
 - **THEN** the response uses `limit` 200
+
+### Requirement: Input length limits
+The system SHALL reject user `name` values longer than 100 characters and API key `name` values longer than 100 characters.
+
+#### Scenario: Oversized name
+- **WHEN** a client sends a `name` of 101 or more characters to register, update the profile or create an API key
+- **THEN** the system responds 400 with code `VALIDATION_ERROR`

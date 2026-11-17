@@ -1,0 +1,44 @@
+meta {
+  name: Delete another user's real API key
+  type: http
+  seq: 5
+}
+delete {
+  url: {{baseUrl}}/api-keys/{{foreignKeyId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{foreignUserToken}}
+}
+headers {
+  Accept: application/json
+  Accept-Language: en
+}
+script:pre-request {
+  const ownerKey = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/api-keys",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { name: "Foreign ownership check" }
+  });
+  const secondUser = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "foreign+" + Date.now() + "@example.com", name: "Foreign user", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("foreignKeyId", ownerKey.data.id);
+  bru.setVar("foreignUserToken", secondUser.data.token);
+}
+docs {
+  Spec scenario: api-keys / API key revocation and ownership / Another user's key. Creates a real key as user A and a second user B, then deletes A's key using B's token; expects 404 NOT_FOUND.
+}
+tests {
+  test("returns not found for inaccessible key", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(404);
+    expect(res.body.code).to.equal("NOT_FOUND");
+  });
+}

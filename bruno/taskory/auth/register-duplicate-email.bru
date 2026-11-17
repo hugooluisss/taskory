@@ -1,0 +1,33 @@
+meta {
+  name: Register duplicate email
+  type: http
+  seq: 6
+}
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "name": "Duplicate User"
+  }
+}
+docs {
+  Spec scenario: user-auth / User registration / Duplicate email. Run after Register; expects 409 EMAIL_TAKEN.
+}
+tests {
+  test("rejects duplicate email", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(409);
+    expect(res.body.code).to.equal("EMAIL_TAKEN");
+  });
+}

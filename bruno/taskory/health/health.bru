@@ -1,0 +1,22 @@
+meta {
+  name: Health check
+  type: http
+  seq: 1
+}
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Spec scenario: user-auth / Health check / Service up. Run first; expects 200 {"status":"ok"}.
+}
+tests {
+  test("health is up", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.eql({ status: "ok" });
+  });
+}

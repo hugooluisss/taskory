@@ -1,0 +1,25 @@
+meta {
+  name: Get profile without token
+  type: http
+  seq: 10
+}
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+  Accept-Language: en
+}
+docs {
+  Spec scenario: user-auth / Authenticated profile / Missing or invalid token. Expects 401 UNAUTHORIZED.
+}
+tests {
+  test("rejects request without token", function() {
+    expect(res.status).to.equal(401);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(401);
+    expect(res.body.code).to.equal("UNAUTHORIZED");
+  });
+}

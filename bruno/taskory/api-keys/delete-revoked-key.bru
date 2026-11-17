@@ -1,0 +1,42 @@
+meta {
+  name: Use revoked API key
+  type: http
+  seq: 6
+}
+get {
+  url: {{baseUrl}}/auth/me
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{apiKey}}
+}
+headers {
+  Accept: application/json
+  Accept-Language: es
+}
+script:pre-request {
+  const response = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/api-keys",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { name: "Revoked key test" }
+  });
+  bru.setVar("apiKey", response.data.key);
+  await bru.sendRequest({
+    method: "DELETE",
+    url: bru.getEnvVar("baseUrl") + "/api-keys/" + response.data.id,
+    headers: { Authorization: "Bearer " + bru.getVar("token") }
+  });
+}
+docs {
+  Spec scenario: api-keys / API key authentication / Revoked key. Creates and revokes a key in the pre-request script, then expects 401 UNAUTHORIZED.
+}
+tests {
+  test("revoked API key is unauthorized", function() {
+    expect(res.status).to.equal(401);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(401);
+    expect(res.body.code).to.equal("UNAUTHORIZED");
+  });
+}

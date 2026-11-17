@@ -1,0 +1,33 @@
+meta {
+  name: Revoke API key
+  type: http
+  seq: 4
+}
+delete {
+  url: {{baseUrl}}/api-keys/{{keyId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const response = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/api-keys",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { name: "Delete own key test" }
+  });
+  bru.setVar("keyId", response.data.id);
+}
+docs {
+  Spec scenario: api-keys / API key revocation and ownership / Revoke own key. Creates a key immediately before deleting it; expects 204.
+}
+tests {
+  test("revokes own API key", function() {
+    expect(res.status).to.equal(204);
+  });
+}

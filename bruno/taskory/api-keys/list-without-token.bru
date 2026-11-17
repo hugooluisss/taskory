@@ -1,0 +1,25 @@
+meta {
+  name: List API keys without token
+  type: http
+  seq: 4
+}
+get {
+  url: {{baseUrl}}/api-keys
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+  Accept-Language: en
+}
+docs {
+  Spec scenario: user-auth / Authenticated profile / Missing or invalid token (protected endpoint behavior). Expects 401 UNAUTHORIZED.
+}
+tests {
+  test("rejects key list without token", function() {
+    expect(res.status).to.equal(401);
+    expect(res.body).to.have.all.keys("statusCode", "code", "message");
+    expect(res.body.statusCode).to.equal(401);
+    expect(res.body.code).to.equal("UNAUTHORIZED");
+  });
+}
