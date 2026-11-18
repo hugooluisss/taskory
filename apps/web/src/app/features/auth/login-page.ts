@@ -5,21 +5,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessageService } from '../../core/services/error-message.service';
-import { LanguageSwitcherComponent } from '../../shared/language-switcher';
 import { LocalPathService } from '../../core/services/local-path.service';
 import { AppIconComponent } from '../../shared/app-icon';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [
-    NgIf,
-    RouterLink,
-    ReactiveFormsModule,
-    TranslocoPipe,
-    LanguageSwitcherComponent,
-    AppIconComponent,
-  ],
+  imports: [NgIf, RouterLink, ReactiveFormsModule, TranslocoPipe, AppIconComponent],
   templateUrl: './login-page.html',
 })
 export class LoginPage {

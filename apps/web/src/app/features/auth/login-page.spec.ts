@@ -3,7 +3,6 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../core/services/auth.service';
 import { ErrorMessageService } from '../../core/services/error-message.service';
-import { LanguageSwitcherComponent } from '../../shared/language-switcher';
 import { LoginPage } from './login-page';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { TestTranslocoPipe } from './test-transloco.pipe';
@@ -29,7 +28,7 @@ describe('Access', () => {
       ],
     })
       .overrideComponent(LoginPage, {
-        remove: { imports: [TranslocoPipe, LanguageSwitcherComponent] },
+        remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe], schemas: [CUSTOM_ELEMENTS_SCHEMA] },
       })
       .compileComponents();
@@ -72,7 +71,7 @@ describe('Access', () => {
     await submission;
     expect(router.navigateByUrl).toHaveBeenCalledWith('/reports?from=today');
   });
-  it('shows the language switcher before login', () => {
-    expect(fixture.nativeElement.querySelector('app-language-switcher')).toBeTruthy();
+  it('does not show the language switcher on the login screen', () => {
+    expect(fixture.nativeElement.querySelector('app-language-switcher')).toBeNull();
   });
 });
