@@ -78,8 +78,16 @@ export class ActivitiesController {
     return this.activities.delete(user.id, id);
   }
 
-  private serialize(activity: Activity): Omit<Activity, "userId"> {
+  private serialize(activity: Activity): Omit<
+    Activity,
+    "userId" | "projects"
+  > & {
+    projects: { id: string; name: string }[];
+  } {
     const { userId: _userId, ...response } = activity;
-    return response;
+    return {
+      ...response,
+      projects: activity.projects.map(({ id, name }) => ({ id, name })),
+    };
   }
 }

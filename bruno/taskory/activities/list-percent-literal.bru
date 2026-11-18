@@ -4,7 +4,7 @@ meta {
   seq: 23
 }
 get {
-  url: {{baseUrl}}/activities?q=%25&project={{percentProject}}
+  url: {{baseUrl}}/activities?q=%25&projectIds={{percentProjectId}}
   body: none
   auth: bearer
 }
@@ -15,8 +15,10 @@ script:pre-request {
   const marker = "percent-" + Date.now();
   bru.setVar("percentProject", marker);
   const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
-  const positive = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + "%", project: marker } });
-  const negative = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " without wildcard", project: marker } });
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
+  bru.setVar("percentProjectId", project.data.id);
+  const positive = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + "%", projectIds: [project.data.id] } });
+  const negative = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " without wildcard", projectIds: [project.data.id] } });
   bru.setVar("percentPositiveId", positive.data.id);
   bru.setVar("percentNegativeId", negative.data.id);
 }

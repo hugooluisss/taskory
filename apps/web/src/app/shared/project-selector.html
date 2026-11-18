@@ -1,0 +1,46 @@
+<fieldset class="form-control gap-2">
+  <legend class="label-text">{{ label() | transloco }}</legend>
+  <div class="max-h-40 overflow-y-auto rounded-box border border-base-300 p-2">
+    @for (project of allProjects(); track project.id) {
+      @if (!project.archived) {
+        <label class="label cursor-pointer justify-start gap-2">
+          <input
+            class="checkbox checkbox-sm"
+            type="checkbox"
+            [checked]="selectedIds().includes(project.id)"
+            (change)="toggle(project.id, $event)"
+          />
+          <span>{{ project.name }}</span>
+        </label>
+      }
+    } @empty {
+      <span class="text-sm text-base-content/60">{{ 'projects.empty' | transloco }}</span>
+    }
+  </div>
+  @if (!creating()) {
+    <button class="btn btn-ghost btn-sm self-start" type="button" (click)="creating.set(true)">
+      <app-icon name="add" />{{ 'projects.createNew' | transloco }}
+    </button>
+  } @else {
+    <div class="flex gap-2">
+      <input
+        class="input input-bordered input-sm"
+        maxlength="100"
+        [attr.aria-label]="'projects.name' | transloco"
+        [ngModel]="newName()"
+        (ngModelChange)="newName.set($event)"
+      />
+      <button
+        class="btn btn-primary btn-sm"
+        type="button"
+        [disabled]="!newName().trim()"
+        (click)="create()"
+      >
+        {{ 'common.confirm' | transloco }}
+      </button>
+    </div>
+    @if (error()) {
+      <span class="text-error" role="alert">{{ error() | transloco }}</span>
+    }
+  }
+</fieldset>

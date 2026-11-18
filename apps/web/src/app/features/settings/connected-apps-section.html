@@ -9,8 +9,8 @@
   <ul class="divide-y divide-base-300" *ngIf="!loading">
     <li class="flex flex-wrap items-center justify-between gap-3 py-4" *ngFor="let app of apps">
       <div class="grid min-w-0 gap-1">
-        <strong class="break-words">{{ app.clientName }}</strong
-        ><span class="text-sm text-base-content/70"
+        <strong class="break-words">{{ app.clientName }}</strong><span
+          class="text-sm text-base-content/70"
           >{{ 'settings.created' | transloco }}:
           {{ app.createdAt | date: undefined : undefined : locale }}</span
         ><span class="text-sm text-base-content/70"

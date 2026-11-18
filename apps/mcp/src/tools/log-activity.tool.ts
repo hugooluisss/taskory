@@ -46,6 +46,11 @@ export function registerLogActivity(
         .max(100)
         .optional()
         .describe("Optional project name."),
+      projects: z
+        .array(z.string().trim().min(1).max(100))
+        .max(20)
+        .optional()
+        .describe("Optional project names."),
     },
     async (args, extra) => {
       try {

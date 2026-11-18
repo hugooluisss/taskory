@@ -12,6 +12,7 @@
     "to": "To",
     "invalidRange": "Choose valid dates, with the start on or before the end.",
     "projects": "Projects",
+    "selectProject": "Select at least one project.",
     "projectsUnavailable": "Project suggestions could not be loaded.",
     "language": "Report language",
     "spanish": "Spanish",

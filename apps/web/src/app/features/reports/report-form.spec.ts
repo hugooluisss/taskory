@@ -3,7 +3,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ReportsService } from '../../core/services/reports.service';
-import { ActivitiesService } from '../../core/services/activities.service';
+import { ProjectsService } from '../../core/services/projects.service';
 import { ReportFormComponent } from './report-form';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 
@@ -26,8 +26,15 @@ describe('Report generation', () => {
       providers: [
         { provide: ReportsService, useValue: reports },
         {
-          provide: ActivitiesService,
-          useValue: { meta: () => of({ projects: ['Apollo'], tags: [] }) },
+          provide: ProjectsService,
+          useValue: {
+            list: () =>
+              of([
+                { id: 'p1', name: 'Apollo', archived: false },
+                { id: 'p2', name: 'Zeus', archived: false },
+                { id: 'p3', name: 'Old', archived: true },
+              ]),
+          },
         },
         { provide: AuthService, useValue: { user: () => ({ language: 'es' }) } },
       ],
@@ -55,21 +62,55 @@ describe('Report generation', () => {
     expect(fixture.componentInstance.rangeError()).toBe(true);
     expect(emit).not.toHaveBeenCalled();
   });
-  it('offers project suggestions from activity metadata', () => {
+  it('selects all non-archived projects by default', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#report-projects-suggestions option').value).toBe(
-      'Apollo',
-    );
+    expect(fixture.nativeElement.textContent).toContain('Apollo');
+    expect(fixture.componentInstance.selectedProjects()).toEqual(['p1', 'p2']);
+    expect(fixture.nativeElement.textContent).not.toContain('Old');
   });
-  it('Web multi-select', () => {
+  it('toggles a project button', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    fixture.detectChanges();
+    const button = [...fixture.nativeElement.querySelectorAll('button')].find(
+      (item: HTMLButtonElement) => item.textContent.trim() === 'Apollo',
+    ) as HTMLButtonElement;
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedProjects()).toEqual(['p2']);
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+  });
+  it('omits projectIds when all projects are selected', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);
     const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
-    fixture.componentInstance.selectedProjects.set(['Apollo', 'Zeus']);
     fixture.componentInstance.submit();
-    expect(emit.mock.calls[0]![0]!.projects).toEqual(['Apollo', 'Zeus']);
+    expect(emit.mock.calls[0]![0]!.projectIds).toBeUndefined();
+  });
+  it('sends selected project ids when only some are selected', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.componentInstance.selectedProjects.set(['p2']);
+    fixture.componentInstance.submit();
+    expect(emit.mock.calls[0]![0]!.projectIds).toEqual(['p2']);
+  });
+  it('blocks submission when no project is selected', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
     fixture.componentInstance.selectedProjects.set([]);
     fixture.componentInstance.submit();
-    expect(emit.mock.calls[1]![0]!.projects).toBeUndefined();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.projectError()).toBe(true);
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(emit).not.toHaveBeenCalled();
+  });
+  it('allows submission without project ids when the user has no projects', () => {
+    TestBed.overrideProvider(ProjectsService, { useValue: { list: () => of([]) } });
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.detectChanges();
+    fixture.componentInstance.submit();
+    expect(fixture.nativeElement.textContent).toContain('projects.empty');
+    expect(emit.mock.calls[0]![0]!.projectIds).toBeUndefined();
   });
 });

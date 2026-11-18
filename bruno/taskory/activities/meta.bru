@@ -20,7 +20,8 @@ docs {
 script:pre-request {
   const marker = "meta-basic-" + Date.now();
   bru.setVar("metaBasicMarker", marker);
-  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, project: marker, tags: [marker] } });
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { name: marker } });
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, projectIds: [project.data.id], tags: [marker] } });
 }
 tests {
   test("returns distinct project and tag suggestions", function() {

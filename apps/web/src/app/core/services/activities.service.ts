@@ -14,7 +14,7 @@ export interface ActivityFormValue {
   description?: string | null;
   referenceUrls?: string | string[];
   tags?: string | string[];
-  project?: string | null;
+  projectIds?: string[];
 }
 
 export interface ActivityDayGroup {
@@ -56,10 +56,11 @@ export class ActivitiesService {
   }
   buildFilters(raw: ActivityFilters): ActivityFilters {
     const filters: ActivityFilters = {};
-    for (const key of ['from', 'to', 'project', 'tag', 'q'] as const) {
+    for (const key of ['from', 'to', 'tag', 'q'] as const) {
       const value = raw[key]?.trim();
       if (value) filters[key] = value;
     }
+    if (raw.projectIds?.length) filters.projectIds = [...new Set(raw.projectIds)];
     if (filters.from && filters.to && filters.from > filters.to) {
       throw new RangeError('Activity filter start date must not be after its end date.');
     }
@@ -77,7 +78,7 @@ export class ActivitiesService {
       date: value.date?.trim() || this.todayLocal(),
       title: value.title.trim(),
       description: value.description?.trim() || null,
-      project: value.project?.trim() || null,
+      projectIds: value.projectIds ?? [],
       tags: this.normalizeTags(value.tags),
       referenceUrls: normalizedUrls.urls,
     };
@@ -99,7 +100,7 @@ export class ActivitiesService {
   list(filters: ActivityFilters = {}) {
     return this.repository.list(this.buildFilters(filters));
   }
-  meta() {
+  meta(): Observable<{ projects: string[]; tags: string[] }> {
     this.metaRequest ??= this.repository
       .meta()
       .pipe(tap({ error: () => (this.metaRequest = undefined) }), shareReplay(1));
@@ -119,7 +120,7 @@ export class ActivitiesService {
     if (formValue.title !== undefined) input.title = formValue.title.trim();
     if (formValue.description !== undefined)
       input.description = formValue.description?.trim() || null;
-    if (formValue.project !== undefined) input.project = formValue.project?.trim() || null;
+    if (formValue.projectIds !== undefined) input.projectIds = formValue.projectIds;
     if (formValue.tags !== undefined) input.tags = this.normalizeTags(formValue.tags);
     if (formValue.referenceUrls !== undefined)
       input.referenceUrls = this.normalizeUrls(formValue.referenceUrls).urls;

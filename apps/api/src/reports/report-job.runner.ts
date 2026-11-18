@@ -56,7 +56,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
         jobId: job.id,
         from: job.params.from,
         to: job.params.to,
-        projects: job.params.projects ?? [],
+        projectIds: job.params.projectIds ?? [],
         language: job.params.language,
         style: job.params.style,
         provider: configured.provider,
@@ -258,7 +258,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       totals: sumTotals(memory),
       from: job.params.from,
       to: job.params.to,
-      projects: job.params.projects,
+      projectIds: job.params.projectIds,
       language: job.params.language,
       style: job.params.style,
       signal,
@@ -290,7 +290,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       jobId: job.id,
       from: job.params.from,
       to: job.params.to,
-      projects: job.params.projects ?? [],
+      projectIds: job.params.projectIds ?? [],
       language: job.params.language,
       style: job.params.style,
       provider: final.provider,
@@ -353,7 +353,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       jobId: id,
       from: job.params.from,
       to: job.params.to,
-      projects: job.params.projects ?? [],
+      projectIds: job.params.projectIds ?? [],
       language: job.params.language,
       style: job.params.style,
       provider: configured.provider,
@@ -462,7 +462,7 @@ function toReportActivity(activity: Activity) {
     description: activity.description,
     referenceUrls: activity.referenceUrls,
     tags: activity.tags,
-    project: activity.project,
+    projects: activity.projects.map(({ id, name }) => ({ id, name })),
   };
 }
 
@@ -470,8 +470,12 @@ function totals(rows: Activity[]): ReportTotals {
   const byProject: Record<string, number> = {};
   const byDay: Record<string, number> = {};
   for (const row of rows) {
-    const project = row.project ?? "none";
-    byProject[project] = (byProject[project] ?? 0) + 1;
+    const projects = row.projects.length
+      ? row.projects.map(({ name }) => name)
+      : ["none"];
+    for (const project of projects) {
+      byProject[project] = (byProject[project] ?? 0) + 1;
+    }
     byDay[row.date] = (byDay[row.date] ?? 0) + 1;
   }
   return { byProject, byDay };

@@ -7,7 +7,7 @@ export class ActivityToolsService {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  log(
+  async log(
     token: string,
     input: {
       title: string;
@@ -17,18 +17,45 @@ export class ActivityToolsService {
       referenceUrls?: string[];
       tags?: string[];
       project?: string;
+      projects?: string[];
     },
   ): Promise<Activity> {
     const date = input.date ?? this.today(input.timezone);
-    const { timezone: _timezone, ...activity } = input;
-    return this.api.createActivity(token, { ...activity, date });
+    const { timezone: _timezone, project, projects, ...activity } = input;
+    const names = [...(projects ?? []), ...(project ? [project] : [])];
+    const projectIds = await this.resolveProjectIds(token, names);
+    return this.api.createActivity(token, {
+      ...activity,
+      date,
+      ...(names.length ? { projectIds } : {}),
+    });
   }
 
-  list(
+  async list(
     token: string,
     input: Record<string, string | number | undefined>,
   ): Promise<ActivityList> {
-    return this.api.listActivities(token, input);
+    const { project, ...filters } = input;
+    if (typeof project !== "string")
+      return this.api.listActivities(token, filters);
+    const projects = await this.api.listProjects(token);
+    const match = projects.find(
+      (item) => item.name.toLowerCase() === project.toLowerCase(),
+    );
+    return match
+      ? this.api.listActivities(token, { ...filters, projectIds: match.id })
+      : {
+          items: [],
+          total: 0,
+          page: Number(filters.page ?? 1),
+          limit: Number(filters.limit ?? 50),
+        };
+  }
+
+  async projects(token: string) {
+    return (await this.api.listProjects(token)).filter(
+      (project) => !project.archived,
+    );
   }
 
   update(
@@ -36,7 +63,51 @@ export class ActivityToolsService {
     id: string,
     input: Record<string, unknown>,
   ): Promise<Activity> {
-    return this.api.updateActivity(token, id, input);
+    return this.updateWithProjects(token, id, input);
+  }
+
+  private async updateWithProjects(
+    token: string,
+    id: string,
+    input: Record<string, unknown>,
+  ): Promise<Activity> {
+    const { project, projects, ...fields } = input;
+    if (project !== undefined || projects !== undefined) {
+      const names = [
+        ...(Array.isArray(projects) ? (projects as string[]) : []),
+        ...(typeof project === "string" ? [project] : []),
+      ];
+      fields.projectIds = await this.resolveProjectIds(token, names);
+    }
+    return this.api.updateActivity(token, id, fields);
+  }
+
+  private async resolveProjectIds(
+    token: string,
+    names: string[],
+  ): Promise<string[]> {
+    const namesByLowercase = new Map<string, string>();
+    for (const name of names) {
+      if (!namesByLowercase.has(name.toLowerCase())) {
+        namesByLowercase.set(name.toLowerCase(), name);
+      }
+    }
+    const uniqueNames = [...namesByLowercase.values()];
+    const catalog = uniqueNames.length
+      ? await this.api.listProjects(token)
+      : [];
+    const ids: string[] = [];
+    for (const name of uniqueNames) {
+      let project = catalog.find(
+        (item) => item.name.toLowerCase() === name.toLowerCase(),
+      );
+      if (!project) {
+        project = await this.api.createProject(token, name);
+        catalog.push(project);
+      }
+      ids.push(project.id);
+    }
+    return [...new Set(ids)];
   }
 
   async delete(

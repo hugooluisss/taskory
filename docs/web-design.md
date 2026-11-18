@@ -21,8 +21,8 @@ Audience: people who are NOT technical. They log what they did at work and later
 
 ## Key screens
 1. Login / Register (single card, switch link, language switcher visible before login).
-2. Activities: “Add activity” action opens a modal, title search stays visible, optional filters can expand, and the list groups entries by day with title, project, tags and links, edit/delete actions, and pagination.
-3. Reports: range picker with presets (this week, last week, this month, last month), project, language, style; "Generate"; progress bar for long reports with a plain sentence ("Reading your activities, part 3 of 11"); result rendered as formatted Markdown with Copy; retry and delete for failed or old reports.
+2. Activities: “Add activity” action opens a modal, title search stays visible, optional filters can expand, and the list groups entries by day with title, linked projects, tags and links, edit/delete actions, and pagination.
+3. Reports: range picker with presets (this week, last week, this month, last month), project selection, language, style; "Generate"; progress bar for long reports with a plain sentence ("Reading your activities, part 3 of 11"); result rendered as formatted Markdown with Copy; retry and delete for failed or old reports.
 4. Settings: profile (name, language); "Connect your assistant" card with the server address, copy button and 3 plain steps; connected assistants list with Disconnect; Advanced (collapsed): personal access keys.
 5. Consent (`/oauth/consent?request=<id>`): clear question "Allow <name> to access your Taskory?", what is granted (full access to your activities), the client id and the full redirect destination, the name labelled "not verified", Allow / Deny buttons, never frameable.
 
@@ -31,3 +31,6 @@ Audience: people who are NOT technical. They log what they did at work and later
 Use Tailwind utility classes and DaisyUI components in external Angular templates for shared controls and page layouts. The web client uses one light DaisyUI theme with the existing blue brand color; keep focus indicators visible and text contrast at WCAG AA. Use `app-icon` for the small set of inline outline icons, keeping translated accessible names on icon-only controls.
 
 Create and edit activities in the same native `<dialog>` with DaisyUI `modal` styling. Keep title search visible, and place date, project and tag controls behind a “More filters” button whose `aria-expanded` state matches the visibility of its controlled region. Show the number of active filters and a clear action.
+
+
+Projects are managed in a per-user catalog. Activity and report forms select catalog projects; archived projects remain attached to existing activities but are hidden from active selectors.

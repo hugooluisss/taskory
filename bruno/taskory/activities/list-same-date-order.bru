@@ -7,7 +7,7 @@ docs {
   Equal-date ordering is fully asserted by the deterministic SQLite repository test. This Bruno request checks both independently created records; when the database timestamps differ, it also checks createdAt DESC without relying on elapsed time.
 }
 get {
-  url: {{baseUrl}}/activities?project={{sameDateMarker}}
+  url: {{baseUrl}}/activities?projectIds={{sameDateMarkerId}}
   body: none
   auth: bearer
 }
@@ -21,8 +21,10 @@ script:pre-request {
   const marker = "same-date-" + Date.now();
   bru.setVar("sameDateMarker", marker);
   const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
-  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " first", project: marker } });
-  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", project: marker } });
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
+  bru.setVar("sameDateMarkerId", project.data.id);
+  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " first", projectIds: [project.data.id] } });
+  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", projectIds: [project.data.id] } });
   bru.setVar("sameDateIds", [first.data.id, second.data.id]);
   bru.setVar("sameDateCreated", [first.data.createdAt, second.data.createdAt]);
 }

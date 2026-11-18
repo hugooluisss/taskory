@@ -1,0 +1,32 @@
+meta {
+  name: Duplicate project name
+  type: http
+  seq: 2
+}
+post {
+  url: {{baseUrl}}/projects
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "name": "{{duplicateName}}"
+  }
+}
+script:pre-request {
+  const name = "Duplicate " + Date.now();
+  bru.setVar("duplicateName", name.toLowerCase());
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { name } });
+}
+tests {
+  test("rejects a duplicate name ignoring case", function() {
+    expect(res.status).to.equal(409);
+  });
+}

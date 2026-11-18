@@ -12,7 +12,7 @@ describe("Activity creation", () => {
       referenceUrls: [],
       tags: [],
       description: null,
-      project: null,
+      projectIds: [],
     });
   });
 
@@ -205,5 +205,6 @@ function createService(repository: ActivitiesRepository): ActivitiesService {
   return new ActivitiesService(
     repository,
     () => new Date("2026-11-20T00:00:00Z"),
+    { getMany: jest.fn().mockResolvedValue([]) } as never,
   );
 }

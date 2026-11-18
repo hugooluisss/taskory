@@ -5,6 +5,7 @@ import { registerDeleteActivity } from "./delete-activity.tool.js";
 import { registerGenerateReport } from "./generate-report.tool.js";
 import { registerGetReport } from "./get-report.tool.js";
 import { registerListActivities } from "./list-activities.tool.js";
+import { registerListProjects } from "./list-projects.tool.js";
 import { registerLogActivity } from "./log-activity.tool.js";
 import { registerUpdateActivity } from "./update-activity.tool.js";
 
@@ -15,6 +16,7 @@ export function registerTools(
 ): void {
   registerLogActivity(server, activities);
   registerListActivities(server, activities);
+  registerListProjects(server, activities);
   registerUpdateActivity(server, activities);
   registerDeleteActivity(server, activities);
   registerGenerateReport(server, reports);

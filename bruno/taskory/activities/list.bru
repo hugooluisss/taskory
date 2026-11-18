@@ -20,11 +20,13 @@ docs {
 script:pre-request {
   const marker = "list-" + Date.now();
   bru.setVar("listMarker", marker);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
   const created = await bru.sendRequest({
     method: "POST",
     url: bru.getEnvVar("baseUrl") + "/activities",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
-    data: { date: "2026-11-16", title: marker, project: marker }
+    headers,
+    data: { date: "2026-11-16", title: marker, projectIds: [project.data.id] }
   });
   bru.setVar("listActivityId", created.data.id);
 }

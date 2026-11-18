@@ -1,5 +1,12 @@
-import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, MaxLength } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import {
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from "class-validator";
 
 export class ListActivitiesDto {
   @IsOptional()
@@ -11,9 +18,13 @@ export class ListActivitiesDto {
   to?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  project?: string;
+  @IsArray()
+  @IsUUID("4", { each: true })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "string" ? value.split(",") : value,
+  )
+  projectIds?: string[];
 
   @IsOptional()
   @IsString()

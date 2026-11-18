@@ -1,0 +1,27 @@
+meta {
+  name: Delete project with activities
+  type: http
+  seq: 4
+}
+delete {
+  url: {{baseUrl}}/projects/{{referencedProjectId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: "referenced-" + Date.now() } });
+  bru.setVar("referencedProjectId", project.data.id);
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "references project", projectIds: [project.data.id] } });
+}
+tests {
+  test("refuses to delete a project used by activities", function() {
+    expect(res.status).to.equal(409);
+  });
+}

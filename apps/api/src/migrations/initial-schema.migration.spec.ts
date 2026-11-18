@@ -28,7 +28,9 @@ describe("Schema is migration managed", () => {
         ),
       );
     }
-    await source.undoLastMigration();
+    for (let count = source.migrations.length; count > 0; count -= 1) {
+      await source.undoLastMigration();
+    }
     expect(await source.query("SHOW TABLES")).toEqual([
       { [`Tables_in_${source.options.database}`]: "migrations" },
     ]);
@@ -65,5 +67,26 @@ describe("Schema is migration managed", () => {
     ).rejects.toThrow();
     await insert("00000000-0000-4000-8000-000000000004", "completed");
     await insert("00000000-0000-4000-8000-000000000005", "failed");
+  });
+
+  it("Merges case variants using the most frequent spelling and maps SIGEI special value", async () => {
+    source = await createMySqlTestDatabase();
+    await source.undoLastMigration();
+    const userId = "00000000-0000-4000-8000-000000000011";
+    await source.query("INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)", [userId, "projects@example.test", "Test", "hash"]);
+    for (const [id, name] of [
+      ["00000000-0000-4000-8000-000000000012", "SIGEI"],
+      ["00000000-0000-4000-8000-000000000013", "sigei"],
+      ["00000000-0000-4000-8000-000000000014", "SIGEI"],
+      ["00000000-0000-4000-8000-000000000015", "Mantenimientos de seguridad, SIGEI"],
+    ]) {
+      await source.query("INSERT INTO activities (id,userId,date,title,referenceUrls,tags,project) VALUES (?,?,?, ?, JSON_ARRAY(), JSON_ARRAY(), ?)", [id, userId, "2026-11-01", name, name]);
+    }
+    await source.runMigrations();
+    const projects = await source.query("SELECT name FROM projects WHERE userId=?", [userId]);
+    expect(projects).toEqual([{ name: "SIGEI" }]);
+    const assigned = await source.query("SELECT ap.projectId FROM activity_projects ap JOIN activities a ON a.id=ap.activityId WHERE a.userId=?", [userId]);
+    expect(assigned).toHaveLength(4);
+    expect(new Set(assigned.map(({ projectId }: { projectId: string }) => projectId)).size).toBe(1);
   });
 });

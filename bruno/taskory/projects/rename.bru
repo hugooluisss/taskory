@@ -1,0 +1,35 @@
+meta {
+  name: Rename project
+  type: http
+  seq: 3
+}
+patch {
+  url: {{baseUrl}}/projects/{{renameProjectId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "name": "{{renamedProjectName}}"
+  }
+}
+script:pre-request {
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: "rename-source-" + Date.now() } });
+  bru.setVar("renameProjectId", project.data.id);
+  bru.setVar("renamedProjectName", "rename-target-" + Date.now());
+}
+tests {
+  test("renames a project", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.id).to.equal(bru.getVar("renameProjectId"));
+    expect(res.body.name).to.equal(bru.getVar("renamedProjectName"));
+  });
+}

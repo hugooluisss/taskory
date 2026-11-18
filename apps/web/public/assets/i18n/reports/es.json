@@ -12,6 +12,7 @@
     "to": "Hasta",
     "invalidRange": "Elige fechas válidas y asegúrate de que el inicio no sea posterior al final.",
     "projects": "Proyectos",
+    "selectProject": "Selecciona al menos un proyecto.",
     "projectsUnavailable": "No se pudieron cargar las sugerencias de proyectos.",
     "language": "Idioma del informe",
     "spanish": "Español",

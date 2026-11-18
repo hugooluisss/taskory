@@ -9,6 +9,8 @@ import { ReportsService } from '../../core/services/reports.service';
 import { ConfirmService } from '../../shared/confirm.service';
 import { ReportsPage } from './reports-page';
 import { ReportFormComponent } from './report-form';
+import { ProjectSelectorComponent } from '../../shared/project-selector';
+import { ProjectsService } from '../../core/services/projects.service';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 
 describe('Long report progress', () => {
@@ -48,13 +50,17 @@ describe('Long report progress', () => {
       imports: [ReportsPage],
       providers: [
         { provide: ReportsService, useValue: reports },
-        { provide: ActivitiesService, useValue: { meta: () => of({ projects: [], tags: [] }) } },
+        { provide: ProjectsService, useValue: { list: () => of([]) } },
         { provide: AuthService, useValue: { user: () => ({ id: 'user-1', language: 'en' }) } },
         { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
         { provide: TranslocoService, useValue: { translate: (key: string) => key } },
       ],
     })
       .overrideComponent(ReportsPage, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
+      .overrideComponent(ProjectSelectorComponent, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },
       })

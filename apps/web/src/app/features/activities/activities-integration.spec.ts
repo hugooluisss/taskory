@@ -14,6 +14,7 @@ import { ActivitiesPage } from './activities-page';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
 import { ActivityListComponent } from './activity-list';
 import { ActivityItemComponent } from './activity-item';
+import { ProjectSelectorComponent } from '../../shared/project-selector';
 import { ActivityFormDialogComponent } from './activity-form-dialog';
 import { AppPaginationComponent } from '../../shared/app-pagination';
 import { AppSpinnerComponent } from '../../shared/app-spinner';
@@ -40,6 +41,7 @@ describe('Activity management', () => {
       ActivityListComponent,
       ActivityItemComponent,
       ActivityFormDialogComponent,
+      ProjectSelectorComponent,
       AppPaginationComponent,
       AppSpinnerComponent,
     ]) {
@@ -56,7 +58,7 @@ describe('Activity management', () => {
     const fixture = TestBed.createComponent(ActivitiesPage);
     fixture.detectChanges();
     const http = TestBed.inject(HttpTestingController);
-    http.expectOne('/api/v1/activities/meta').flush({ projects: [], tags: [] });
+    http.expectOne('/api/v1/projects').flush([]);
     http
       .expectOne('/api/v1/activities?page=1&limit=20')
       .flush({ items: [], total: 0, page: 1, limit: 20 });
@@ -72,12 +74,12 @@ describe('Activity management', () => {
     ) as HTMLFormElement;
     const dialogComponent = fixture.debugElement.query(By.directive(ActivityFormDialogComponent))
       .componentInstance as ActivityFormDialogComponent;
+    dialogComponent.selectedProjectIds.set([]);
     const urls = ['https://one.test', 'https://two.test', 'https://three.test'];
     dialogComponent.form.setValue({
       date: '2026-11-17',
       title: 'Three links',
       description: '',
-      project: '',
       tags: [],
       referenceUrls: urls,
     });
@@ -87,7 +89,7 @@ describe('Activity management', () => {
       date: '2026-11-17',
       title: 'Three links',
       description: null,
-      project: null,
+      projects: [],
       tags: [],
       referenceUrls: urls,
       createdAt: '',

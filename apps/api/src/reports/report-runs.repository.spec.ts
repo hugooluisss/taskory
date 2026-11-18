@@ -79,7 +79,7 @@ function run(
     jobId: null,
     from: "2026-01-01",
     to: "2026-01-02",
-    projects: ["Core"],
+    projectIds: ["00000000-0000-4000-8000-000000000001"],
     language: "en",
     style: "summary",
     provider: "ollama",

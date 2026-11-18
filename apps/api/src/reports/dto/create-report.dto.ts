@@ -4,6 +4,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  IsUUID,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -14,15 +15,6 @@ import { isCalendarDate } from "../../common/dates/is-calendar-date";
 class CalendarDateValidator implements ValidatorConstraintInterface {
   validate(value: string): boolean {
     return isCalendarDate(value);
-  }
-}
-
-@ValidatorConstraint({ name: "reportProject", async: false })
-class ReportProjectValidator implements ValidatorConstraintInterface {
-  validate(value: unknown): boolean {
-    if (typeof value !== "string") return false;
-    const project = value.trim();
-    return project.length > 0 && project.length <= 100;
   }
 }
 
@@ -39,8 +31,8 @@ export class CreateReportDto {
   @IsArray()
   @ArrayMaxSize(20)
   @IsString({ each: true })
-  @Validate(ReportProjectValidator, { each: true })
-  projects?: string[];
+  @IsUUID("4", { each: true })
+  projectIds?: string[];
 
   @IsOptional()
   @IsArray()

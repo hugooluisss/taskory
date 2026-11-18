@@ -24,7 +24,9 @@ docs {
   Spec scenario: activities / Activity read, update and delete / Partial update. Creates its own activity; expects other fields unchanged and updatedAt changed.
 }
 script:pre-request {
-  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "Bruno patch original" } });
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: "patch-project-" + Date.now() } });
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: "Bruno patch original", projectIds: [project.data.id] } });
   bru.setVar("independentPatchId", created.data.id);
   bru.setVar("activityUpdatedAt", created.data.updatedAt);
 }
@@ -36,7 +38,7 @@ tests {
     expect(res.body.description).to.equal(null);
     expect(res.body.referenceUrls).to.eql([]);
     expect(res.body.tags).to.eql([]);
-    expect(res.body.project).to.equal(null);
+    expect(res.body.projects[0].name).to.match(/^patch-project-/);
     expect(res.body.updatedAt).to.not.equal(bru.getVar("activityUpdatedAt"));
   });
 }

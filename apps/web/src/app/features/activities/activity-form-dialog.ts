@@ -13,6 +13,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { Activity } from '../../core/models';
 import { ActivityFormValue, ActivitiesService } from '../../core/services/activities.service';
 import { AppChipsInputComponent } from '../../shared/app-chips-input';
+import { ProjectSelectorComponent } from '../../shared/project-selector';
+import { Project } from '../../core/models';
 import { AppTextareaComponent } from '../../shared/app-textarea';
 import { AppIconComponent } from '../../shared/app-icon';
 
@@ -23,6 +25,7 @@ import { AppIconComponent } from '../../shared/app-icon';
     ReactiveFormsModule,
     TranslocoPipe,
     AppChipsInputComponent,
+    ProjectSelectorComponent,
     AppTextareaComponent,
     AppIconComponent,
   ],
@@ -30,7 +33,8 @@ import { AppIconComponent } from '../../shared/app-icon';
 })
 export class ActivityFormDialogComponent {
   private activities = inject(ActivitiesService);
-  readonly projects = input<string[]>([]);
+  readonly projects = input<Project[]>([]);
+  readonly selectedProjectIds = signal<string[]>([]);
   @ViewChild('dialog', { static: true }) private dialog!: ElementRef<HTMLDialogElement>;
   @Output() saveActivity = new EventEmitter<{ id?: string; value: ActivityFormValue }>();
   form = new FormGroup({
@@ -40,7 +44,6 @@ export class ActivityFormDialogComponent {
       validators: [Validators.required, Validators.maxLength(200)],
     }),
     description: new FormControl('', { nonNullable: true }),
-    project: new FormControl('', { nonNullable: true }),
     tags: new FormControl<string[]>([], { nonNullable: true }),
     referenceUrls: new FormControl<string[]>([], { nonNullable: true }),
   });
@@ -59,10 +62,10 @@ export class ActivityFormDialogComponent {
       date: activity?.date ?? this.activities.todayLocal(),
       title: activity?.title ?? '',
       description: activity?.description ?? '',
-      project: activity?.project ?? '',
       tags: activity?.tags ?? [],
       referenceUrls: activity?.referenceUrls ?? [],
     });
+    this.selectedProjectIds.set(activity?.projects.map((project) => project.id) ?? []);
     this.dialog.nativeElement.showModal();
     queueMicrotask(() => this.dialog.nativeElement.querySelector<HTMLElement>('input')?.focus());
   }
@@ -72,7 +75,10 @@ export class ActivityFormDialogComponent {
     if (this.form.invalid || this.saving()) return;
     this.saving.set(true);
     this.error.set('');
-    this.saveActivity.emit({ id: this.currentId(), value: this.form.getRawValue() });
+    this.saveActivity.emit({
+      id: this.currentId(),
+      value: { ...this.form.getRawValue(), projectIds: this.selectedProjectIds() },
+    });
   }
   saveFailed(): void {
     this.saving.set(false);

@@ -34,7 +34,7 @@ describe("Activity creation", () => {
       referenceUrls: [],
       tags: [],
       description: null,
-      project: null,
+      projects: [],
     });
   });
 
@@ -48,12 +48,36 @@ describe("Activity creation", () => {
     expect(response.body.referenceUrls).toEqual(urls);
   });
 
+  it("Links an activity to several projects and matches either without duplicates", async () => {
+    const alpha = await createProject(app, owner, "Alpha");
+    const beta = await createProject(app, owner, "Beta");
+    const created = await create(app, owner, {
+      date: "2026-11-16",
+      title: "Multi-project",
+      projectIds: [alpha.id, beta.id, alpha.id],
+    }).expect(201);
+    expect(created.body.projects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: alpha.id, name: "Alpha" }),
+        expect.objectContaining({ id: beta.id, name: "Beta" }),
+      ]),
+    );
+    expect(created.body.projects).toHaveLength(2);
+    await list(app, owner, `projectIds=${alpha.id},${beta.id}`)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.total).toBe(1);
+        expect(body.items).toHaveLength(1);
+      });
+  });
+
   it("Missing required field", async () => {
     const invalidBodies = [
       { title: "No date" },
       { date: "2026-11-16" },
       { date: "2026-02-30", title: "Bad date" },
       { date: "2026-11-16", title: "" },
+      { date: "2026-11-16", title: "Null projects", projectIds: null },
     ];
     for (const body of invalidBodies) {
       const response = await create(app, owner, body).expect(400);
@@ -305,11 +329,12 @@ describe("Activity read, update and delete", () => {
   afterEach(async () => closeApp(app, databasePath));
 
   it("Partial update", async () => {
+    const project = await createProject(app, owner, "A");
     const created = await create(app, owner, {
       date: "2026-11-16",
       title: "Old",
       tags: ["API"],
-      project: "A",
+      projectIds: [project.id],
     });
     const updated = await request(app.getHttpServer())
       .patch(`/api/v1/activities/${created.body.id}`)
@@ -320,7 +345,7 @@ describe("Activity read, update and delete", () => {
       title: "New",
       date: "2026-11-16",
       tags: ["api"],
-      project: "A",
+      projects: [{ id: project.id, name: "A" }],
     });
     expect(updated.body.updatedAt).toBe("2099-01-01T00:00:00.000Z");
     expect(updated.body.updatedAt).not.toBe(created.body.updatedAt);
@@ -409,22 +434,25 @@ describe("Activity metadata", () => {
   afterEach(async () => closeApp(app, databasePath));
 
   it("Suggestions", async () => {
+    const a = await createProject(app, owner, "A");
+    const b = await createProject(app, owner, "B");
+    const secret = await createProject(app, other, "Secret");
     await create(app, owner, {
       date: "2026-11-16",
       title: "A",
-      project: "A",
+      projectIds: [a.id],
       tags: ["mine"],
     });
     await create(app, owner, {
       date: "2026-11-17",
       title: "B",
-      project: "B",
+      projectIds: [b.id],
       tags: ["mine"],
     });
     await create(app, other, {
       date: "2026-11-16",
       title: "Secret",
-      project: "Secret",
+      projectIds: [secret.id],
       tags: ["secret"],
     });
     await request(app.getHttpServer())
@@ -486,6 +514,19 @@ async function register(app: INestApplication, name: string): Promise<string> {
 
 function auth(token: string) {
   return { Authorization: `Bearer ${token}` };
+}
+
+async function createProject(
+  app: INestApplication,
+  token: string,
+  name: string,
+) {
+  const response = await request(app.getHttpServer())
+    .post("/api/v1/projects")
+    .set(auth(token))
+    .send({ name })
+    .expect(201);
+  return response.body as { id: string; name: string };
 }
 
 function create(app: INestApplication, token: string, body: object) {

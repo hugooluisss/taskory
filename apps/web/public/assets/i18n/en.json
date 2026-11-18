@@ -15,7 +15,8 @@
     "settings": "Settings",
     "consent": "Connect assistant",
     "label": "Main navigation",
-    "menu": "Open navigation menu"
+    "menu": "Open navigation menu",
+    "projects": "Projects"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -59,5 +60,24 @@
     "label": "Pagination",
     "previous": "Previous",
     "next": "Next"
+  },
+  "projects": {
+    "title": "Projects",
+    "description": "Manage your project catalog.",
+    "selector": {
+      "label": "Projects"
+    },
+    "empty": "No projects yet.",
+    "createNew": "Create new project",
+    "createError": "Could not create the project.",
+    "name": "Project name",
+    "saveError": "Could not save the project.",
+    "deleteHasActivities": "This project has activities. Archive it instead.",
+    "deleteError": "Could not delete the project.",
+    "rename": "Save project name",
+    "archive": "Archive project",
+    "unarchive": "Unarchive project",
+    "delete": "Delete project",
+    "archived": "Archived"
   }
 }

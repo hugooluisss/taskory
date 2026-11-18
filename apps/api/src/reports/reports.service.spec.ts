@@ -40,7 +40,16 @@ describe("Report generation", () => {
     description: null,
     referenceUrls: [],
     tags: ["api"],
-    project: "A",
+    projects: [
+      {
+        id: "p1",
+        name: "A",
+        userId: "user",
+        archived: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
     userId: "user",
     createdAt: new Date(),
     updatedAt: new Date(),

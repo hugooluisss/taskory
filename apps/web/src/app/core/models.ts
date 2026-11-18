@@ -14,7 +14,7 @@ export interface Activity {
   description: string | null;
   referenceUrls: string[];
   tags: string[];
-  project: string | null;
+  projects: { id: string; name: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -29,7 +29,7 @@ export interface Paginated<T> {
 export interface ActivityFilters {
   from?: string;
   to?: string;
-  project?: string;
+  projectIds?: string[];
   tag?: string;
   q?: string;
   page?: number;
@@ -37,7 +37,15 @@ export interface ActivityFilters {
 }
 
 export type ActivityInput = Pick<Activity, 'date' | 'title'> &
-  Partial<Pick<Activity, 'description' | 'referenceUrls' | 'tags' | 'project'>>;
+  Partial<Pick<Activity, 'description' | 'referenceUrls' | 'tags'>> & { projectIds?: string[] };
+
+export interface Project {
+  id: string;
+  name: string;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface ApiKey {
   id: string;
@@ -50,7 +58,7 @@ export interface ApiKey {
 export interface ReportRequest {
   from: string;
   to: string;
-  projects?: string[];
+  projectIds?: string[];
   tags?: string[];
   language: Language;
   style?: 'summary' | 'detailed';

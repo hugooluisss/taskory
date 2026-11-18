@@ -26,7 +26,7 @@ export class ReportRun {
   @CreateDateColumn() createdAt!: Date;
   @Column({ type: "date" }) from!: string;
   @Column({ type: "date" }) to!: string;
-  @Column({ type: "json" }) projects!: string[];
+  @Column({ type: "json" }) projectIds!: string[];
   @Column() language!: "es" | "en";
   @Column() style!: "summary" | "detailed";
   @Column() provider!: string;

@@ -4,7 +4,7 @@ meta {
   seq: 5
 }
 get {
-  url: {{baseUrl}}/activities?from=2026-11-15&to=2026-11-16&project={{rangeMarker}}
+  url: {{baseUrl}}/activities?from=2026-11-15&to=2026-11-16&projectIds={{rangeMarkerId}}
   body: none
   auth: bearer
 }
@@ -21,10 +21,12 @@ script:pre-request {
   const marker = "range-" + Date.now();
   bru.setVar("rangeMarker", marker);
   const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
-  const before = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-14", title: marker + " before", project: marker } });
-  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-15", title: marker + " first", project: marker } });
-  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", project: marker } });
-  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-17", title: marker + " after", project: marker } });
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
+  bru.setVar("rangeMarkerId", project.data.id);
+  const before = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-14", title: marker + " before", projectIds: [project.data.id] } });
+  const first = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-15", title: marker + " first", projectIds: [project.data.id] } });
+  const second = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker + " second", projectIds: [project.data.id] } });
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-17", title: marker + " after", projectIds: [project.data.id] } });
   bru.setVar("rangeIds", [first.data.id, second.data.id]);
 }
 tests {

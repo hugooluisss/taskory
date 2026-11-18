@@ -3,6 +3,7 @@ import type {
   ApiErrorEnvelope,
   Activity,
   ActivityList,
+  Project,
   ReportJob,
   ReportResult,
 } from "../types/api.js";
@@ -41,6 +42,14 @@ export class TaskoryApiClient {
 
   createActivity(token: string, input: unknown): Promise<Activity> {
     return this.send("/activities", token, "POST", input);
+  }
+
+  listProjects(token: string): Promise<Project[]> {
+    return this.get("/projects", token);
+  }
+
+  createProject(token: string, name: string): Promise<Project> {
+    return this.send("/projects", token, "POST", { name });
   }
 
   updateActivity(token: string, id: string, input: unknown): Promise<Activity> {

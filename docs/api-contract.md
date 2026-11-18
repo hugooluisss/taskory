@@ -29,7 +29,7 @@ Taskory stores a user's daily work activities and generates AI reports from them
   "description": "string | null",
   "referenceUrls": ["https://..."],
   "tags": ["string"],
-  "project": "string | null",
+  "projects": [{"id":"uuid", "name":"string"}],
   "createdAt": "...", "updatedAt": "..."
 }
 ```
@@ -47,18 +47,24 @@ Taskory stores a user's daily work activities and generates AI reports from them
 | GET | /api-keys | yes | — | 200 `[{id,name,prefix,createdAt,lastUsedAt}]` |
 | POST | /api-keys | yes | `{name}` | 201 `{id,name,key}` (key shown once) |
 | DELETE | /api-keys/:id | yes | — | 204 |
-| GET | /activities | yes | `from,to,project,tag,q,page,limit` | 200 list, ordered date desc, createdAt desc |
-| POST | /activities | yes | Activity without id/timestamps | 201 Activity |
+| GET | /activities | yes | `from,to,projectIds,tag,q,page,limit` (`projectIds` comma-separated; any match) | 200 list, ordered date desc, createdAt desc |
+| POST | /activities | yes | Activity without id/timestamps; `projectIds?: string[]` | 201 Activity |
 | GET | /activities/:id | yes | — | 200 Activity |
-| PATCH | /activities/:id | yes | partial Activity | 200 Activity |
+| PATCH | /activities/:id | yes | partial Activity; `projectIds?: string[]` replaces links | 200 Activity |
 | DELETE | /activities/:id | yes | — | 204 |
-| GET | /activities/meta | yes | — | 200 `{projects:[], tags:[]}` distinct values of the user |
-| POST | /reports | yes | `{from,to,projects?,tags?,language:"es"|"en",style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, promptTokens, completionTokens, totalTokens, costUsd, activityCount}` |
+| GET | /activities/meta | yes | — | 200 `{projects: string[], tags: string[]}` distinct names linked to activities, excluding archived projects |
+| GET | /projects | yes | — | 200 `Project[]` |
+| POST | /projects | yes | `{name}` | 201 `Project` |
+| PATCH | /projects/:id | yes | `{name?, archived?}` | 200 `Project` |
+| DELETE | /projects/:id | yes | — | 204; 409 if activities reference it |
+| POST | /reports | yes | `{from,to,projectIds?:string[],tags?,language:"es"|"en",style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, promptTokens, completionTokens, totalTokens, costUsd, activityCount}` |
 | GET | /reports/runs | yes | `page` (default 1), `limit` (default 50, max 200) | 200 paginated caller-owned report run history, newest first |
 
 Notes:
 - `/activities/meta` must be declared before `/activities/:id`.
-- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `projects?` (max 20; trimmed, non-empty names of at most 100 characters, duplicates removed; an activity matches if its project is ANY listed value; omitted/empty means all projects), `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `style?`. Provider and model are server-wide settings from `DEFAULT_LLM_PROVIDER` and `DEFAULT_LLM_MODEL`; callers cannot override them. The configured provider being unavailable returns 502 `LLM_UNAVAILABLE`. Other errors include 400 `VALIDATION_ERROR`, 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` and 502 `LLM_UNAVAILABLE`. The provider is never called on 4xx.
+- Activity create and update accept `projectIds` (UUID array); every id must belong to the caller. Responses contain `projects: [{id,name}]`.
+- Project responses are `{id,name,archived,createdAt,updatedAt}`. Names are trimmed, non-empty and at most 100 characters. Duplicate names ignoring case and accents return 409; deleting a project with activities also returns 409. Archive it to retain its activity links.
+- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `projectIds?` (UUID array, max 20; an activity matches if linked to ANY selected id; omitted/empty means all projects), `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `style?`. Provider and model are server-wide settings from `DEFAULT_LLM_PROVIDER` and `DEFAULT_LLM_MODEL`; callers cannot override them. The configured provider being unavailable returns 502 `LLM_UNAVAILABLE`. Other errors include 400 `VALIDATION_ERROR`, 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` and 502 `LLM_UNAVAILABLE`. The provider is never called on 4xx.
 - Every report execution is recorded, including failed executions, with provider, model, split token usage, and cost. Providers that omit usage count as zero. Completed asynchronous job responses and run history include `provider`, `model`, `promptTokens`, `completionTokens`, `totalTokens`, and `costUsd` (USD number). Cost uses `LLM_PRICE_INPUT_PER_MTOK` and `LLM_PRICE_OUTPUT_PER_MTOK`; unset rates default to zero for Ollama and USD 0.30/1.20 per million input/output tokens for DeepSeek. The estimate is an upper bound and ignores cache-hit and off-peak discounts; the database stores cost in integer micro-dollars.
 - Rate-limit `/auth/*` (e.g. @nestjs/throttler).
 
@@ -67,11 +73,12 @@ The API is the OAuth 2.1 authorization server (public clients, PKCE S256 only, d
 
 ## MCP tools (apps/mcp)
 Auth: OAuth access token (primary, zero-config for users) or personal API key `tk_...` (advanced) as `Authorization: Bearer ...`; the MCP forwards it to the API per request (multi-user, no shared credential). Without a valid token it answers 401 with `WWW-Authenticate: Bearer resource_metadata=...`.
-- `log_activity {date?(default today), title, description?, referenceUrls?, tags?, project?}`
-- `list_activities {from?, to?, project?, tag?, q?, limit?}`
-- `update_activity {id, ...partial}`
+- `log_activity {date?(default today), title, description?, referenceUrls?, tags?, projects?: string[], project?: string}` resolves names to owned projects, creating missing ones; `project` is a single-name alias.
+- `list_activities {from?, to?, project?: string, tag?, q?, limit?}` filters by project name.
+- `update_activity {id, ...partial, projects?: string[], project?: string}` resolves names; empty `projects` or `project: null` clears links.
 - `delete_activity {id}`
-- `generate_report {from, to, projects?, language?, style?}`
+- `list_projects {}` returns non-archived projects.
+- `generate_report {from, to, projects?: string[], language?, style?}` resolves project names to ids.
 Env: `TASKORY_API_URL`.
 
 ## Architecture (mandatory)

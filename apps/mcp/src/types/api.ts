@@ -11,7 +11,13 @@ export interface Activity {
   description: string | null;
   referenceUrls: string[];
   tags: string[];
-  project: string | null;
+  projects: Array<{ id: string; name: string }>;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  archived: boolean;
 }
 
 export interface ActivityList {

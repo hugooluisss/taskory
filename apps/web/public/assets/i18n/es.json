@@ -15,7 +15,8 @@
     "settings": "Ajustes",
     "consent": "Conectar asistente",
     "label": "Navegación principal",
-    "menu": "Abrir menú de navegación"
+    "menu": "Abrir menú de navegación",
+    "projects": "Proyectos"
   },
   "auth": {
     "loginTitle": "Inicia sesión",
@@ -59,5 +60,24 @@
     "label": "Paginación",
     "previous": "Anterior",
     "next": "Siguiente"
+  },
+  "projects": {
+    "title": "Proyectos",
+    "description": "Administra tu catálogo de proyectos.",
+    "selector": {
+      "label": "Proyectos"
+    },
+    "empty": "Aún no hay proyectos.",
+    "createNew": "Crear proyecto",
+    "createError": "No se pudo crear el proyecto.",
+    "name": "Nombre del proyecto",
+    "saveError": "No se pudo guardar el proyecto.",
+    "deleteHasActivities": "Este proyecto tiene actividades. Archívalo en su lugar.",
+    "deleteError": "No se pudo eliminar el proyecto.",
+    "rename": "Guardar nombre del proyecto",
+    "archive": "Archivar proyecto",
+    "unarchive": "Desarchivar proyecto",
+    "delete": "Eliminar proyecto",
+    "archived": "Archivado"
   }
 }

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe, TranslocoService, provideTranslocoScope } from '@jsverse/transloco';
-import { Activity, ActivityFilters, Paginated } from '../../core/models';
+import { Activity, ActivityFilters, Paginated, Project } from '../../core/models';
 import { ActivityFormValue, ActivitiesService } from '../../core/services/activities.service';
 import { ConfirmService } from '../../shared/confirm.service';
 import { ToastService } from '../../shared/toast.service';
@@ -11,6 +11,7 @@ import { AppPaginationComponent } from '../../shared/app-pagination';
 import { ActivityFormDialogComponent } from './activity-form-dialog';
 import { ActivityListComponent } from './activity-list';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
+import { ProjectsService } from '../../core/services/projects.service';
 
 const PAGE_LIMIT = 20;
 
@@ -32,6 +33,7 @@ const PAGE_LIMIT = 20;
 })
 export class ActivitiesPage {
   private activities = inject(ActivitiesService);
+  private projectsService = inject(ProjectsService);
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
   private transloco = inject(TranslocoService);
@@ -46,14 +48,16 @@ export class ActivitiesPage {
   readonly error = signal('');
   private requestId = 0;
   readonly filters = signal<ActivityFilters>({ limit: PAGE_LIMIT });
-  readonly projects = signal<string[]>([]);
+  readonly projects = signal<Project[]>([]);
   readonly hasFilters = computed(() => {
     const filters = this.filters();
-    return Boolean(filters.from || filters.to || filters.project || filters.tag || filters.q);
+    return Boolean(
+      filters.from || filters.to || filters.projectIds?.length || filters.tag || filters.q,
+    );
   });
   constructor() {
-    this.activities.meta().subscribe({
-      next: (meta) => this.projects.set(meta.projects),
+    this.projectsService.list().subscribe({
+      next: (projects) => this.projects.set(projects),
       error: () => this.error.set('activities.loadError'),
     });
     this.load();

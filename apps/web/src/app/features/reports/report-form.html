@@ -4,8 +4,11 @@
     <legend class="mb-2 font-medium">{{ 'reports.form.range' | transloco }}</legend>
     <div class="flex flex-wrap gap-2">
       <button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('thisWeek')">
-        {{ 'reports.form.thisWeek' | transloco }}</button
-      ><button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('lastWeek')">
+        {{ 'reports.form.thisWeek' | transloco }}</button><button
+        class="btn btn-sm btn-outline"
+        type="button"
+        (click)="selectPreset('lastWeek')"
+      >
         {{ 'reports.form.lastWeek' | transloco }}</button
       ><button class="btn btn-sm btn-outline" type="button" (click)="selectPreset('thisMonth')">
         {{ 'reports.form.thisMonth' | transloco }}</button
@@ -36,16 +39,32 @@
   @if (rangeError()) {
     <p class="text-error" role="alert">{{ 'reports.form.invalidRange' | transloco }}</p>
   }
-  <app-chips-input
-    name="projects"
-    id="report-projects"
-    [label]="'reports.form.projects' | transloco"
-    [maxItems]="20"
-    [maxLength]="100"
-    [suggestions]="projects()"
-    [ngModel]="selectedProjects()"
-    (ngModelChange)="selectedProjects.set($event)"
-  />
+  <fieldset class="grid gap-2">
+    <legend class="font-medium">{{ 'reports.form.projects' | transloco }}</legend>
+    @if (projects().length) {
+      <div class="flex flex-wrap gap-2">
+        @for (project of projects(); track project.id) {
+          <button
+            [class]="
+              selectedProjects().includes(project.id)
+                ? 'btn btn-sm btn-primary'
+                : 'btn btn-sm btn-outline'
+            "
+            type="button"
+            [attr.aria-pressed]="selectedProjects().includes(project.id)"
+            (click)="toggleProject(project.id)"
+          >
+            {{ project.name }}
+          </button>
+        }
+      </div>
+    } @else if (projectsLoaded()) {
+      <p class="text-sm text-base-content/60">{{ 'projects.empty' | transloco }}</p>
+    }
+  </fieldset>
+  @if (projectError()) {
+    <p class="text-error" role="alert">{{ 'reports.form.selectProject' | transloco }}</p>
+  }
   @if (projectsUnavailable()) {
     <p class="text-base-content/70">{{ 'reports.form.projectsUnavailable' | transloco }}</p>
   }

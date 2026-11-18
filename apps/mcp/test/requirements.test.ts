@@ -387,6 +387,132 @@ describe("log_activity", () => {
     );
   });
 
+  it("Finds a case-insensitive project or creates it before logging", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return { body: [{ id: "p1", name: "SIGEI", archived: true }] };
+        if (request.url === "/api/v1/activities" && request.method === "POST")
+          return {
+            status: 201,
+            body: { id: "a1", projects: [{ id: "p1", name: "SIGEI" }] },
+          };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "log_activity",
+          arguments: { title: "Work", projects: ["sigei"] },
+        });
+        expect(
+          system.apiRequests.filter(
+            (request) =>
+              request.url === "/api/v1/projects" && request.method === "POST",
+          ),
+        ).toHaveLength(0);
+        expect(
+          system.apiRequests.find(
+            (request) =>
+              request.url === "/api/v1/activities" && request.method === "POST",
+          )?.body,
+        ).toMatchObject({ projectIds: ["p1"] });
+      },
+    );
+  });
+
+  it("Creates a missing project before logging", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return { body: [] };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "log_activity",
+          arguments: { title: "Work", project: "New" },
+        });
+        expect(
+          system.apiRequests.find(
+            (request) =>
+              request.url === "/api/v1/projects" && request.method === "POST",
+          )?.body,
+        ).toEqual({ name: "New" });
+        expect(
+          system.apiRequests.find(
+            (request) =>
+              request.url === "/api/v1/activities" && request.method === "POST",
+          )?.body,
+        ).toMatchObject({ projectIds: ["new-project"] });
+      },
+    );
+  });
+
+  it("Deduplicates project names case-insensitively before lookup and creation", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return { body: [{ id: "p1", name: "SIGEI", archived: false }] };
+        if (request.url === "/api/v1/projects" && request.method === "POST")
+          return {
+            status: 201,
+            body: {
+              id: "p2",
+              name: (request.body as { name: string }).name,
+              archived: false,
+            },
+          };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "log_activity",
+          arguments: {
+            title: "Work",
+            projects: ["SIGEI", "sigei", "New", "new"],
+          },
+        });
+        const creations = system.apiRequests.filter(
+          (request) =>
+            request.url === "/api/v1/projects" && request.method === "POST",
+        );
+        expect(creations).toHaveLength(1);
+        expect(creations[0]?.body).toEqual({ name: "New" });
+        expect(
+          system.apiRequests.find(
+            (request) =>
+              request.url === "/api/v1/activities" && request.method === "POST",
+          )?.body,
+        ).toMatchObject({ projectIds: ["p1", "p2"] });
+      },
+    );
+  });
+
+  it("Lists only non-archived projects", async () => {
+    const result = await withMcpClient(
+      (request) =>
+        request.url === "/api/v1/projects"
+          ? {
+              body: [
+                { id: "a", name: "Active", archived: false },
+                { id: "b", name: "Old", archived: true },
+              ],
+            }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client }) =>
+        JSON.parse(
+          contentText(
+            await client.callTool({ name: "list_projects", arguments: {} }),
+          ),
+        ),
+    );
+    expect(result).toEqual([{ id: "a", name: "Active", archived: false }]);
+  });
+
   it("Rejects an invalid IANA timezone before the API call", async () => {
     const result = await withMcpClient(
       defaultFakeTaskoryHandler,
@@ -447,6 +573,24 @@ describe("list_activities", () => {
     );
   });
 
+  it("Resolves project names to projectIds", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "list_activities",
+          arguments: { project: "alpha" },
+        });
+        expect(
+          system.apiRequests.find((request) =>
+            request.url.startsWith("/api/v1/activities?"),
+          )?.url,
+        ).toContain("projectIds=project-1");
+      },
+    );
+  });
+
   it("More results than one page", async () => {
     await withMcpClient(
       (request) =>
@@ -494,6 +638,93 @@ describe("list_activities", () => {
 });
 
 describe("update_activity and delete_activity", () => {
+  it("Resolves update project names to projectIds", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, projects: ["alpha"] },
+        });
+        expect(
+          system.apiRequests.find((request) => request.method === "PATCH")
+            ?.body,
+        ).toMatchObject({ projectIds: ["project-1"] });
+      },
+    );
+  });
+
+  it("Finds an existing project case-insensitively through the update alias", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return { body: [{ id: "p1", name: "SIGEI", archived: true }] };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, project: "sigei" },
+        });
+        expect(
+          system.apiRequests.find((request) => request.method === "PATCH")
+            ?.body,
+        ).toMatchObject({ projectIds: ["p1"] });
+        expect(
+          system.apiRequests.some(
+            (request) =>
+              request.url === "/api/v1/projects" && request.method === "POST",
+          ),
+        ).toBe(false);
+      },
+    );
+  });
+
+  it("Creates missing projects during update and clears links with an empty array", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return { body: [] };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, projects: ["New"] },
+        });
+        await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, projects: [] },
+        });
+        const patches = system.apiRequests.filter(
+          (request) => request.method === "PATCH",
+        );
+        expect(patches[0]?.body).toMatchObject({ projectIds: ["new-project"] });
+        expect(patches[1]?.body).toMatchObject({ projectIds: [] });
+      },
+    );
+  });
+
+  it("Omits projectIds when project fields are not supplied", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "update_activity",
+          arguments: { id: activityId, title: "Changed" },
+        });
+        expect(
+          system.apiRequests.find((request) => request.method === "PATCH")
+            ?.body,
+        ).not.toHaveProperty("projectIds");
+      },
+    );
+  });
+
   it("Unknown id", async () => {
     await withMcpClient(
       (request) =>
@@ -527,6 +758,56 @@ describe("update_activity and delete_activity", () => {
 });
 
 describe("generate_report", () => {
+  it("Resolves project names to projectIds", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "generate_report",
+          arguments: {
+            from: "2026-02-01",
+            to: "2026-02-28",
+            projects: ["alpha"],
+          },
+        });
+        expect(
+          system.apiRequests.find(
+            (request) => request.url === "/api/v1/reports",
+          )?.body,
+        ).toMatchObject({ projectIds: ["project-1"] });
+      },
+    );
+  });
+
+  it("Returns a clear error when a project name is unknown", async () => {
+    const result = await withMcpClient(
+      (request) =>
+        request.url === "/api/v1/projects"
+          ? { body: [] }
+          : defaultFakeTaskoryHandler(request),
+      validToken,
+      async ({ client, system }) => ({
+        result: await client.callTool({
+          name: "generate_report",
+          arguments: {
+            from: "2026-02-01",
+            to: "2026-02-28",
+            projects: ["Missing"],
+          },
+        }),
+        requests: system.apiRequests,
+      }),
+    );
+    expect(result.result.isError).toBe(true);
+    expect(contentText(result.result)).toContain(
+      "PROJECT_NOT_FOUND: Project not found: Missing",
+    );
+    expect(
+      result.requests.some((request) => request.url === "/api/v1/reports"),
+    ).toBe(false);
+  });
+
   it("Report returned", async () => {
     await withMcpClient(
       defaultFakeTaskoryHandler,
@@ -558,14 +839,15 @@ describe("Tool descriptions guide the agent", () => {
       validToken,
       async ({ client }) => {
         const listed = await client.listTools();
-        expect(listed.tools).toHaveLength(6);
+        expect(listed.tools).toHaveLength(7);
         for (const tool of listed.tools) {
           expect(tool.description).toMatch(/use/i);
           const properties = tool.inputSchema.properties as Record<
             string,
             { description?: string }
           >;
-          expect(Object.keys(properties).length).toBeGreaterThan(0);
+          if (tool.name !== "list_projects")
+            expect(Object.keys(properties).length).toBeGreaterThan(0);
           for (const parameter of Object.values(properties))
             expect(parameter.description?.trim()).toBeTruthy();
         }

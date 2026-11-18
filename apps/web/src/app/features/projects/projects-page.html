@@ -1,0 +1,58 @@
+<main class="page">
+  <app-page-header
+    [title]="'projects.title' | transloco"
+    [description]="'projects.description' | transloco"
+  />
+  @if (error()) {
+    <p class="alert alert-error mb-4" role="alert">{{ error() | transloco }}</p>
+  }
+  <ul class="divide-y divide-base-300 rounded-box border border-base-300 bg-base-100">
+    @for (project of projects(); track project.id) {
+      <li class="flex flex-wrap items-center gap-3 p-4">
+        <input
+          class="input input-bordered min-w-48 flex-1"
+          maxlength="100"
+          [attr.aria-label]="'projects.name' | transloco"
+          [value]="names()[project.id] ?? project.name"
+          (input)="updateName(project.id, $event)"
+        />
+        <button
+          class="btn btn-ghost btn-square tooltip"
+          type="button"
+          [attr.aria-label]="'projects.rename' | transloco"
+          [attr.data-tip]="'projects.rename' | transloco"
+          (click)="rename(project)"
+        >
+          <app-icon name="check" />
+        </button>
+        <button
+          class="btn btn-ghost btn-square tooltip"
+          type="button"
+          [attr.aria-label]="
+            (project.archived ? 'projects.unarchive' : 'projects.archive') | transloco
+          "
+          [attr.data-tip]="
+            (project.archived ? 'projects.unarchive' : 'projects.archive') | transloco
+          "
+          (click)="archive(project)"
+        >
+          <app-icon [name]="project.archived ? 'check' : 'close'" />
+        </button>
+        <button
+          class="btn btn-ghost btn-square tooltip"
+          type="button"
+          [attr.aria-label]="'projects.delete' | transloco"
+          [attr.data-tip]="'projects.delete' | transloco"
+          (click)="remove(project)"
+        >
+          <app-icon name="delete" />
+        </button>
+        @if (project.archived) {
+          <span class="badge">{{ 'projects.archived' | transloco }}</span>
+        }
+      </li>
+    } @empty {
+      <li class="p-5 text-base-content/70">{{ 'projects.empty' | transloco }}</li>
+    }
+  </ul>
+</main>

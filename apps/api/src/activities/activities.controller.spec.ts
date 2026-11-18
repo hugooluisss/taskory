@@ -5,7 +5,7 @@ import { CreateActivityDto } from "./dto/create-activity.dto";
 import { ListActivitiesDto } from "./dto/list-activities.dto";
 
 describe("Activity response serialization", () => {
-  const activity = { id: "a1", userId: "u1", title: "Work" };
+  const activity = { id: "a1", userId: "u1", title: "Work", projects: [] };
   const service = {
     create: jest.fn().mockResolvedValue(activity),
     list: jest
@@ -23,14 +23,14 @@ describe("Activity response serialization", () => {
         date: "2026-11-17",
         title: "Work",
       } as CreateActivityDto),
-    ).resolves.toEqual({ id: "a1", title: "Work" });
+    ).resolves.toEqual({ id: "a1", title: "Work", projects: [] });
   });
 
   it("omits the owner id from listed activities", async () => {
     await expect(
       controller.list(user, {} as ListActivitiesDto),
     ).resolves.toEqual({
-      items: [{ id: "a1", title: "Work" }],
+      items: [{ id: "a1", title: "Work", projects: [] }],
       total: 1,
       page: 1,
       limit: 50,

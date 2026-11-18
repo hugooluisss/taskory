@@ -1,6 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ApiError } from "../repositories/api-error.js";
 import { UpstreamUnavailable } from "../repositories/taskory-api.client.js";
+import { UnknownProjectError } from "../services/report-tools.service.js";
 
 export function toolResult(value: unknown): CallToolResult {
   const message = typeof value === "string" ? value : JSON.stringify(value);
@@ -8,6 +9,12 @@ export function toolResult(value: unknown): CallToolResult {
 }
 
 export function toolError(error: unknown): CallToolResult {
+  if (error instanceof UnknownProjectError) {
+    return {
+      isError: true,
+      content: [{ type: "text", text: `PROJECT_NOT_FOUND: ${error.message}` }],
+    };
+  }
   if (error instanceof UpstreamUnavailable) {
     return {
       isError: true,

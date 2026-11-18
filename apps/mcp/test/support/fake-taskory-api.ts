@@ -23,6 +23,17 @@ export type FakeTaskoryHandler = (
 export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
   if (request.url === "/api/v1/auth/me")
     return { body: { id: request.authorization } };
+  if (request.url === "/api/v1/projects" && request.method === "GET")
+    return { body: [{ id: "project-1", name: "Alpha", archived: false }] };
+  if (request.url === "/api/v1/projects" && request.method === "POST")
+    return {
+      status: 201,
+      body: {
+        id: "new-project",
+        name: (request.body as { name: string }).name,
+        archived: false,
+      },
+    };
   if (request.url.startsWith("/api/v1/activities")) {
     if (request.method === "POST")
       return {

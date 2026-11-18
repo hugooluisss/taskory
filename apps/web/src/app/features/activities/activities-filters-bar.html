@@ -75,21 +75,12 @@
           [ngModel]="to()"
           (ngModelChange)="to.set($event)"
       /></label>
-      <label class="form-control"
-        ><span class="label-text mb-1">{{ 'activities.project' | transloco }}</span
-        ><select
-          class="select select-bordered"
-          id="filter-project"
-          name="project"
-          [ngModel]="project()"
-          (ngModelChange)="project.set($event)"
-        >
-          <option value="">{{ 'activities.allProjects' | transloco }}</option>
-          @for (item of projects(); track item) {
-            <option [value]="item">{{ item }}</option>
-          }
-        </select></label
-      >
+      <app-project-selector
+        [projects]="projects()"
+        [label]="'activities.project'"
+        [selectedIds]="projectIds()"
+        (selectedIdsChange)="projectIds.set($event)"
+      />
       <label class="form-control"
         ><span class="label-text mb-1">{{ 'activities.tag' | transloco }}</span
         ><input

@@ -4,7 +4,7 @@ meta {
   seq: 6
 }
 get {
-  url: {{baseUrl}}/activities?project={{projectMarker}}
+  url: {{baseUrl}}/activities?projectIds={{projectMarkerId}}
   body: none
   auth: bearer
 }
@@ -20,7 +20,10 @@ docs {
 script:pre-request {
   const marker = "project-" + Date.now();
   bru.setVar("projectMarker", marker);
-  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, project: marker } });
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
+  bru.setVar("projectMarkerId", project.data.id);
+  const created = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: marker, projectIds: [project.data.id] } });
   bru.setVar("projectActivityId", created.data.id);
 }
 tests {

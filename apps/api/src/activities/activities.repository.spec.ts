@@ -4,6 +4,7 @@ import {
   dropMySqlTestDatabase,
 } from "../../test/mysql-test-database";
 import { Activity } from "./entities/activity.entity";
+import { Project } from "../projects/entities/project.entity";
 import { ActivitiesRepository } from "./activities.repository";
 
 describe("Activity listing and filters", () => {
@@ -13,6 +14,14 @@ describe("Activity listing and filters", () => {
   beforeEach(async () => {
     source = await createMySqlTestDatabase();
     repository = new ActivitiesRepository(source.getRepository(Activity));
+    await source.query(
+      "INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      ["u1", "u1@example.test", "U1", "hash"],
+    );
+    await source.query(
+      "INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      ["u2", "u2@example.test", "U2", "hash"],
+    );
   });
 
   afterEach(async () => {
@@ -99,23 +108,26 @@ describe("Activity listing and filters", () => {
   });
 
   it("Report projects match any selected value", async () => {
+    const alpha = await addProject(source, "u1", "Alpha");
+    const beta = await addProject(source, "u1", "Beta");
+    const secret = await addProject(source, "u1", "Secret");
     await repository.create("u1", {
       ...activity("2026-11-01", "Alpha"),
-      project: "Alpha",
+      projectIds: [alpha.id],
     });
     await repository.create("u1", {
       ...activity("2026-11-02", "Beta"),
-      project: "Beta",
+      projectIds: [beta.id],
     });
     await repository.create("u1", {
       ...activity("2026-11-03", "Secret"),
-      project: "Secret",
+      projectIds: [secret.id],
     });
 
     const result = await repository.findReportSnapshot("u1", {
       from: "2026-11-01",
       to: "2026-11-30",
-      projects: ["Alpha", "Beta"],
+      projectIds: [alpha.id, beta.id],
     });
 
     expect(result).toHaveLength(2);
@@ -129,6 +141,14 @@ describe("Activity metadata", () => {
   beforeEach(async () => {
     source = await createMySqlTestDatabase();
     repository = new ActivitiesRepository(source.getRepository(Activity));
+    await source.query(
+      "INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      ["u1", "u1@example.test", "U1", "hash"],
+    );
+    await source.query(
+      "INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      ["u2", "u2@example.test", "U2", "hash"],
+    );
   });
 
   afterEach(async () => {
@@ -138,25 +158,28 @@ describe("Activity metadata", () => {
   });
 
   it("Suggestions", async () => {
+    const a = await addProject(source, "u1", "A");
+    const b = await addProject(source, "u1", "B");
+    const secret = await addProject(source, "u2", "Secret");
     await repository.create("u1", {
       ...activity("2026-11-01", "One"),
       tags: ["api"],
-      project: "A",
+      projectIds: [a.id],
     });
     await repository.create("u1", {
       ...activity("2026-11-02", "Two"),
       tags: ["api", "bug"],
-      project: "A",
+      projectIds: [a.id],
     });
     await repository.create("u1", {
       ...activity("2026-11-03", "Three"),
       tags: ["bug", "api"],
-      project: "B",
+      projectIds: [b.id],
     });
     await repository.create("u2", {
       ...activity("2026-11-02", "Other"),
       tags: ["private", "api"],
-      project: "Secret",
+      projectIds: [secret.id],
     });
 
     await expect(repository.meta("u1")).resolves.toEqual({
@@ -172,6 +195,12 @@ function activity(date: string, title: string) {
     title,
     tags: [],
     referenceUrls: [],
-    project: null,
+    projectIds: [],
   };
+}
+
+async function addProject(source: DataSource, userId: string, name: string) {
+  return source
+    .getRepository(Project)
+    .save(source.getRepository(Project).create({ userId, name }));
 }

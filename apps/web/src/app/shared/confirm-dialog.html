@@ -10,8 +10,7 @@
     <p class="py-4">{{ confirm.options()?.message }}</p>
     <div class="modal-action">
       <button class="btn btn-ghost" type="button" data-safe (click)="confirm.answer(false)">
-        {{ confirm.options()?.cancelLabel }}</button
-      ><button
+        {{ confirm.options()?.cancelLabel }}</button><button
         class="btn"
         [class.btn-error]="confirm.options()?.danger"
         type="button"

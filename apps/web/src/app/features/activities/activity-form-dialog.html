@@ -42,17 +42,12 @@
             }}</small>
           }
         </label>
-        <label class="form-control sm:col-span-2"
-          ><span class="label-text mb-1">{{ 'activities.project' | transloco }}</span
-          ><input
-            class="input input-bordered"
-            id="form-project"
-            formControlName="project"
-            list="form-projects" /><datalist id="form-projects">
-            @for (suggestion of projects(); track suggestion) {
-              <option [value]="suggestion"></option>
-            }</datalist
-        ></label>
+        <app-project-selector
+          class="sm:col-span-2"
+          [projects]="projects()"
+          [selectedIds]="selectedProjectIds()"
+          (selectedIdsChange)="selectedProjectIds.set($event)"
+        />
         <div class="sm:col-span-2">
           <app-textarea
             id="form-description"

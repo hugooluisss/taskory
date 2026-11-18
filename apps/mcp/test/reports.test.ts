@@ -45,7 +45,7 @@ describe("generate_report 200 response", () => {
           name: "generate_report",
           arguments: {
             ...reportArgs,
-            projects: ["Alpha", "Beta"],
+            projects: ["Alpha"],
             provider: "other",
             model: "caller-choice",
           },
@@ -53,7 +53,7 @@ describe("generate_report 200 response", () => {
         expect(
           system.apiRequests.find((item) => item.url === "/api/v1/reports")
             ?.body,
-        ).toMatchObject({ projects: ["Alpha", "Beta"] });
+        ).toMatchObject({ projectIds: ["project-1"] });
         expect(
           system.apiRequests.find((item) => item.url === "/api/v1/reports")
             ?.body,

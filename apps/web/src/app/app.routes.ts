@@ -32,6 +32,13 @@ export const routes: Routes = [
     data: { title: 'nav.reports' },
   },
   {
+    path: 'projects',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/projects/projects-page').then((module) => module.ProjectsPage),
+    data: { title: 'nav.projects' },
+  },
+  {
     path: 'settings',
     canActivate: [authGuard],
     loadComponent: () =>

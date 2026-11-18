@@ -5,5 +5,5 @@ export interface ReportActivity {
   description: string | null;
   referenceUrls: string[];
   tags: string[];
-  project: string | null;
+  projects: { id: string; name: string }[];
 }

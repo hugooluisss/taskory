@@ -684,7 +684,7 @@ describe("Chunked generation for large reports", () => {
       description: null,
       referenceUrls: [],
       tags: [],
-      project: null,
+      projects: [],
       createdAt: new Date(index),
       updatedAt: new Date(index),
     };

@@ -13,11 +13,15 @@ auth:bearer {
 }
 script:pre-request {
   const marker = "meta-" + Date.now();
-  const ownerActivity = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, project: marker, tags: [marker] } });
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") };
+  const ownerProject = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers, data: { name: marker } });
+  const ownerActivity = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { date: "2026-11-16", title: marker, projectIds: [ownerProject.data.id], tags: [marker] } });
   const secondUser = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: marker + "@example.com", name: marker, password: bru.getEnvVar("password") } });
   bru.setVar("metaForeignToken", secondUser.data.token);
   const foreignMarker = marker + "-foreign";
-  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + secondUser.data.token }, data: { date: "2026-11-16", title: "foreign", project: foreignMarker, tags: [foreignMarker] } });
+  const foreignHeaders = { "Content-Type": "application/json", Authorization: "Bearer " + secondUser.data.token };
+  const foreignProject = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers: foreignHeaders, data: { name: foreignMarker } });
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: foreignHeaders, data: { date: "2026-11-16", title: "foreign", projectIds: [foreignProject.data.id], tags: [foreignMarker] } });
   bru.setVar("metaMarker", marker);
   const foreignMetadata = await bru.sendRequest({ method: "GET", url: bru.getEnvVar("baseUrl") + "/activities/meta", headers: { Accept: "application/json", Authorization: "Bearer " + secondUser.data.token } });
   bru.setVar("foreignProjects", JSON.stringify(foreignMetadata.data.projects));

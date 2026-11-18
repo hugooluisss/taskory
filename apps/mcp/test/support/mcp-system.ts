@@ -44,11 +44,18 @@ export async function startMcpSystem(
   };
 }
 
-export function connect(root: string, token: string, mcpPath = "/mcp"): Promise<Client> {
+export function connect(
+  root: string,
+  token: string,
+  mcpPath = "/mcp",
+): Promise<Client> {
   const client = new Client({ name: "test", version: "1.0.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(`${root}${mcpPath}`), {
-    requestInit: { headers: { authorization: `Bearer ${token}` } },
-  });
+  const transport = new StreamableHTTPClientTransport(
+    new URL(`${root}${mcpPath}`),
+    {
+      requestInit: { headers: { authorization: `Bearer ${token}` } },
+    },
+  );
   return client.connect(transport).then(() => client);
 }
 
@@ -81,7 +88,12 @@ export async function withMcpClient<T>(
     client: Client;
     system: Awaited<ReturnType<typeof startMcpSystem>>;
   }) => Promise<T>,
-  options: { publicUrl?: string; mcpPath?: string; timeoutMs?: number; now?: () => Date } = {},
+  options: {
+    publicUrl?: string;
+    mcpPath?: string;
+    timeoutMs?: number;
+    now?: () => Date;
+  } = {},
 ): Promise<T> {
   return withMcpSystem(
     handler,
@@ -100,7 +112,12 @@ export async function withMcpClient<T>(
 export async function withMcpSystem<T>(
   handler: FakeTaskoryHandler,
   run: (system: Awaited<ReturnType<typeof startMcpSystem>>) => Promise<T>,
-  options: { publicUrl?: string; mcpPath?: string; timeoutMs?: number; now?: () => number } = {},
+  options: {
+    publicUrl?: string;
+    mcpPath?: string;
+    timeoutMs?: number;
+    now?: () => number;
+  } = {},
 ): Promise<T> {
   const system = await startMcpSystem(handler, options);
   try {

@@ -22,8 +22,12 @@ body:json {
     "description": "Multiple reference URLs",
     "referenceUrls": ["https://example.com/one", "https://example.com/two"],
     "tags": ["docs", "review"],
-    "project": "Bruno project"
+    "projectIds": ["{{catalogProjectId}}"]
   }
+}
+script:pre-request {
+  const project = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/projects", headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") }, data: { name: "Bruno project" } });
+  bru.setVar("catalogProjectId", project.data.id);
 }
 script:post-response {
   bru.setVar("referencesActivityId", res.body.id);
@@ -36,6 +40,6 @@ tests {
     expect(res.status).to.equal(201);
     expect(res.body.referenceUrls).to.eql(["https://example.com/one", "https://example.com/two"]);
     expect(res.body.tags).to.eql(["docs", "review"]);
-    expect(res.body.project).to.equal("Bruno project");
+    expect(res.body.projects[0].name).to.equal("Bruno project");
   });
 }

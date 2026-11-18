@@ -4,7 +4,7 @@ export interface CreateActivityInput {
   description?: string | null;
   referenceUrls?: string[];
   tags?: string[];
-  project?: string | null;
+  projectIds?: string[];
 }
 
 export type UpdateActivityInput = Partial<CreateActivityInput> & {
@@ -14,7 +14,7 @@ export type UpdateActivityInput = Partial<CreateActivityInput> & {
 export interface ActivityFilters {
   from?: string;
   to?: string;
-  project?: string;
+  projectIds?: string[];
   tag?: string;
   q?: string;
   page: number;
@@ -24,6 +24,6 @@ export interface ActivityFilters {
 export interface ReportActivityFilters {
   from: string;
   to: string;
-  projects?: string[];
+  projectIds?: string[];
   tags?: string[];
 }

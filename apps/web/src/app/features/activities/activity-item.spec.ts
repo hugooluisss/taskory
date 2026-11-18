@@ -17,7 +17,7 @@ describe('Activity management', () => {
       date: '2026-11-17',
       title: 'Work',
       description: null,
-      project: null,
+      projects: [],
       tags: [],
       referenceUrls: ['https://a.test', 'https://b.test', 'https://c.test'],
       createdAt: '',

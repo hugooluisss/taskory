@@ -21,6 +21,9 @@ import { OAuthModule } from "./oauth/oauth.module";
 import { ConnectedAppsModule } from "./connected-apps/connected-apps.module";
 import { OAuthHttpModule } from "./oauth/oauth-http.module";
 import { MySqlBaseline1770000000000 } from "./migrations/1770000000000-MySqlBaseline";
+import { Project } from "./projects/entities/project.entity";
+import { ProjectsModule } from "./projects/projects.module";
+import { ProjectCatalog1771000000000 } from "./migrations/1771000000000-ProjectCatalog";
 
 export function databaseOptions() {
   const required = (name: string) => {
@@ -43,6 +46,7 @@ export function databaseOptions() {
       User,
       ApiKey,
       Activity,
+      Project,
       ReportJob,
       ReportMemory,
       ReportRun,
@@ -52,7 +56,7 @@ export function databaseOptions() {
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    migrations: [MySqlBaseline1770000000000],
+    migrations: [MySqlBaseline1770000000000, ProjectCatalog1771000000000],
     synchronize: false,
     migrationsRun: true,
   };
@@ -66,6 +70,7 @@ export function databaseOptions() {
     AuthModule,
     HealthModule,
     ActivitiesModule,
+    ProjectsModule,
     ReportsModule,
     OAuthModule,
     ConnectedAppsModule,

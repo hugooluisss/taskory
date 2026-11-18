@@ -23,8 +23,8 @@
       </div>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      @if (activity.project) {
-        <span class="badge badge-primary badge-outline">{{ activity.project }}</span>
+      @for (project of activity.projects; track project.id) {
+        <span class="badge badge-primary badge-outline">{{ project.name }}</span>
       }
       @for (tag of activity.tags; track tag) {
         <span class="badge badge-secondary badge-outline">{{ tag }}</span>

@@ -53,7 +53,9 @@ describe("Configuration validation", () => {
   });
 
   it("Validates the configurable MCP path", () => {
-    expect(loadConfig({ MCP_PATH: "/taskory-mcp" }).mcpPath).toBe("/taskory-mcp");
+    expect(loadConfig({ MCP_PATH: "/taskory-mcp" }).mcpPath).toBe(
+      "/taskory-mcp",
+    );
     for (const MCP_PATH of ["mcp", "/mcp/", "/mcp?x=1", "/mcp#x"]) {
       expect(() => loadConfig({ MCP_PATH })).toThrow("MCP_PATH");
     }

@@ -8,7 +8,7 @@ export interface ReportGeneratorPort {
     activities: ReportActivity[];
     from: string;
     to: string;
-    projects?: string[];
+    projectIds?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
   }): Promise<{
@@ -31,7 +31,7 @@ export interface ReportGeneratorPort {
     totals: ReportTotals;
     from: string;
     to: string;
-    projects?: string[];
+    projectIds?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
     signal?: AbortSignal;

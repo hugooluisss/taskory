@@ -11,7 +11,7 @@ export class ActivitiesRepository {
     let params = new HttpParams();
     for (const [key, value] of Object.entries(filters)) {
       if (value === undefined || value === '') continue;
-      params = params.set(key, value);
+      params = params.set(key, Array.isArray(value) ? value.join(',') : value);
     }
     return this.http.get<Paginated<Activity>>(`${this.config.apiBaseUrl}/activities`, { params });
   }

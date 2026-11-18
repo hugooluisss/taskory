@@ -122,38 +122,42 @@ describe("Report generation", () => {
   });
 
   describe("Report project selection", () => {
+    let alphaId: string;
+    let betaId: string;
     beforeEach(async () => {
+      alphaId = await createProject(owner, "Alpha");
+      betaId = await createProject(owner, "Beta");
       await create(owner, {
         date: "2026-11-16",
         title: "Alpha",
-        project: "Alpha",
+        projectIds: [alphaId, betaId],
       });
       await create(owner, {
         date: "2026-11-17",
         title: "Beta",
-        project: "Beta",
+        projectIds: [betaId],
       });
       await create(owner, { date: "2026-11-18", title: "Unassigned" });
     });
 
     it("One project", async () => {
-      await report(owner, { projects: ["Alpha"] })
+      await report(owner, { projectIds: [alphaId] })
         .expect(200)
         .expect(({ body }) => expect(body.activityCount).toBe(1));
     });
 
     it("Several projects", async () => {
-      await report(owner, { projects: [" Alpha ", "Beta", "Alpha"] })
+      await report(owner, { projectIds: [alphaId, betaId, alphaId] })
         .expect(200)
         .expect(({ body }) => expect(body.activityCount).toBe(2));
-      expect(generator.generate.mock.calls[0][0].projects).toEqual([
-        "Alpha",
-        "Beta",
+      expect(generator.generate.mock.calls[0][0].projectIds).toEqual([
+        alphaId,
+        betaId,
       ]);
     });
 
     it("None means all", async () => {
-      await report(owner, { projects: [] })
+      await report(owner, { projectIds: [] })
         .expect(200)
         .expect(({ body }) => {
           expect(body.activityCount).toBe(3);
@@ -161,13 +165,8 @@ describe("Report generation", () => {
     });
 
     it("Too many or invalid projects", async () => {
-      for (const projects of [
-        [" "],
-        ["x".repeat(101)],
-        [null],
-        Array(21).fill("A"),
-      ]) {
-        await report(owner, { projects })
+      for (const projectIds of [["bad-id"], [null], Array(21).fill(alphaId)]) {
+        await report(owner, { projectIds })
           .expect(400)
           .expect(({ body }) => expect(body.code).toBe("VALIDATION_ERROR"));
       }
@@ -654,7 +653,6 @@ describe("Report generation", () => {
       description: null,
       referenceUrls: [],
       tags: [],
-      project: null,
     }));
     for (let index = 0; index < rows.length; index += 400) {
       await app
@@ -873,7 +871,6 @@ async function insertActivities(
     description: null,
     referenceUrls: [],
     tags: [],
-    project: null,
   }));
   for (let index = 0; index < rows.length; index += 400) {
     await app
@@ -965,6 +962,15 @@ function create(token: string, body: object) {
     .post("/api/v1/activities")
     .set(auth(token))
     .send(body);
+}
+
+async function createProject(token: string, name: string): Promise<string> {
+  const response = await request(currentApp.getHttpServer())
+    .post("/api/v1/projects")
+    .set(auth(token))
+    .send({ name })
+    .expect(201);
+  return response.body.id as string;
 }
 
 function report(token: string, overrides: Record<string, unknown> = {}) {

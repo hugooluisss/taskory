@@ -6,9 +6,14 @@ import { ActivitiesController } from "./activities.controller";
 import { ActivitiesRepository } from "./activities.repository";
 import { ActivitiesService } from "./activities.service";
 import { ACTIVITY_CLOCK } from "./activities.service";
+import { ProjectsModule } from "../projects/projects.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Activity]), TokenAuthModule],
+  imports: [
+    TypeOrmModule.forFeature([Activity]),
+    TokenAuthModule,
+    ProjectsModule,
+  ],
   controllers: [ActivitiesController],
   providers: [
     ActivitiesRepository,

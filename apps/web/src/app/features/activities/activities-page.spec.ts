@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { Subject } from 'rxjs';
 import { Activity } from '../../core/models';
 import { ActivitiesService } from '../../core/services/activities.service';
+import { ProjectsService } from '../../core/services/projects.service';
 import { ConfirmService } from '../../shared/confirm.service';
 import { ToastService } from '../../shared/toast.service';
 import { ActivitiesPage } from './activities-page';
@@ -15,7 +16,7 @@ const activity: Activity = {
   description: null,
   referenceUrls: [],
   tags: [],
-  project: null,
+  projects: [],
   createdAt: '',
   updatedAt: '',
 };
@@ -35,7 +36,7 @@ describe('Activity management', () => {
   beforeEach(() => {
     repositoryService = {
       list: vi.fn(() => of({ items: [activity], total: 1, page: 1, limit: 20 })),
-      meta: vi.fn(() => of({ projects: ['Taskory'], tags: [] })),
+      meta: vi.fn(() => of({ projects: [], tags: [] })),
       groupByDay: vi.fn((items) =>
         items.map((item: Activity) => ({ date: item.date, items: [item] })),
       ),
@@ -53,6 +54,7 @@ describe('Activity management', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: ActivitiesService, useValue: repositoryService },
+        { provide: ProjectsService, useValue: { list: () => of([]) } },
         { provide: ConfirmService, useValue: { ask } },
         { provide: ToastService, useValue: { success: vi.fn(), error: vi.fn() } },
         { provide: TranslocoService, useValue: { translate: (key: string) => key } },
@@ -85,9 +87,10 @@ describe('Activity management', () => {
     expect(repositoryService.remove).toHaveBeenCalledWith('a1');
   });
   it('Filters omit empty values and block inverted ranges', () => {
-    page.applyFilters({ from: '2026-11-01', to: '', project: '', tag: '', q: '' });
+    page.applyFilters({ from: '2026-11-01', to: '', projectIds: [], tag: '', q: '' });
     expect(repositoryService.list).toHaveBeenLastCalledWith({
       from: '2026-11-01',
+      projectIds: [],
       page: 1,
       limit: 20,
     });
@@ -97,13 +100,13 @@ describe('Activity management', () => {
     expect(page.error()).toBe('activities.invalidRange');
   });
   it('Pagination keeps filters and scrolls to the top', () => {
-    page.applyFilters({ q: 'docs', project: 'Taskory' });
+    page.applyFilters({ q: 'docs', projectIds: ['p1'] });
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
     page.changePage(2);
     expect(repositoryService.list).toHaveBeenLastCalledWith({
       q: 'docs',
-      project: 'Taskory',
+      projectIds: ['p1'],
       page: 2,
       limit: 20,
     });

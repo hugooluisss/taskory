@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { Activity } from "./entities/activity.entity";
 import { isCalendarDate } from "../common/dates/is-calendar-date";
+import { ProjectsService } from "../projects/projects.service";
 
 export const ACTIVITY_CLOCK = Symbol("ACTIVITY_CLOCK");
 
@@ -18,13 +19,23 @@ export class ActivitiesService {
   constructor(
     private readonly activities: ActivitiesRepository,
     @Inject(ACTIVITY_CLOCK) private readonly now: () => Date,
+    private readonly projects: ProjectsService,
   ) {}
 
   create(userId: string, values: CreateActivityInput) {
+    return this.createWithProjects(userId, values);
+  }
+
+  private async createWithProjects(
+    userId: string,
+    values: CreateActivityInput,
+  ) {
+    const projectIds = [...new Set(values.projectIds ?? [])];
+    await this.projects.getMany(userId, projectIds);
     return this.activities.create(userId, {
       ...values,
       description: values.description ?? null,
-      project: values.project ?? null,
+      projectIds,
       referenceUrls: values.referenceUrls ?? [],
       tags: this.normalizeTags(values.tags ?? []),
     });
@@ -37,7 +48,13 @@ export class ActivitiesService {
   }
 
   async update(userId: string, id: string, values: UpdateActivityInput) {
+    const projectIds =
+      values.projectIds === undefined
+        ? undefined
+        : [...new Set(values.projectIds)];
+    if (projectIds) await this.projects.getMany(userId, projectIds);
     const update = { ...values };
+    if (projectIds) update.projectIds = projectIds;
     if (values.tags) update.tags = this.normalizeTags(values.tags);
     update.updatedAt = this.now();
     const activity = await this.activities.update(userId, id, update);

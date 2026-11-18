@@ -1,7 +1,6 @@
-import { IsOptional } from "class-validator";
+import { IsArray, IsOptional, IsUUID, ValidateIf } from "class-validator";
 import {
   OptionalDescriptionField,
-  OptionalProjectField,
   OptionalReferenceUrlsField,
   OptionalTagsField,
   RequiredDateField,
@@ -27,7 +26,8 @@ export class CreateActivityDto {
   @OptionalTagsField()
   tags?: string[];
 
-  @IsOptional()
-  @OptionalProjectField()
-  project?: string | null;
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsArray()
+  @IsUUID("4", { each: true })
+  projectIds?: string[];
 }

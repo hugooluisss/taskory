@@ -12,23 +12,47 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
   constructor(private readonly generator: ReportGenerator) {}
 
   generate(options: Parameters<ReportGeneratorPort["generate"]>[0]) {
+    const { projectIds, ...input } = options;
     return this.translate(() =>
       this.generator.generate({
-        ...options,
-        style: options.style ?? "summary",
+        ...input,
+        activities: input.activities.map(toLlmActivity),
+        projects: projectIds?.length
+          ? [
+              ...new Set(
+                options.activities.flatMap((activity) =>
+                  activity.projects
+                    .filter((project) => projectIds.includes(project.id))
+                    .map(({ name }) => name),
+                ),
+              ),
+            ]
+          : undefined,
+        style: input.style ?? "summary",
       }),
     );
   }
 
   evaluateChunk(options: Parameters<ReportGeneratorPort["evaluateChunk"]>[0]) {
-    return this.translate(() => this.generator.evaluateChunk(options));
+    return this.translate(() =>
+      this.generator.evaluateChunk({
+        ...options,
+        activities: options.activities.map(toLlmActivity),
+      }),
+    );
   }
 
   writeFinal(options: Parameters<ReportGeneratorPort["writeFinal"]>[0]) {
+    const { projectIds, ...input } = options;
     return this.translate(() =>
       this.generator.writeFinal({
-        ...options,
-        style: options.style ?? "summary",
+        ...input,
+        projects: projectIds?.length
+          ? Object.keys(options.totals.byProject).filter(
+              (project) => project !== "none",
+            )
+          : undefined,
+        style: input.style ?? "summary",
       }),
     );
   }
@@ -66,6 +90,16 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
       throw error;
     }
   }
+}
+
+function toLlmActivity({
+  projects,
+  ...activity
+}: Parameters<ReportGeneratorPort["generate"]>[0]["activities"][number]) {
+  return {
+    ...activity,
+    project: projects.map(({ name }) => name).join(", ") || null,
+  };
 }
 
 function usage(error: unknown): {

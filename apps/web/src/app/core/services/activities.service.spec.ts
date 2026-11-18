@@ -46,7 +46,7 @@ describe('Activity management', () => {
     expect(
       service.buildFilters({
         from: ' 2026-01-01 ',
-        project: '  ',
+        projectIds: [],
         q: ' task ',
         page: 2.8,
         limit: 999,
@@ -62,7 +62,7 @@ describe('Activity management', () => {
       service.toInput({
         title: ' Task ',
         description: ' ',
-        project: '',
+        projectIds: [],
         tags: 'One,ONE',
         referenceUrls: 'https://a.test',
       }),
@@ -70,7 +70,7 @@ describe('Activity management', () => {
       date: '2026-11-17',
       title: 'Task',
       description: null,
-      project: null,
+      projectIds: [],
       tags: ['one'],
       referenceUrls: ['https://a.test'],
     });
@@ -96,8 +96,13 @@ describe('Activity management', () => {
     );
   });
   it('lists with validated non-empty filters and returns pagination', () => {
-    service.list({ from: ' 2026-01-01 ', project: ' ', page: 2, limit: 20 }).subscribe();
-    expect(repository.list).toHaveBeenCalledWith({ from: '2026-01-01', page: 2, limit: 20 });
+    service.list({ from: ' 2026-01-01 ', projectIds: ['p1'], page: 2, limit: 20 }).subscribe();
+    expect(repository.list).toHaveBeenCalledWith({
+      from: '2026-01-01',
+      projectIds: ['p1'],
+      page: 2,
+      limit: 20,
+    });
     expect(() => service.list({ from: '2026-02-02', to: '2026-02-01' })).toThrow(RangeError);
   });
   it('loads metadata once and refreshes it after mutations', () => {
@@ -107,7 +112,7 @@ describe('Activity management', () => {
     service.create({ title: 'new' }).subscribe();
     service.meta().subscribe();
     expect(repository.meta).toHaveBeenCalledTimes(2);
-    service.update('1', { project: 'Other' }).subscribe();
+    service.update('1', { projectIds: ['p1'] }).subscribe();
     service.meta().subscribe();
     expect(repository.meta).toHaveBeenCalledTimes(3);
     service.remove('1').subscribe();

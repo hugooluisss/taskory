@@ -12,6 +12,9 @@
       <a class="btn btn-ghost" routerLink="/reports"
         ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
       >
+      <a class="btn btn-ghost" routerLink="/projects"
+        ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
+      >
       <a class="btn btn-ghost" routerLink="/settings"
         ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
       >
@@ -58,6 +61,12 @@
         routerLink="/reports"
         (click)="mobileNavOpen.set(false)"
         ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
+      >
+      <a
+        class="btn btn-ghost justify-start"
+        routerLink="/projects"
+        (click)="mobileNavOpen.set(false)"
+        ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
       >
       <a
         class="btn btn-ghost justify-start"

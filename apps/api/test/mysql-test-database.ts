@@ -1,5 +1,6 @@
 import { DataSource } from "typeorm";
 import { MySqlBaseline1770000000000 } from "../src/migrations/1770000000000-MySqlBaseline";
+import { ProjectCatalog1771000000000 } from "../src/migrations/1771000000000-ProjectCatalog";
 
 export async function createMySqlTestDatabase(): Promise<DataSource> {
   for (const key of ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD"]) {
@@ -13,6 +14,7 @@ export async function createMySqlTestDatabase(): Promise<DataSource> {
   const { ApiKey } = await import("../src/api-keys/entities/api-key.entity");
   const { Activity } =
     await import("../src/activities/entities/activity.entity");
+  const { Project } = await import("../src/projects/entities/project.entity");
   const { ReportJob } =
     await import("../src/reports/entities/report-job.entity");
   const { ReportMemory } =
@@ -44,6 +46,7 @@ export async function createMySqlTestDatabase(): Promise<DataSource> {
       User,
       ApiKey,
       Activity,
+      Project,
       ReportJob,
       ReportMemory,
       ReportRun,
@@ -53,7 +56,7 @@ export async function createMySqlTestDatabase(): Promise<DataSource> {
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    migrations: [MySqlBaseline1770000000000],
+    migrations: [MySqlBaseline1770000000000, ProjectCatalog1771000000000],
     migrationsRun: true,
     synchronize: false,
   };

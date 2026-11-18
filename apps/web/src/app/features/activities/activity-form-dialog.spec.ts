@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { AppChipsInputComponent } from '../../shared/app-chips-input';
+import { ProjectSelectorComponent } from '../../shared/project-selector';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 import { ActivityFormDialogComponent } from './activity-form-dialog';
 
@@ -17,6 +18,10 @@ describe('Activity management', () => {
         },
       ],
     })
+      .overrideComponent(ProjectSelectorComponent, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
       .overrideComponent(ActivityFormDialogComponent, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },

@@ -42,13 +42,11 @@ export class ReportsService {
     if (!this.generator.hasProvider()) {
       throw new ApiException(502, ERROR_CODES.LLM_UNAVAILABLE);
     }
-    const projects = [
-      ...new Set((input.projects ?? []).map((project) => project.trim())),
-    ];
+    const projectIds = [...new Set(input.projectIds ?? [])];
     const snapshot = await this.activities.findReportSnapshot(userId, {
       from: input.from,
       to: input.to,
-      projects,
+      projectIds,
       tags: input.tags,
     });
     if (snapshot.length === 0) {
@@ -85,11 +83,11 @@ export class ReportsService {
           description: activity.description,
           referenceUrls: activity.referenceUrls,
           tags: activity.tags,
-          project: activity.project,
+          projects: activity.projects.map(({ id, name }) => ({ id, name })),
         })),
         from: input.from,
         to: input.to,
-        projects,
+        projectIds,
         language: input.language,
         style: input.style ?? "summary",
       });
@@ -102,7 +100,7 @@ export class ReportsService {
           jobId: null,
           from: input.from,
           to: input.to,
-          projects,
+          projectIds,
           language: input.language,
           style: input.style ?? "summary",
           provider: configured.provider,
@@ -137,7 +135,7 @@ export class ReportsService {
       jobId: null,
       from: input.from,
       to: input.to,
-      projects,
+      projectIds,
       language: input.language,
       style: input.style ?? "summary",
       provider: result.provider,

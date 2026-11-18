@@ -1,11 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ProjectSelectorComponent } from '../../shared/project-selector';
 import { TestTranslocoPipe } from './test-transloco.pipe';
 import { ActivitiesFiltersBarComponent } from './activities-filters-bar';
 
 describe('Activity filters', () => {
   it('Expand and collapse additional filters', async () => {
     await TestBed.configureTestingModule({ imports: [ActivitiesFiltersBarComponent] })
+      .overrideComponent(ProjectSelectorComponent, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
       .overrideComponent(ActivitiesFiltersBarComponent, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },
@@ -27,6 +32,10 @@ describe('Activity filters', () => {
 
   it('Clear active filters', async () => {
     await TestBed.configureTestingModule({ imports: [ActivitiesFiltersBarComponent] })
+      .overrideComponent(ProjectSelectorComponent, {
+        remove: { imports: [TranslocoPipe] },
+        add: { imports: [TestTranslocoPipe] },
+      })
       .overrideComponent(ActivitiesFiltersBarComponent, {
         remove: { imports: [TranslocoPipe] },
         add: { imports: [TestTranslocoPipe] },

@@ -44,7 +44,16 @@ export function registerUpdateActivity(
         .max(100)
         .nullable()
         .optional()
-        .describe("Replacement project, or null to clear it."),
+        .describe(
+          "Optional project name alias; null clears all project links.",
+        ),
+      projects: z
+        .array(z.string().trim().min(1).max(100))
+        .max(20)
+        .optional()
+        .describe(
+          "Replacement project names; an empty array clears all project links.",
+        ),
     },
     async (args, extra) => {
       try {
