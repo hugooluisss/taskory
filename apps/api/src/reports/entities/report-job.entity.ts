@@ -11,16 +11,12 @@ export type ReportJobStatus = "queued" | "running" | "completed" | "failed";
 
 @Entity("report_jobs")
 @Index("report_jobs_id_user", ["id", "userId"], { unique: true })
-@Index("report_jobs_active_user", ["userId"], {
-  unique: true,
-  where: "status IN ('queued', 'running')",
-})
 export class ReportJob {
   @PrimaryGeneratedColumn("uuid") id!: string;
   @Column() userId!: string;
   @Column() status!: ReportJobStatus;
-  @Column({ type: "simple-json" }) params!: ReportJobParams;
-  @Column({ type: "simple-json" }) activityIds!: string[];
+  @Column({ type: "json" }) params!: ReportJobParams;
+  @Column({ type: "json" }) activityIds!: string[];
   @Column() chunkSize!: number;
   @Column({ default: 0 }) progressDone!: number;
   @Column() progressTotal!: number;

@@ -86,14 +86,6 @@ export class ReportJobsRepository {
     );
   }
 
-  async ensureActiveJobIndex(): Promise<void> {
-    // No index migration is needed because no earlier databases exist.
-    await this.jobs.query(
-      "CREATE UNIQUE INDEX IF NOT EXISTS report_jobs_active_user " +
-        "ON report_jobs(userId) WHERE status IN ('queued', 'running')",
-    );
-  }
-
   async findById(id: string): Promise<ReportJob | null> {
     return this.jobs.findOne({ where: { id } });
   }
@@ -120,8 +112,7 @@ function isActiveReportConstraint(error: unknown): boolean {
   if (!(error instanceof QueryFailedError)) return false;
   const driverError = error.driverError as { code?: string; message?: string };
   return (
-    (driverError.code === "SQLITE_CONSTRAINT_UNIQUE" ||
-      driverError.code === "SQLITE_CONSTRAINT_PRIMARYKEY") &&
-    driverError.message?.includes("report_jobs.userId") === true
+    driverError.code === "ER_DUP_ENTRY" &&
+    driverError.message?.includes("report_jobs_active_user") === true
   );
 }

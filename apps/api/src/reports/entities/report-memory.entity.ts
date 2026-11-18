@@ -18,9 +18,9 @@ export class ReportMemory {
   @Column({ type: "date" }) dateTo!: string;
   @Column() activityCount!: number;
   @Column({ type: "text" }) summary!: string;
-  @Column({ type: "simple-json" }) highlights!: Highlight[];
-  @Column({ type: "simple-json" }) byProject!: Record<string, number>;
-  @Column({ type: "simple-json" }) byDay!: Record<string, number>;
+  @Column({ type: "json" }) highlights!: Highlight[];
+  @Column({ type: "json" }) byProject!: Record<string, number>;
+  @Column({ type: "json" }) byDay!: Record<string, number>;
   @Column({ type: "integer", default: 0 }) totalTokens!: number;
   @Column({ type: "integer", default: 0 }) promptTokens!: number;
   @Column({ type: "integer", default: 0 }) completionTokens!: number;

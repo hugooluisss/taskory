@@ -2,13 +2,20 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "..",
   "testRegex": "test/.*\\.e2e-spec\\.ts$",
-  "transform": { "^.+\\.ts$": "ts-jest" },
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  },
   "testEnvironment": "node",
   "setupFiles": ["<rootDir>/test/oauth-rate-setup.ts"],
   "coverageDirectory": "<rootDir>/coverage",
   "collectCoverage": true,
   "collectCoverageFrom": ["src/**/*.controller.ts"],
   "coverageThreshold": {
-    "./src/**/*.controller.ts": { "lines": 80, "branches": 80 }
-  }
+    "./src/**/*.controller.ts": {
+      "lines": 80,
+      "branches": 80
+    }
+  },
+  "globalSetup": "<rootDir>/test/mysql-global-setup.cjs",
+  "globalTeardown": "<rootDir>/test/mysql-global-setup.cjs"
 }

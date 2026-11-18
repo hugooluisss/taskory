@@ -2,9 +2,6 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { DataSource } from "typeorm";
 import { ReportJob } from "../src/reports/entities/report-job.entity";
 import { ReportMemory } from "../src/reports/entities/report-memory.entity";
@@ -12,9 +9,20 @@ import { ReportGenerationError } from "../src/reports/ports/report-generation-er
 import { ReportJobRunner } from "../src/reports/report-job.runner";
 import { ReportMemoryRepository } from "../src/reports/report-memory.repository";
 import { AppModule } from "../src/app.module";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "./mysql-test-database";
 import { Activity } from "../src/activities/entities/activity.entity";
 import { REPORT_GENERATOR } from "../src/reports/report-generator.provider";
 import { configureHttp } from "../src/http-setup";
+
+async function provisionDatabase(): Promise<string> {
+  const source = await createMySqlTestDatabase();
+  const database = source.options.database as string;
+  await source.destroy();
+  return database;
+}
 
 describe("Report generation", () => {
   let app: INestApplication;
@@ -27,8 +35,7 @@ describe("Report generation", () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = "e2e-secret";
-    databasePath = join(tmpdir(), `taskory-reports-${randomUUID()}.sqlite`);
-    process.env.DATABASE_PATH = databasePath;
+    databasePath = await provisionDatabase();
     generator = new FakeGenerator();
     app = await bootApp(generator);
     owner = await register("owner");
@@ -43,9 +50,7 @@ describe("Report generation", () => {
 
   afterEach(async () => {
     await app.close();
-    await unlink(databasePath).catch(() => undefined);
-    await unlink(`${databasePath}-shm`).catch(() => undefined);
-    await unlink(`${databasePath}-wal`).catch(() => undefined);
+    await dropMySqlTestDatabase(databasePath);
   });
 
   it("Successful report", async () => {
@@ -910,11 +915,7 @@ describe("LLM timeout integration", () => {
           once: true,
         });
       });
-    databasePath = join(
-      tmpdir(),
-      `taskory-reports-timeout-${randomUUID()}.sqlite`,
-    );
-    process.env.DATABASE_PATH = databasePath;
+    databasePath = await provisionDatabase();
     const module = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -929,9 +930,7 @@ describe("LLM timeout integration", () => {
   afterEach(async () => {
     await app.close();
     global.fetch = originalFetch;
-    await unlink(databasePath).catch(() => undefined);
-    await unlink(`${databasePath}-shm`).catch(() => undefined);
-    await unlink(`${databasePath}-wal`).catch(() => undefined);
+    await dropMySqlTestDatabase(databasePath);
   });
 
   it("Real ReportGenerator timeout returns LLM_UNAVAILABLE", async () => {

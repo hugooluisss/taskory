@@ -12,6 +12,23 @@ export function getTrustProxyHops(): number {
 }
 
 export function validateConfig(): void {
+  for (const name of [
+    "DB_HOST",
+    "DB_PORT",
+    "DB_NAME",
+    "DB_USER",
+    "DB_PASSWORD",
+  ]) {
+    if (!process.env[name])
+      throw new Error(`${name} is required for MySQL connection`);
+  }
+  if (
+    !/^\d+$/.test(process.env.DB_PORT!) ||
+    Number(process.env.DB_PORT) < 1 ||
+    Number(process.env.DB_PORT) > 65535
+  ) {
+    throw new Error("DB_PORT must be an integer between 1 and 65535");
+  }
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is required");
   }

@@ -2,16 +2,24 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { createHash, randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { AppModule } from "../src/app.module";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "./mysql-test-database";
 import { configureHttp } from "../src/http-setup";
 import { REPORT_GENERATOR } from "../src/reports/report-generator.provider";
 import { OAUTH_NOW } from "../src/oauth/oauth-clock";
 import { DataSource } from "typeorm";
 import { OAuthAuthorization } from "../src/oauth/entities/oauth-authorization.entity";
 import { OAuthToken } from "../src/oauth/entities/oauth-token.entity";
+
+async function provisionDatabase(): Promise<string> {
+  const source = await createMySqlTestDatabase();
+  const database = source.options.database as string;
+  await source.destroy();
+  return database;
+}
 
 const PUBLIC_URL = "http://localhost:3999";
 const REDIRECT_URI = "https://client.example/callback";
@@ -23,11 +31,12 @@ describe("OAuth authorization flow", () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = "oauth-e2e-secret";
+    process.env.PUBLIC_URL = PUBLIC_URL;
+    process.env.MCP_PATH = "/mcp";
     delete process.env.OAUTH_RATE_LIMIT;
     delete process.env.OAUTH_RATE_WINDOW_MS;
     currentTime = new Date("2026-01-02T03:04:05.000Z");
-    databasePath = join(tmpdir(), `taskory-oauth-${randomUUID()}.sqlite`);
-    process.env.DATABASE_PATH = databasePath;
+    databasePath = await provisionDatabase();
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(REPORT_GENERATOR)
       .useValue({
@@ -49,9 +58,7 @@ describe("OAuth authorization flow", () => {
 
   afterEach(async () => {
     await app.close();
-    await unlink(databasePath).catch(() => undefined);
-    await unlink(`${databasePath}-shm`).catch(() => undefined);
-    await unlink(`${databasePath}-wal`).catch(() => undefined);
+    await dropMySqlTestDatabase(databasePath);
   });
 
   it("Registers, consents, exchanges, refreshes, detects reuse and revokes the authorization", async () => {

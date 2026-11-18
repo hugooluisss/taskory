@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { DataSource } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { TransactionRunner } from "../common/database/transaction-runner";
 import { User } from "../users/entities/user.entity";
 import { OAuthAuthorizationCode } from "./entities/oauth-authorization-code.entity";
@@ -25,24 +25,9 @@ describe("OAuth persistence repositories", () => {
   let codes: OAuthAuthorizationCodesRepository;
   let tokens: OAuthTokensRepository;
   let transactions: TransactionRunner;
-  let databasePath: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-oauth-${randomUUID()}.sqlite`);
-    source = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [
-        User,
-        OAuthClient,
-        OAuthAuthorizationRequest,
-        OAuthAuthorization,
-        OAuthAuthorizationCode,
-        OAuthToken,
-      ],
-      synchronize: true,
-      prepareDatabase: (database) => database.exec("PRAGMA foreign_keys = ON"),
-    }).initialize();
+    source = await createMySqlTestDatabase();
     transactions = new TransactionRunner(source);
     clients = new OAuthClientsRepository(source.getRepository(OAuthClient));
     requests = new OAuthAuthorizationRequestsRepository(
@@ -77,8 +62,9 @@ describe("OAuth persistence repositories", () => {
   });
 
   afterEach(async () => {
+    const database = source.options.database as string;
     await source.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Stores only token hashes", async () => {

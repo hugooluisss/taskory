@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { DataSource } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { TransactionRunner } from "../common/database/transaction-runner";
 import { ReportJob } from "./entities/report-job.entity";
 import { ReportMemory } from "./entities/report-memory.entity";
@@ -15,17 +15,9 @@ describe("Report job repository", () => {
   let source: DataSource;
   let jobs: ReportJobsRepository;
   let memory: ReportMemoryRepository;
-  let databasePath: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-report-jobs-${randomUUID()}.sqlite`);
-    source = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [ReportJob, ReportMemory],
-      synchronize: true,
-      prepareDatabase: (database) => database.exec("PRAGMA foreign_keys = ON"),
-    }).initialize();
+    source = await createMySqlTestDatabase();
     jobs = new ReportJobsRepository(
       source.getRepository(ReportJob),
       new TransactionRunner(source),
@@ -34,8 +26,9 @@ describe("Report job repository", () => {
   });
 
   afterEach(async () => {
+    const database = source.options.database as string;
     await source.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Finds reports only for their owner", async () => {
@@ -88,11 +81,14 @@ describe("Report job repository", () => {
     );
     await expect(memory.list("owner", report.id)).resolves.toHaveLength(0);
     const foreignKeys = await source.query(
-      "PRAGMA foreign_key_list(report_memory)",
+      "SELECT REFERENCED_TABLE_NAME AS tableName, DELETE_RULE AS onDelete FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'report_memory'",
     );
     expect(foreignKeys).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ table: "report_jobs", on_delete: "CASCADE" }),
+        expect.objectContaining({
+          tableName: "report_jobs",
+          onDelete: "CASCADE",
+        }),
       ]),
     );
   });
@@ -118,7 +114,6 @@ describe("Report job repository", () => {
   });
 
   it("Allows one concurrent active create per user and retries only a failed row", async () => {
-    await jobs.ensureActiveJobIndex();
     const creates = await Promise.allSettled([
       createJob("race-owner", "queued"),
       createJob("race-owner", "queued"),
@@ -141,6 +136,10 @@ describe("Report job repository", () => {
     userId: string,
     status: ReportJob["status"],
   ): Promise<ReportJob> {
+    await source.query(
+      "INSERT IGNORE INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      [userId, `${userId}@example.test`, userId, "hash"],
+    );
     return jobs.create({
       userId,
       status,

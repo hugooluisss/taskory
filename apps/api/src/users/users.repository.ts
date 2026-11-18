@@ -32,7 +32,11 @@ export class UsersRepository {
       .catch((error) => {
         if (
           error instanceof QueryFailedError &&
-          /UNIQUE constraint failed: users\.email/.test(error.message)
+          (error.driverError as { code?: string; message?: string }).code ===
+            "ER_DUP_ENTRY" &&
+          (error.driverError as { message?: string }).message?.includes(
+            "users.email",
+          )
         ) {
           throw new DuplicateEmailError();
         }

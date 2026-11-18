@@ -20,22 +20,25 @@ import { OAuthToken } from "./oauth/entities/oauth-token.entity";
 import { OAuthModule } from "./oauth/oauth.module";
 import { ConnectedAppsModule } from "./connected-apps/connected-apps.module";
 import { OAuthHttpModule } from "./oauth/oauth-http.module";
-import { InitialSchema1763400000000 } from "./migrations/1763400000000-InitialSchema";
-import { ReportRuns1763500000000 } from "./migrations/1763500000000-ReportRuns";
+import { MySqlBaseline1770000000000 } from "./migrations/1770000000000-MySqlBaseline";
 
-const synchronize =
-  process.env.DB_SYNCHRONIZE === "true" ||
-  (process.env.NODE_ENV !== "production" &&
-    process.env.DB_SYNCHRONIZE !== "false");
-
-export function databaseOptions(
-  databasePath = process.env.DATABASE_PATH ?? "taskory.sqlite",
-) {
+export function databaseOptions() {
+  const required = (name: string) => {
+    const value = process.env[name];
+    if (!value) throw new Error(`${name} is required for MySQL connection`);
+    return value;
+  };
   return {
-    type: "better-sqlite3" as const,
-    database: databasePath,
-    prepareDatabase: (database: { exec(sql: string): void }) =>
-      database.exec("PRAGMA foreign_keys = ON"),
+    type: "mysql" as const,
+    host: required("DB_HOST"),
+    port: Number(required("DB_PORT")),
+    database: required("DB_NAME"),
+    username: required("DB_USER"),
+    password: required("DB_PASSWORD"),
+    charset: "utf8mb4",
+    timezone: "Z",
+    dateStrings: ["DATE"],
+    extra: { connectionLimit: 10 },
     entities: [
       User,
       ApiKey,
@@ -49,9 +52,9 @@ export function databaseOptions(
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    migrations: [InitialSchema1763400000000, ReportRuns1763500000000],
-    synchronize,
-    migrationsRun: !synchronize,
+    migrations: [MySqlBaseline1770000000000],
+    synchronize: false,
+    migrationsRun: true,
   };
 }
 

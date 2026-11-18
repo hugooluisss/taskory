@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { DataSource } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { User } from "./entities/user.entity";
 import { UsersRepository } from "./users.repository";
 import { DuplicateEmailError } from "./duplicate-email.error";
@@ -10,22 +10,16 @@ import { DuplicateEmailError } from "./duplicate-email.error";
 describe("User registration", () => {
   let dataSource: DataSource;
   let repository: UsersRepository;
-  let databasePath: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-users-${randomUUID()}.sqlite`);
-    dataSource = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [User],
-      synchronize: true,
-    }).initialize();
+    dataSource = await createMySqlTestDatabase();
     repository = new UsersRepository(dataSource.getRepository(User));
   });
 
   afterEach(async () => {
+    const database = dataSource.options.database as string;
     await dataSource.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Duplicate email lookup finds existing user", async () => {
@@ -38,13 +32,11 @@ describe("User registration", () => {
   });
 
   it("Password security loads the hash only for authentication", async () => {
-    await dataSource
-      .getRepository(User)
-      .save({
-        email: "hash@example.com",
-        name: "Hash",
-        passwordHash: "secret-hash",
-      });
+    await dataSource.getRepository(User).save({
+      email: "hash@example.com",
+      name: "Hash",
+      passwordHash: "secret-hash",
+    });
     await expect(
       repository.findByEmailWithHash("hash@example.com"),
     ).resolves.toMatchObject({ passwordHash: "secret-hash" });

@@ -3,7 +3,7 @@
 Taskory stores a user's daily work activities and generates AI reports from them. Multi-user. Languages: es / en.
 
 ## Repo layout (each agent owns its folder; no root workspace, each app has its own package.json)
-- `apps/api` — NestJS + TypeScript + SQLite (TypeORM). Port 3000, global prefix `/api/v1`.
+- `apps/api` — NestJS + TypeScript + MySQL 8.4 (TypeORM). Port 3000, global prefix `/api/v1`.
 - `packages/llm` — dependency-free TS lib: `LlmProvider` interface, `OllamaProvider`, `DeepSeekProvider`, `ReportGenerator`. Consumed by the api as `"@taskory/llm": "file:../../packages/llm"`.
 - `apps/mcp` — MCP server (streamable HTTP, port 3100, path `MCP_PATH`, default `/mcp`). Talks to the API over REST only.
 - `apps/web` — Angular (latest), es/en runtime switch.
@@ -18,7 +18,7 @@ Taskory stores a user's daily work activities and generates AI reports from them
 - Paginated list endpoints (activities) return `{ "items": [], "total": number, "page": number, "limit": number }`; query `page` (default 1), `limit` (default 50, max 200). Small bounded lists (api-keys, connected-apps, report providers) return a plain array.
 - A user can have at most 20 active API keys (409 `API_KEY_LIMIT` beyond that).
 - Passwords: argon2 or bcrypt. Never log secrets. API keys are stored hashed; plaintext shown only once at creation.
-- Config via env vars: `JWT_SECRET`, `DATABASE_PATH`, `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`.
+- Config via env vars: `JWT_SECRET`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`.
 
 ## Activity
 ```json

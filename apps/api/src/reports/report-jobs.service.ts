@@ -19,7 +19,6 @@ export class ReportJobsService implements OnModuleDestroy {
 
   async recover(): Promise<ReportJob[]> {
     await this.purgeExpired();
-    await this.jobs.ensureActiveJobIndex();
     const interrupted = await this.jobs.findRunning();
     await this.jobs.markRunningInterrupted();
     this.retentionTimer = setInterval(

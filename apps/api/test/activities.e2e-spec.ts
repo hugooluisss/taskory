@@ -1,12 +1,13 @@
+import { randomUUID } from "node:crypto";
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
-import { randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { DataSource } from "typeorm";
 import { AppModule } from "../src/app.module";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "./mysql-test-database";
 import { Activity } from "../src/activities/entities/activity.entity";
 import { ACTIVITY_CLOCK } from "../src/activities/activities.service";
 import { configureHttp } from "../src/http-setup";
@@ -442,11 +443,9 @@ async function createApp(): Promise<{
   databasePath: string;
 }> {
   process.env.JWT_SECRET = "e2e-secret";
-  const databasePath = join(
-    tmpdir(),
-    `taskory-activities-${randomUUID()}.sqlite`,
-  );
-  process.env.DATABASE_PATH = databasePath;
+  const database = await createMySqlTestDatabase();
+  const databasePath = database.options.database as string;
+  await database.destroy();
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(REPORT_GENERATOR)
     .useValue({
@@ -471,9 +470,7 @@ async function closeApp(
   databasePath: string,
 ): Promise<void> {
   await app.close();
-  await unlink(databasePath).catch(() => undefined);
-  await unlink(`${databasePath}-shm`).catch(() => undefined);
-  await unlink(`${databasePath}-wal`).catch(() => undefined);
+  await dropMySqlTestDatabase(databasePath);
 }
 
 async function register(app: INestApplication, name: string): Promise<string> {

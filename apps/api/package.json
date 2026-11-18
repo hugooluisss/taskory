@@ -11,17 +11,17 @@
     "test:cov": "jest --coverage --runInBand && jest --config ./test/jest-e2e.json --coverage --runInBand"
   },
   "dependencies": {
-    "@taskory/llm": "file:../../packages/llm",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
+    "@taskory/llm": "file:../../packages/llm",
     "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.4.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.24.6",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.28"

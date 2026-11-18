@@ -9,6 +9,6 @@ import {
 export class OAuthClient {
   @PrimaryGeneratedColumn("uuid") id!: string;
   @Column() name!: string;
-  @Column({ type: "simple-json" }) redirectUris!: string[];
+  @Column({ type: "json" }) redirectUris!: string[];
   @CreateDateColumn() createdAt!: Date;
 }

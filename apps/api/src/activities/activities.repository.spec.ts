@@ -1,30 +1,24 @@
-import { randomUUID } from "node:crypto";
-import { unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { DataSource } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { Activity } from "./entities/activity.entity";
 import { ActivitiesRepository } from "./activities.repository";
 
 describe("Activity listing and filters", () => {
   let source: DataSource;
   let repository: ActivitiesRepository;
-  let databasePath: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-activities-${randomUUID()}.sqlite`);
-    source = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [Activity],
-      synchronize: true,
-    }).initialize();
+    source = await createMySqlTestDatabase();
     repository = new ActivitiesRepository(source.getRepository(Activity));
   });
 
   afterEach(async () => {
+    const database = source.options.database as string;
     await source.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Date range", async () => {
@@ -131,22 +125,16 @@ describe("Activity listing and filters", () => {
 describe("Activity metadata", () => {
   let source: DataSource;
   let repository: ActivitiesRepository;
-  let databasePath: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-activities-${randomUUID()}.sqlite`);
-    source = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [Activity],
-      synchronize: true,
-    }).initialize();
+    source = await createMySqlTestDatabase();
     repository = new ActivitiesRepository(source.getRepository(Activity));
   });
 
   afterEach(async () => {
+    const database = source.options.database as string;
     await source.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Suggestions", async () => {

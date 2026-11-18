@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { DataSource } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { TransactionRunner } from "../common/database/transaction-runner";
 import { User } from "../users/entities/user.entity";
 import { ReportRun } from "./entities/report-run.entity";
@@ -11,19 +11,11 @@ import { ReportRunsRepository } from "./report-runs.repository";
 describe("Report runs repository", () => {
   let source: DataSource;
   let runs: ReportRunsRepository;
-  let databasePath: string;
   let ownerId: string;
   let otherId: string;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-report-runs-${randomUUID()}.sqlite`);
-    source = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [User, ReportRun],
-      synchronize: true,
-      prepareDatabase: (database) => database.exec("PRAGMA foreign_keys = ON"),
-    }).initialize();
+    source = await createMySqlTestDatabase();
     const users = source.getRepository(User);
     ownerId = (
       await users.save(
@@ -50,8 +42,9 @@ describe("Report runs repository", () => {
   });
 
   afterEach(async () => {
+    const database = source.options.database as string;
     await source.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("saves usage transactionally and lists only the owner with USD cost", async () => {

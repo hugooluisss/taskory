@@ -5,6 +5,11 @@ const originalEnv = {
   PUBLIC_URL: process.env.PUBLIC_URL,
   TRUST_PROXY_HOPS: process.env.TRUST_PROXY_HOPS,
   MCP_PATH: process.env.MCP_PATH,
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT,
+  DB_NAME: process.env.DB_NAME,
+  DB_USER: process.env.DB_USER,
+  DB_PASSWORD: process.env.DB_PASSWORD,
 };
 
 afterEach(() => {
@@ -12,6 +17,36 @@ afterEach(() => {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+});
+
+describe("MySQL configuration", () => {
+  it("requires DB environment settings", () => {
+    for (const key of [
+      "DB_HOST",
+      "DB_PORT",
+      "DB_NAME",
+      "DB_USER",
+      "DB_PASSWORD",
+    ])
+      delete process.env[key];
+    expect(() => validateConfig()).toThrow(
+      "DB_HOST is required for MySQL connection",
+    );
+  });
+  it("rejects an invalid port", () => {
+    Object.assign(process.env, {
+      DB_HOST: "localhost",
+      DB_PORT: "no",
+      DB_NAME: "x",
+      DB_USER: "x",
+      DB_PASSWORD: "x",
+      JWT_SECRET: "x",
+      PUBLIC_URL: "https://example.test",
+    });
+    expect(() => validateConfig()).toThrow(
+      "DB_PORT must be an integer between 1 and 65535",
+    );
+  });
 });
 
 describe("TRUST_PROXY_HOPS", () => {

@@ -2,12 +2,13 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import request from "supertest";
 import { DataSource } from "typeorm";
 import { AppModule } from "../src/app.module";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "./mysql-test-database";
 import { configureHttp } from "../src/http-setup";
 import { OAuthAuthorization } from "../src/oauth/entities/oauth-authorization.entity";
 import { OAuthToken } from "../src/oauth/entities/oauth-token.entity";
@@ -15,6 +16,13 @@ import { OAuthAuthorizationRequest } from "../src/oauth/entities/oauth-authoriza
 import { OAUTH_NOW } from "../src/oauth/oauth-clock";
 import { OAuthTokensRepository } from "../src/oauth/oauth-tokens.repository";
 import { REPORT_GENERATOR } from "../src/reports/report-generator.provider";
+
+async function provisionDatabase(): Promise<string> {
+  const source = await createMySqlTestDatabase();
+  const database = source.options.database as string;
+  await source.destroy();
+  return database;
+}
 
 const REDIRECT_URI = "http://localhost:8787/callback";
 
@@ -26,14 +34,11 @@ describe("OAuth security probe scenarios", () => {
 
   beforeEach(async () => {
     process.env.JWT_SECRET = "oauth-security-e2e-secret";
+    process.env.PUBLIC_URL = "http://localhost:8787";
     delete process.env.OAUTH_RATE_LIMIT;
     delete process.env.OAUTH_RATE_WINDOW_MS;
     currentTime = new Date("2026-02-03T04:05:06.000Z");
-    databasePath = join(
-      tmpdir(),
-      `taskory-oauth-security-${randomUUID()}.sqlite`,
-    );
-    process.env.DATABASE_PATH = databasePath;
+    databasePath = await provisionDatabase();
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideGuard(ThrottlerGuard)
       .useValue({ canActivate: () => true })
@@ -57,9 +62,7 @@ describe("OAuth security probe scenarios", () => {
 
   afterEach(async () => {
     await app.close();
-    await unlink(databasePath).catch(() => undefined);
-    await unlink(`${databasePath}-shm`).catch(() => undefined);
-    await unlink(`${databasePath}-wal`).catch(() => undefined);
+    await dropMySqlTestDatabase(databasePath);
   });
 
   describe("Dynamic registration redirect validation", () => {

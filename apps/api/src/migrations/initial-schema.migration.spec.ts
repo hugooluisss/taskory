@@ -1,74 +1,69 @@
 import "reflect-metadata";
-import { randomUUID } from "node:crypto";
-import { rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { DataSource } from "typeorm";
-import { databaseOptions } from "../app.module";
-import { InitialSchema1763400000000 } from "./1763400000000-InitialSchema";
-import { ReportRuns1763500000000 } from "./1763500000000-ReportRuns";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 
-describe("Initial database migration", () => {
-  const migratedPath = join(
-    tmpdir(),
-    `taskory-migrated-${randomUUID()}.sqlite`,
-  );
-  const synchronizedPath = join(
-    tmpdir(),
-    `taskory-synchronized-${randomUUID()}.sqlite`,
-  );
-  let migrated: DataSource;
-  let synchronized: DataSource;
-
+describe("Schema is migration managed", () => {
+  let source: DataSource;
+  let database: string;
   afterEach(async () => {
-    await migrated?.destroy();
-    await synchronized?.destroy();
-    rmSync(migratedPath, { force: true });
-    rmSync(synchronizedPath, { force: true });
+    database = source?.options.database as string;
+    await source?.destroy();
+    if (database) await dropMySqlTestDatabase(database);
   });
 
-  it("matches the synchronized entity schema and is a no-op when run twice", async () => {
-    migrated = new DataSource({
-      ...databaseOptions(migratedPath),
-      synchronize: false,
-      migrationsRun: false,
-      migrations: [InitialSchema1763400000000, ReportRuns1763500000000],
-    });
-    synchronized = new DataSource({
-      ...databaseOptions(synchronizedPath),
-      synchronize: true,
-      migrationsRun: false,
-      migrations: [],
-    });
-    await Promise.all([migrated.initialize(), synchronized.initialize()]);
-    expect(await migrated.runMigrations()).toHaveLength(2);
-    expect(await migrated.runMigrations()).toHaveLength(0);
-
-    const schema = async (source: DataSource) =>
-      (
-        await source.query(
-          "SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name != 'migrations' ORDER BY type, name",
-        )
-      ).map(
-        ({ type, name, sql }: { type: string; name: string; sql: string }) => ({
-          type,
-          name,
-          sql: sql
-            ?.replace(/\bIF NOT EXISTS\b/gi, "")
-            .replaceAll('"', "")
-            .replace(/\s+/g, " ")
-            .replace(/ \(/g, "(")
-            .trim()
-            .toLowerCase(),
-        }),
+  it("Schema is created by migration and can be rolled back", async () => {
+    source = await createMySqlTestDatabase();
+    expect(await source.showMigrations()).toBe(false);
+    expect((await source.query("SHOW TABLES")).length).toBeGreaterThan(10);
+    for (const entity of source.entityMetadatas) {
+      const columns = (await source.query(
+        `SHOW COLUMNS FROM \`${entity.tableName}\``,
+      )) as { Field: string }[];
+      expect(columns.map(({ Field }) => Field)).toEqual(
+        expect.arrayContaining(
+          entity.columns.map(({ databaseName }) => databaseName),
+        ),
       );
-
-    expect(await schema(migrated)).toEqual(await schema(synchronized));
-    expect(
-      (await migrated.driver.createSchemaBuilder().log()).upQueries,
-    ).toHaveLength(0);
-    expect(await migrated.query("PRAGMA foreign_keys")).toEqual([
-      { foreign_keys: 1 },
+    }
+    await source.undoLastMigration();
+    expect(await source.query("SHOW TABLES")).toEqual([
+      { [`Tables_in_${source.options.database}`]: "migrations" },
     ]);
+  });
+
+  it("Active report job uniqueness is enforced", async () => {
+    source = await createMySqlTestDatabase();
+    const userId = "00000000-0000-4000-8000-000000000001";
+    await source.query(
+      "INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)",
+      [userId, "unique@example.test", "Test", "hash"],
+    );
+    const values = [
+      "00000000-0000-4000-8000-000000000002",
+      userId,
+      "queued",
+      JSON.stringify({}),
+      JSON.stringify([]),
+      1,
+      0,
+      1,
+    ];
+    await source.query(
+      "INSERT INTO report_jobs (id,userId,status,params,activityIds,chunkSize,progressDone,progressTotal) VALUES (?,?,?,?,?,?,?,?)",
+      values,
+    );
+    const insert = (id: string, status: string) =>
+      source.query(
+        "INSERT INTO report_jobs (id,userId,status,params,activityIds,chunkSize,progressDone,progressTotal) VALUES (?,?,?,?,?,?,?,?)",
+        [id, userId, status, JSON.stringify({}), JSON.stringify([]), 1, 0, 1],
+      );
+    await expect(
+      insert("00000000-0000-4000-8000-000000000003", "running"),
+    ).rejects.toThrow();
+    await insert("00000000-0000-4000-8000-000000000004", "completed");
+    await insert("00000000-0000-4000-8000-000000000005", "failed");
   });
 });

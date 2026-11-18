@@ -48,6 +48,8 @@ describe("Issuer URL validation", () => {
   });
 
   it("Validates configurable MCP paths", () => {
+    process.env.PUBLIC_URL = "http://localhost:3999";
+    process.env.NODE_ENV = "test";
     process.env.MCP_PATH = "/taskory-mcp";
     expect(getMcpResource()).toBe("http://localhost:3999/taskory-mcp");
     for (const MCP_PATH of ["mcp", "/mcp/", "/mcp?x=1", "/mcp#x"]) {

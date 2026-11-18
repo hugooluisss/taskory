@@ -8,7 +8,6 @@ describe("Report job lifecycle", () => {
   let repository: jest.Mocked<
     Pick<
       ReportJobsRepository,
-      | "ensureActiveJobIndex"
       | "markRunningInterrupted"
       | "findQueued"
       | "findRunning"
@@ -44,7 +43,6 @@ describe("Report job lifecycle", () => {
   beforeEach(() => {
     repository = {
       markRunningInterrupted: jest.fn().mockResolvedValue(undefined),
-      ensureActiveJobIndex: jest.fn().mockResolvedValue(undefined),
       findQueued: jest.fn().mockResolvedValue([]),
       findRunning: jest.fn().mockResolvedValue([]),
       findActiveForUser: jest.fn().mockResolvedValue(null),

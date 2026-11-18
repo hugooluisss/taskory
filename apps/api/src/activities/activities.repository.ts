@@ -78,10 +78,9 @@ export class ActivitiesRepository {
       });
     }
     if (filters.tags?.length) {
-      query.andWhere(
-        "EXISTS (SELECT 1 FROM json_each(activity.tags) WHERE json_each.value IN (:...tags))",
-        { tags: filters.tags },
-      );
+      query.andWhere("JSON_OVERLAPS(activity.tags, CAST(:tagsJson AS JSON))", {
+        tagsJson: JSON.stringify(filters.tags),
+      });
     }
     return query
       .orderBy("activity.date", "ASC")
@@ -125,10 +124,9 @@ export class ActivitiesRepository {
       });
     }
     if (filters.tags?.length) {
-      query.andWhere(
-        "EXISTS (SELECT 1 FROM json_each(activity.tags) WHERE json_each.value IN (:...tags))",
-        { tags: filters.tags },
-      );
+      query.andWhere("JSON_OVERLAPS(activity.tags, CAST(:tagsJson AS JSON))", {
+        tagsJson: JSON.stringify(filters.tags),
+      });
     }
     return query;
   }
@@ -143,7 +141,7 @@ export class ActivitiesRepository {
       .orderBy("activity.project", "ASC")
       .getRawMany<{ project: string }>();
     const tags = (await this.activities.query(
-      "SELECT DISTINCT value AS tag FROM activities, json_each(activities.tags) WHERE userId = ? ORDER BY value",
+      "SELECT DISTINCT jt.tag AS tag FROM activities CROSS JOIN JSON_TABLE(activities.tags, '$[*]' COLUMNS (tag varchar(255) PATH '$')) jt WHERE userId = ? ORDER BY jt.tag",
       [userId],
     )) as { tag: string }[];
     return {
@@ -170,16 +168,14 @@ export class ActivitiesRepository {
       });
     }
     if (filters.tag) {
-      query.andWhere(
-        "EXISTS (SELECT 1 FROM json_each(activity.tags) WHERE json_each.value = :tag)",
-        { tag: filters.tag },
-      );
+      query.andWhere("JSON_CONTAINS(activity.tags, JSON_QUOTE(:tag))", {
+        tag: filters.tag,
+      });
     }
     if (filters.q) {
-      const escaped = filters.q.replace(/[\\%_]/g, "\\$&");
+      const escaped = filters.q.replace(/[=%_]/g, "=$&");
       query.andWhere(
-        "(activity.title LIKE :search ESCAPE '\\' COLLATE NOCASE " +
-          "OR activity.description LIKE :search ESCAPE '\\' COLLATE NOCASE)",
+        "(activity.title LIKE :search ESCAPE '=' OR activity.description LIKE :search ESCAPE '=')",
         { search: `%${escaped}%` },
       );
     }

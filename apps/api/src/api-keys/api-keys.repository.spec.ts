@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { DataSource, IsNull, Repository } from "typeorm";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "../../test/mysql-test-database";
 import { TransactionRunner } from "../common/database/transaction-runner";
 import { User } from "../users/entities/user.entity";
 import { ApiKey } from "./entities/api-key.entity";
@@ -11,19 +11,12 @@ import { ApiKeysRepository } from "./api-keys.repository";
 describe("API key authentication", () => {
   let dataSource: DataSource;
   let repository: ApiKeysRepository;
-  let databasePath: string;
   let ownerId: string;
   let otherId: string;
   let keys: Repository<ApiKey>;
 
   beforeEach(async () => {
-    databasePath = join(tmpdir(), `taskory-keys-${randomUUID()}.sqlite`);
-    dataSource = await new DataSource({
-      type: "better-sqlite3",
-      database: databasePath,
-      entities: [User, ApiKey],
-      synchronize: true,
-    }).initialize();
+    dataSource = await createMySqlTestDatabase();
     const users = dataSource.getRepository(User);
     const owner = await users.save({
       email: "owner@example.com",
@@ -45,8 +38,9 @@ describe("API key authentication", () => {
   });
 
   afterEach(async () => {
+    const database = dataSource.options.database as string;
     await dataSource.destroy();
-    await unlink(databasePath).catch(() => undefined);
+    await dropMySqlTestDatabase(database);
   });
 
   it("Request with a valid key finds active hashes only", async () => {

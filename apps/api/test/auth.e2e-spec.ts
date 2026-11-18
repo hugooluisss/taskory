@@ -2,11 +2,11 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { DataSource } from "typeorm";
 import request from "supertest";
-import { randomUUID } from "node:crypto";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { unlink } from "node:fs/promises";
 import { AppModule } from "../src/app.module";
+import {
+  createMySqlTestDatabase,
+  dropMySqlTestDatabase,
+} from "./mysql-test-database";
 import { configureHttp } from "../src/http-setup";
 import { User } from "../src/users/entities/user.entity";
 import { ApiKey } from "../src/api-keys/entities/api-key.entity";
@@ -579,8 +579,9 @@ async function createApp(): Promise<{
   databasePath: string;
 }> {
   process.env.JWT_SECRET = "e2e-secret";
-  const databasePath = join(tmpdir(), `taskory-api-${randomUUID()}.sqlite`);
-  process.env.DATABASE_PATH = databasePath;
+  const database = await createMySqlTestDatabase();
+  const databasePath = database.options.database as string;
+  await database.destroy();
   const module = await Test.createTestingModule({
     imports: [AppModule],
   })
@@ -600,10 +601,8 @@ async function createApp(): Promise<{
   return { app, databasePath };
 }
 
-async function removeDatabase(path: string): Promise<void> {
-  await unlink(path).catch(() => undefined);
-  await unlink(`${path}-shm`).catch(() => undefined);
-  await unlink(`${path}-wal`).catch(() => undefined);
+async function removeDatabase(name: string): Promise<void> {
+  await dropMySqlTestDatabase(name);
 }
 
 function register(

@@ -7,11 +7,10 @@ WORKDIR /workspace/apps/api
 COPY apps/api/package*.json ./
 COPY packages/llm /workspace/packages/llm
 RUN apk add --no-cache python3 make g++ && npm ci \
-    && npm install-scripts approve bcrypt better-sqlite3 \
-    && npm rebuild bcrypt better-sqlite3
+    && npm install-scripts approve bcrypt \
+    && npm rebuild bcrypt
 WORKDIR /workspace
 COPY --chown=node:node . .
-RUN mkdir -p /data && chown node:node /data
 USER node
 EXPOSE 3000
 CMD ["sh", "-c", "cd /workspace/packages/llm && npm run build && cd /workspace/apps/api && npm run start:dev"]
