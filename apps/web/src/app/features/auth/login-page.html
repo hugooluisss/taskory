@@ -54,12 +54,6 @@
           {{ (loading() ? 'common.loading' : 'auth.login') | transloco }}
         </button>
       </form>
-      <a
-        class="link link-primary text-sm"
-        routerLink="/register"
-        [queryParams]="{ returnUrl: returnUrl }"
-        >{{ 'auth.registerLink' | transloco }}</a
-      >
     </div>
   </section>
 </main>

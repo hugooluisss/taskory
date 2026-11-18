@@ -32,7 +32,6 @@
     "logout": "Sign out",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "registerLink": "Create an account",
     "brand": "Taskory"
   },
   "errors": {
