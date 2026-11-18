@@ -21,16 +21,16 @@ export class ProjectsRepository {
     return this.projects.find({ where: { userId, id: In(ids) } });
   }
 
-  create(userId: string, name: string) {
+  create(userId: string, name: string, description: string | null) {
     return this.projects.save(
-      this.projects.create({ userId, name: name.trim() }),
+      this.projects.create({ userId, name: name.trim(), description }),
     );
   }
 
   async update(
     userId: string,
     id: string,
-    values: Partial<Pick<Project, "name" | "archived">>,
+    values: Partial<Pick<Project, "name" | "archived" | "description">>,
   ) {
     await this.projects.update(
       { userId, id },

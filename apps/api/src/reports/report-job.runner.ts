@@ -208,6 +208,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
   ): Promise<ReportMemory> {
     const evaluated = await this.generator.evaluateChunk({
       activities: rows.map(toReportActivity),
+      projects: job.params.projects,
       language: job.params.language,
       signal,
     });
@@ -259,8 +260,10 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       from: job.params.from,
       to: job.params.to,
       projectIds: job.params.projectIds,
+      projects: job.params.projects,
       language: job.params.language,
       style: job.params.style,
+      customPrompt: job.params.customPrompt,
       signal,
     });
     if (signal.aborted || this.cancelling.has(job.id)) return;

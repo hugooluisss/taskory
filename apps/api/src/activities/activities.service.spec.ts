@@ -184,6 +184,28 @@ describe("Activity metadata", () => {
   });
 });
 
+describe("Projects involved in a report", () => {
+  it("Selected projects", async () => {
+    const selected = [{ id: "p1", name: "Core", description: "Platform" }];
+    const projects = { getMany: jest.fn().mockResolvedValue(selected) };
+    const repository = fakeRepository();
+    const service = new ActivitiesService(repository, () => new Date(), projects as never);
+
+    await expect(service.findReportProjects("u1", ["a1"], ["p1"])).resolves.toEqual(selected);
+    expect(projects.getMany).toHaveBeenCalledWith("u1", ["p1"]);
+    expect(repository.findReportProjects).not.toHaveBeenCalled();
+  });
+
+  it("Projects linked to included activities when none are selected", async () => {
+    const linked = [{ id: "p1", name: "Core", description: "Platform" }];
+    const repository = fakeRepository({ findReportProjects: jest.fn().mockResolvedValue(linked) });
+    const service = createService(repository);
+
+    await expect(service.findReportProjects("u1", ["a1"], [])).resolves.toEqual(linked);
+    expect(repository.findReportProjects).toHaveBeenCalledWith("u1", ["a1"]);
+  });
+});
+
 function fakeRepository(overrides: Record<string, unknown> = {}) {
   return {
     create: jest.fn(async (_userId, values) => ({ ...values, id: "a1" })),
@@ -197,6 +219,7 @@ function fakeRepository(overrides: Record<string, unknown> = {}) {
       limit: 50,
     }),
     meta: jest.fn().mockResolvedValue({ projects: [], tags: [] }),
+    findReportProjects: jest.fn().mockResolvedValue([]),
     ...overrides,
   } as unknown as ActivitiesRepository;
 }

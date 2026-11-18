@@ -18,6 +18,8 @@ import { ReportGenerationError } from "./ports/report-generation-error";
 import { messages } from "../common/i18n/messages";
 import { ReportRunsRepository } from "./report-runs.repository";
 import { reportCostMicros } from "./report-cost";
+import { UsersService } from "../users/users.service";
+import { reportStylePrompts } from "@taskory/llm";
 
 @Injectable()
 export class ReportsService {
@@ -29,6 +31,7 @@ export class ReportsService {
     private readonly jobs: ReportJobsService,
     @Inject(REPORT_JOB_QUEUE) private readonly queue: ReportJobQueue,
     private readonly runs: ReportRunsRepository,
+    private readonly users: UsersService,
   ) {}
 
   async create(userId: string, input: CreateReportDto) {
@@ -55,10 +58,23 @@ export class ReportsService {
     if (snapshot.length > reportActivityLimit()) {
       throw new ApiException(422, ERROR_CODES.RANGE_TOO_LARGE);
     }
+    const projects = await this.activities.findReportProjects(
+      userId,
+      snapshot.map(({ id }) => id),
+      projectIds,
+    );
+    if (input.style === "custom") {
+      const customPrompt = input.customPrompt?.trim();
+      if (!customPrompt || customPrompt.length > 2000) {
+        throw new ApiException(400, ERROR_CODES.VALIDATION_ERROR);
+      }
+      input.customPrompt = customPrompt;
+      await this.users.saveCustomReportPrompt(userId, customPrompt);
+    }
     if (snapshot.length > REPORT_SYNC_MAX_ACTIVITIES) {
       const job = await this.jobs.enqueue(
         userId,
-        { ...input, style: input.style ?? "summary" },
+        { ...input, projects, style: input.style ?? "summary" },
         snapshot.map(({ id }) => id),
         CHUNK_SIZE,
       );
@@ -88,8 +104,10 @@ export class ReportsService {
         from: input.from,
         to: input.to,
         projectIds,
+        projects,
         language: input.language,
         style: input.style ?? "summary",
+        ...(input.style === "custom" ? { customPrompt: input.customPrompt } : {}),
       });
     } catch (error) {
       const configured = this.generator.configuration();
@@ -156,6 +174,17 @@ export class ReportsService {
 
   listRuns(userId: string, page?: number, limit?: number) {
     return this.runs.list(userId, page, limit);
+  }
+
+  async listStyles(userId: string) {
+    const user = await this.users.findById(userId);
+    return {
+      styles: [
+        { id: "summary", prompt: reportStylePrompts.summary },
+        { id: "detailed", prompt: reportStylePrompts.detailed },
+      ],
+      customPrompt: user?.customReportPrompt ?? null,
+    };
   }
 
   status(userId: string, id: string, acceptLanguage?: string) {

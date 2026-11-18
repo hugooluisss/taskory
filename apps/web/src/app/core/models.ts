@@ -42,6 +42,7 @@ export type ActivityInput = Pick<Activity, 'date' | 'title'> &
 export interface Project {
   id: string;
   name: string;
+  description: string | null;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -61,7 +62,15 @@ export interface ReportRequest {
   projectIds?: string[];
   tags?: string[];
   language: Language;
-  style?: 'summary' | 'detailed';
+  style?: ReportStyle;
+  customPrompt?: string;
+}
+
+export type ReportStyle = 'summary' | 'detailed' | 'custom';
+
+export interface ReportStyles {
+  styles: { id: 'summary' | 'detailed'; prompt: Record<Language, string> }[];
+  customPrompt: string | null;
 }
 
 export interface ReportResult {

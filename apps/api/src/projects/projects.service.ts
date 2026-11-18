@@ -25,11 +25,11 @@ export class ProjectsService {
     return projects;
   }
 
-  async create(userId: string, name: string) {
+  async create(userId: string, name: string, description?: string | null) {
     if (!name.trim() || name.trim().length > 100)
       throw new ApiException(400, ERROR_CODES.VALIDATION_ERROR);
     try {
-      return await this.projects.create(userId, name);
+      return await this.projects.create(userId, name, normalizeDescription(description));
     } catch (error) {
       if (isDuplicate(error))
         throw new ApiException(409, ERROR_CODES.VALIDATION_ERROR);
@@ -40,7 +40,7 @@ export class ProjectsService {
   async update(
     userId: string,
     id: string,
-    values: { name?: string; archived?: boolean },
+    values: { name?: string; archived?: boolean; description?: string | null },
   ) {
     if (
       values.name !== undefined &&
@@ -48,8 +48,10 @@ export class ProjectsService {
     ) {
       throw new ApiException(400, ERROR_CODES.VALIDATION_ERROR);
     }
+    const normalized = { ...values };
+    if (values.description !== undefined) normalized.description = normalizeDescription(values.description);
     try {
-      const project = await this.projects.update(userId, id, values);
+      const project = await this.projects.update(userId, id, normalized);
       if (!project) throw new ApiException(404, ERROR_CODES.NOT_FOUND);
       return project;
     } catch (error) {
@@ -69,6 +71,10 @@ export class ProjectsService {
       throw error;
     }
   }
+}
+
+function normalizeDescription(description?: string | null): string | null {
+  return description?.trim() || null;
 }
 
 function isDuplicate(error: unknown) {

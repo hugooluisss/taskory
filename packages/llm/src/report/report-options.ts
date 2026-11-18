@@ -13,6 +13,17 @@ export interface ReportOptions {
   from: string;
   to: string;
   language: "es" | "en";
-  style?: "summary" | "detailed";
-  projects?: string[];
+  style?: "summary" | "detailed" | "custom";
+  customPrompt?: string;
+  projects?: ReportProject[];
+}
+
+export interface ReportProject { id: string; name: string; description: string | null }
+
+export function projectData(projects?: ReportProject[]) {
+  return projects?.map(({ id, name, description }) => ({
+    id,
+    name,
+    ...(description?.trim() ? { description: description.trim() } : {}),
+  }));
 }

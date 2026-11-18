@@ -9,13 +9,36 @@
   <ul class="divide-y divide-base-300 rounded-box border border-base-300 bg-base-100">
     @for (project of projects(); track project.id) {
       <li class="flex flex-wrap items-center gap-3 p-4">
-        <input
-          class="input input-bordered min-w-48 flex-1"
-          maxlength="100"
-          [attr.aria-label]="'projects.name' | transloco"
-          [value]="names()[project.id] ?? project.name"
-          (input)="updateName(project.id, $event)"
-        />
+        <div class="min-w-48 flex-1">
+          <input
+            class="input input-bordered w-full"
+            maxlength="100"
+            [attr.aria-label]="'projects.name' | transloco"
+            [value]="names()[project.id] ?? project.name"
+            (input)="updateName(project.id, $event)"
+          />
+        </div>
+        <div class="w-full">
+          <textarea
+            class="textarea textarea-bordered w-full"
+            maxlength="1000"
+            [attr.aria-label]="'projects.descriptionField' | transloco"
+            [value]="descriptions()[project.id] ?? project.description ?? ''"
+            (input)="updateDescription(project.id, $event)"
+          ></textarea>
+          <span class="text-xs text-base-content/60"
+            >{{ (descriptions()[project.id] ?? project.description ?? '').length }}/1000</span
+          >
+          <button
+            class="btn btn-ghost btn-square tooltip"
+            type="button"
+            [attr.aria-label]="'projects.saveDescription' | transloco"
+            [attr.data-tip]="'projects.saveDescription' | transloco"
+            (click)="describe(project)"
+          >
+            <app-icon name="check" />
+          </button>
+        </div>
         <button
           class="btn btn-ghost btn-square tooltip"
           type="button"

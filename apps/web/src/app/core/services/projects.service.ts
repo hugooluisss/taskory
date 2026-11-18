@@ -7,14 +7,17 @@ export class ProjectsService {
   list() {
     return this.repository.list();
   }
-  create(name: string) {
-    return this.repository.create(name.trim());
+  create(name: string, description?: string) {
+    return this.repository.create(name.trim(), description?.trim());
   }
   rename(id: string, name: string) {
     return this.repository.update(id, { name: name.trim() });
   }
   archive(id: string, archived: boolean) {
     return this.repository.update(id, { archived });
+  }
+  describe(id: string, description: string) {
+    return this.repository.update(id, { description: description.trim() || null });
   }
   remove(id: string) {
     return this.repository.delete(id);

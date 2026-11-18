@@ -22,6 +22,14 @@ describe('ProjectsRepository', () => {
     expect(create.request.method).toBe('POST');
     expect(create.request.body).toEqual({ name: 'Apollo' });
     create.flush({ id: 'p1', name: 'Apollo' });
+    repository.create('Apollo', 'Context').subscribe();
+    const describedCreate = http.expectOne('/api/v1/projects');
+    expect(describedCreate.request.body).toEqual({ name: 'Apollo', description: 'Context' });
+    describedCreate.flush({ id: 'p2', name: 'Apollo', description: 'Context' });
+    repository.update('p1', { description: 'Context' }).subscribe();
+    const description = http.expectOne('/api/v1/projects/p1');
+    expect(description.request.body).toEqual({ description: 'Context' });
+    description.flush({ id: 'p1', description: 'Context' });
     repository.update('p1', { archived: true }).subscribe();
     const update = http.expectOne('/api/v1/projects/p1');
     expect(update.request.method).toBe('PATCH');

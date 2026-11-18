@@ -73,6 +73,60 @@ describe("Report generation", () => {
     expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("model");
   });
 
+  it("List styles", async () => {
+    const response = await request(app.getHttpServer())
+      .get("/api/v1/reports/styles")
+      .set(auth(owner))
+      .expect(200);
+    expect(response.body).toMatchObject({
+      styles: [
+        { id: "summary", prompt: { es: expect.any(String), en: expect.any(String) } },
+        { id: "detailed", prompt: { es: expect.any(String), en: expect.any(String) } },
+      ],
+      customPrompt: null,
+    });
+  });
+
+  it("Generate with custom prompt", async () => {
+    await create(owner, { date: "2026-11-16", title: "Owned" });
+    await report(owner, { style: "custom", customPrompt: "  Group by project.  " }).expect(200);
+    expect(generator.generate.mock.calls[0][0]).toMatchObject({
+      style: "custom",
+      customPrompt: "Group by project.",
+    });
+    const styles = await request(app.getHttpServer())
+      .get("/api/v1/reports/styles")
+      .set(auth(owner))
+      .expect(200);
+    expect(styles.body.customPrompt).toBe("Group by project.");
+    const history = await request(app.getHttpServer())
+      .get("/api/v1/reports/runs")
+      .set(auth(owner))
+      .expect(200);
+    expect(history.body.items[0].style).toBe("custom");
+    expect(history.body.items[0]).not.toHaveProperty("customPrompt");
+  });
+
+  it("Custom without prompt", async () => {
+    for (const customPrompt of [undefined, "   ", "x".repeat(2001)]) {
+      await report(owner, { style: "custom", customPrompt })
+        .expect(400)
+        .expect(({ body }) => expect(body.code).toBe("VALIDATION_ERROR"));
+    }
+    expect(generator.generate).not.toHaveBeenCalled();
+  });
+
+  it("Prompt only matters for custom", async () => {
+    await create(owner, { date: "2026-11-16", title: "Owned" });
+    await report(owner, { customPrompt: "Ignore this" }).expect(200);
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("customPrompt");
+    const styles = await request(app.getHttpServer())
+      .get("/api/v1/reports/styles")
+      .set(auth(owner))
+      .expect(200);
+    expect(styles.body.customPrompt).toBeNull();
+  });
+
   it("Report run history is paginated and isolated by owner", async () => {
     await create(owner, { date: "2026-11-16", title: "Owner activity" });
     await create(other, { date: "2026-11-16", title: "Other activity" });
@@ -154,6 +208,23 @@ describe("Report generation", () => {
         alphaId,
         betaId,
       ]);
+    });
+
+    it("Prompt carries project context", async () => {
+      await request(app.getHttpServer())
+        .patch(`/api/v1/projects/${alphaId}`)
+        .set(auth(owner))
+        .send({ description: "  Delivery context  " })
+        .expect(200);
+      await report(owner, { projectIds: [alphaId] }).expect(200);
+      expect(generator.generate.mock.calls[0][0].projects).toEqual([
+        { id: alphaId, name: "Alpha", description: "Delivery context" },
+      ]);
+      await report(owner, { projectIds: [] }).expect(200);
+      expect(generator.generate.mock.calls[1][0].projects).toEqual(expect.arrayContaining([
+        { id: alphaId, name: "Alpha", description: "Delivery context" },
+        { id: betaId, name: "Beta", description: null },
+      ]));
     });
 
     it("None means all", async () => {

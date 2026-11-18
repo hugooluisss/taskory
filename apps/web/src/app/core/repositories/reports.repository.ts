@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ConfigService } from '../config.service';
-import { ReportJob, ReportRequest, ReportResult, RetryReportJob } from '../models';
+import { ReportJob, ReportRequest, ReportResult, ReportStyles, RetryReportJob } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ReportsRepository {
@@ -11,6 +11,9 @@ export class ReportsRepository {
     return this.http.post<ReportResult | ReportJob>(`${this.config.apiBaseUrl}/reports`, body, {
       observe: 'response' as const,
     });
+  }
+  getStyles() {
+    return this.http.get<ReportStyles>(`${this.config.apiBaseUrl}/reports/styles`);
   }
   getJob(id: string) {
     return this.http.get<ReportJob>(`${this.config.apiBaseUrl}/reports/${id}`);

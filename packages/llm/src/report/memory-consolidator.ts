@@ -11,6 +11,8 @@ import type { MemoryChunk } from "./report-memory";
 import { buildFinalReportPrompt } from "./final-report.prompt";
 import { InvalidLlmOutputError } from "../errors/invalid-llm-output.error";
 import type { ReportTotals } from "./report-memory";
+import type { ReportStyle } from "./report-styles";
+import type { ReportProject } from "./report-options";
 
 export async function consolidateMemory(
   memory: MemoryChunk[],
@@ -22,8 +24,9 @@ export async function consolidateMemory(
     totals: ReportTotals;
     from: string;
     to: string;
-    projects?: string[];
-    style: "summary" | "detailed";
+    projects?: ReportProject[];
+    style: ReportStyle;
+    customPrompt?: string;
   },
 ): Promise<{
   memory: MemoryChunk[];
@@ -125,8 +128,9 @@ function fitsFinalPrompt(
     totals: ReportTotals;
     from: string;
     to: string;
-    projects?: string[];
-    style: "summary" | "detailed";
+    projects?: ReportProject[];
+    style: ReportStyle;
+    customPrompt?: string;
   },
 ): boolean {
   if (!options) return countHighlights(memory) <= MAX_MEMORY_HIGHLIGHTS;

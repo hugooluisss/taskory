@@ -497,7 +497,12 @@ describe("log_activity", () => {
         request.url === "/api/v1/projects"
           ? {
               body: [
-                { id: "a", name: "Active", archived: false },
+                {
+                  id: "a",
+                  name: "Active",
+                  description: "Context",
+                  archived: false,
+                },
                 { id: "b", name: "Old", archived: true },
               ],
             }
@@ -510,7 +515,60 @@ describe("log_activity", () => {
           ),
         ),
     );
-    expect(result).toEqual([{ id: "a", name: "Active", archived: false }]);
+    expect(result).toEqual([
+      { id: "a", name: "Active", description: "Context", archived: false },
+    ]);
+  });
+
+  it("Creates projects with descriptions", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "create_project",
+          arguments: { name: "New", description: " Context " },
+        });
+        expect(
+          system.apiRequests.find(
+            (request) =>
+              request.url === "/api/v1/projects" && request.method === "POST",
+          )?.body,
+        ).toEqual({ name: "New", description: "Context" });
+      },
+    );
+  });
+
+  it("Updates a project by case-insensitive name", async () => {
+    await withMcpClient(
+      (request) => {
+        if (request.url === "/api/v1/projects" && request.method === "GET")
+          return {
+            body: [
+              { id: "p1", name: "Alpha", archived: false, description: null },
+            ],
+          };
+        return defaultFakeTaskoryHandler(request);
+      },
+      validToken,
+      async ({ client, system }) => {
+        await client.callTool({
+          name: "update_project",
+          arguments: {
+            name: "alpha",
+            description: " Context ",
+            archived: true,
+          },
+        });
+        expect(
+          system.apiRequests.find((request) => request.method === "PATCH")?.url,
+        ).toBe("/api/v1/projects/p1");
+        expect(
+          system.apiRequests.find((request) => request.method === "PATCH")
+            ?.body,
+        ).toEqual({ description: "Context", archived: true });
+      },
+    );
   });
 
   it("Rejects an invalid IANA timezone before the API call", async () => {
@@ -839,14 +897,14 @@ describe("Tool descriptions guide the agent", () => {
       validToken,
       async ({ client }) => {
         const listed = await client.listTools();
-        expect(listed.tools).toHaveLength(7);
+        expect(listed.tools).toHaveLength(10);
         for (const tool of listed.tools) {
           expect(tool.description).toMatch(/use/i);
           const properties = tool.inputSchema.properties as Record<
             string,
             { description?: string }
           >;
-          if (tool.name !== "list_projects")
+          if (!["list_projects", "list_report_styles"].includes(tool.name))
             expect(Object.keys(properties).length).toBeGreaterThan(0);
           for (const parameter of Object.values(properties))
             expect(parameter.description?.trim()).toBeTruthy();

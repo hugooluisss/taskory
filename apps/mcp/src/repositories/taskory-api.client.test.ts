@@ -3,6 +3,46 @@ import { ApiError } from "./api-error.js";
 import { TaskoryApiClient } from "./taskory-api.client.js";
 
 describe("Token forwarding without shared credentials", () => {
+  it("Sends project descriptions on create and update", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(
+        async () =>
+          new Response(
+            JSON.stringify({
+              id: "p1",
+              name: "Alpha",
+              description: "Context",
+              archived: false,
+            }),
+          ),
+      );
+    const client = new TaskoryApiClient("https://api.test", fetcher);
+    await client.createProject("token", {
+      name: "Alpha",
+      description: "Context",
+    });
+    await client.updateProject("token", "p1", { description: null });
+    expect(
+      fetcher.mock.calls.map((call) => [
+        call[0],
+        call[1]?.method,
+        call[1]?.body,
+      ]),
+    ).toEqual([
+      [
+        "https://api.test/projects",
+        "POST",
+        JSON.stringify({ name: "Alpha", description: "Context" }),
+      ],
+      [
+        "https://api.test/projects/p1",
+        "PATCH",
+        JSON.stringify({ description: null }),
+      ],
+    ]);
+  });
+
   it("Invalid token", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(

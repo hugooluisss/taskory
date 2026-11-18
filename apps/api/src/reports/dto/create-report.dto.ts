@@ -5,11 +5,15 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
+  MinLength,
   Validate,
+  ValidateIf,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from "class-validator";
 import { isCalendarDate } from "../../common/dates/is-calendar-date";
+import { Transform } from "class-transformer";
 
 @ValidatorConstraint({ name: "calendarDate", async: false })
 class CalendarDateValidator implements ValidatorConstraintInterface {
@@ -44,6 +48,13 @@ export class CreateReportDto {
   language!: "es" | "en";
 
   @IsOptional()
-  @IsIn(["summary", "detailed"])
-  style: "summary" | "detailed" = "summary";
+  @IsIn(["summary", "detailed", "custom"])
+  style: "summary" | "detailed" | "custom" = "summary";
+
+  @ValidateIf((report: CreateReportDto) => report.style === "custom")
+  @Transform(({ value }) => typeof value === "string" ? value.trim() : value)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(2000)
+  customPrompt?: string;
 }

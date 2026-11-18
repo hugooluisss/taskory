@@ -11,6 +11,10 @@ export class UsersService {
     return this.users.findById(id);
   }
 
+  async saveCustomReportPrompt(id: string, prompt: string): Promise<void> {
+    await this.users.saveCustomReportPrompt(id, prompt);
+  }
+
   findByEmailWithHash(email: string): Promise<User | null> {
     return this.users.findByEmailWithHash(email.trim().toLowerCase());
   }

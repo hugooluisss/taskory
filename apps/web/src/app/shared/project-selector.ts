@@ -19,6 +19,7 @@ export class ProjectSelectorComponent {
   @Output() selectedIdsChange = new EventEmitter<string[]>();
   readonly creating = signal(false);
   readonly newName = signal('');
+  readonly newDescription = signal('');
   readonly error = signal('');
   readonly createdProjects = signal<Project[]>([]);
   allProjects(): Project[] {
@@ -35,12 +36,13 @@ export class ProjectSelectorComponent {
     const name = this.newName().trim();
     if (!name || name.length > 100) return;
     this.error.set('');
-    this.projectsService!.create(name).subscribe({
+    this.projectsService!.create(name, this.newDescription()).subscribe({
       next: (project) => {
         this.createdProjects.update((items) => [...items, project]);
         this.selectedIdsChange.emit([...new Set([...this.selectedIds(), project.id])]);
         this.creating.set(false);
         this.newName.set('');
+        this.newDescription.set('');
       },
       error: () => this.error.set('projects.createError'),
     });

@@ -17,12 +17,16 @@ describe('ProjectsService', () => {
     const service = TestBed.inject(ProjectsService);
     service.list().subscribe();
     service.create(' Apollo ').subscribe();
+    service.create(' New ', ' Context ').subscribe();
     service.rename('p1', ' New name ').subscribe();
     service.archive('p1', true).subscribe();
+    service.describe('p1', ' Context ').subscribe();
     service.remove('p1').subscribe();
-    expect(repository.create).toHaveBeenCalledWith('Apollo');
+    expect(repository.create).toHaveBeenCalledWith('Apollo', undefined);
+    expect(repository.create).toHaveBeenCalledWith('New', 'Context');
     expect(repository.update).toHaveBeenNthCalledWith(1, 'p1', { name: 'New name' });
     expect(repository.update).toHaveBeenNthCalledWith(2, 'p1', { archived: true });
+    expect(repository.update).toHaveBeenNthCalledWith(3, 'p1', { description: 'Context' });
     expect(repository.delete).toHaveBeenCalledWith('p1');
   });
 });

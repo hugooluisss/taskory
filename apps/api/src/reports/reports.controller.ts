@@ -31,6 +31,11 @@ export class ReportsController {
     return this.reports.listRuns(user.id, query.page, query.limit);
   }
 
+  @Get("styles")
+  styles(@CurrentUser() user: AuthUser) {
+    return this.reports.listStyles(user.id);
+  }
+
   @Post()
   create(
     @CurrentUser() user: AuthUser,

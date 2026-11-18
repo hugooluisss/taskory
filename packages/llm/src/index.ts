@@ -10,5 +10,6 @@ export * from "./registry/provider-registry";
 export * from "./report/report-generator";
 export type { ReportGeneratorOptions } from "./report/report-generator";
 export * from "./report/report-options";
+export * from "./report/report-styles";
 export * from "./report/report-prompt";
 export * from "./report/report-memory";

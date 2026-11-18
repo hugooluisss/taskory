@@ -52,6 +52,33 @@ describe("Project management", () => {
       .expect(200, [created.body]);
   });
 
+  describe("Project description", () => {
+    it("Save description", async () => {
+      const headers = { Authorization: `Bearer ${token}` };
+      const created = await request(app.getHttpServer())
+        .post("/api/v1/projects")
+        .set(headers)
+        .send({ name: "Described", description: "  Internal tools  " })
+        .expect(201);
+      expect(created.body.description).toBe("Internal tools");
+      await request(app.getHttpServer()).get("/api/v1/projects").set(headers).expect(200, [created.body]);
+      await request(app.getHttpServer())
+        .patch(`/api/v1/projects/${created.body.id}`)
+        .set(headers)
+        .send({ description: "   " })
+        .expect(200)
+        .expect(({ body }) => expect(body.description).toBeNull());
+    });
+
+    it("Description too long", async () => {
+      await request(app.getHttpServer())
+        .post("/api/v1/projects")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ name: "Too long", description: "x".repeat(1001) })
+        .expect(400);
+    });
+  });
+
   it("Rejects a duplicate ignoring case", async () => {
     const auth = { Authorization: `Bearer ${token}` };
     await request(app.getHttpServer())

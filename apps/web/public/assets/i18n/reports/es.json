@@ -20,6 +20,10 @@
     "style": "Estilo",
     "summary": "Resumen",
     "detailed": "Detallado",
+    "custom": "Personalizado",
+    "prompt": "Instrucción del estilo",
+    "customPrompt": "Instrucción personalizada",
+    "customPromptRequired": "Escribe una instrucción personalizada antes de generar el informe.",
     "generate": "Generar informe"
   },
   "progress": {

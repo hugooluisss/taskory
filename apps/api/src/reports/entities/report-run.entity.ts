@@ -28,7 +28,7 @@ export class ReportRun {
   @Column({ type: "date" }) to!: string;
   @Column({ type: "json" }) projectIds!: string[];
   @Column() language!: "es" | "en";
-  @Column() style!: "summary" | "detailed";
+  @Column() style!: "summary" | "detailed" | "custom";
   @Column() provider!: string;
   @Column() model!: string;
   @Column({ type: "integer" }) promptTokens!: number;

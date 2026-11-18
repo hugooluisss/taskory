@@ -71,6 +71,8 @@
     "createNew": "Create new project",
     "createError": "Could not create the project.",
     "name": "Project name",
+    "descriptionField": "Project description",
+    "saveDescription": "Save project description",
     "saveError": "Could not save the project.",
     "deleteHasActivities": "This project has activities. Archive it instead.",
     "deleteError": "Could not delete the project.",

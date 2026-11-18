@@ -15,7 +15,7 @@ import {
   throwError,
   timer,
 } from 'rxjs';
-import { ReportJob, ReportRequest, ReportResult } from '../models';
+import { ReportJob, ReportRequest, ReportResult, ReportStyles } from '../models';
 import { ReportsRepository } from '../repositories/reports.repository';
 import { REPORT_SCHEDULER } from './report-scheduler';
 import { ReportCreationResult } from './reports.repository-result';
@@ -37,6 +37,9 @@ export class ReportsService {
   private repository = inject(ReportsRepository);
   private sanitizer = inject(DomSanitizer);
   private scheduler = inject(REPORT_SCHEDULER);
+  getStyles(): Observable<ReportStyles> {
+    return this.repository.getStyles();
+  }
   presets(now = new Date()): ReportPresets {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const mondayOffset = (date.getDay() + 6) % 7;

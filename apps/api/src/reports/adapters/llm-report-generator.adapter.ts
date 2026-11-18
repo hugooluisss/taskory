@@ -12,22 +12,12 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
   constructor(private readonly generator: ReportGenerator) {}
 
   generate(options: Parameters<ReportGeneratorPort["generate"]>[0]) {
-    const { projectIds, ...input } = options;
+    const { projects, ...input } = options;
     return this.translate(() =>
       this.generator.generate({
         ...input,
         activities: input.activities.map(toLlmActivity),
-        projects: projectIds?.length
-          ? [
-              ...new Set(
-                options.activities.flatMap((activity) =>
-                  activity.projects
-                    .filter((project) => projectIds.includes(project.id))
-                    .map(({ name }) => name),
-                ),
-              ),
-            ]
-          : undefined,
+        projects,
         style: input.style ?? "summary",
       }),
     );
@@ -43,15 +33,11 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
   }
 
   writeFinal(options: Parameters<ReportGeneratorPort["writeFinal"]>[0]) {
-    const { projectIds, ...input } = options;
+    const { projects, ...input } = options;
     return this.translate(() =>
       this.generator.writeFinal({
         ...input,
-        projects: projectIds?.length
-          ? Object.keys(options.totals.byProject).filter(
-              (project) => project !== "none",
-            )
-          : undefined,
+        projects,
         style: input.style ?? "summary",
       }),
     );

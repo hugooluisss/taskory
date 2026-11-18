@@ -17,6 +17,7 @@ export interface Activity {
 export interface Project {
   id: string;
   name: string;
+  description: string | null;
   archived: boolean;
 }
 
@@ -36,6 +37,14 @@ export interface ReportResult {
   completionTokens: number;
   costUsd: number;
   activityCount: number;
+}
+
+export interface ReportStyles {
+  styles: Array<{
+    id: "summary" | "detailed";
+    prompt: { es: string; en: string };
+  }>;
+  customPrompt: string | null;
 }
 
 export interface ReportJob {

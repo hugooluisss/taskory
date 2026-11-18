@@ -14,6 +14,7 @@ import type {
   ReportTotals,
 } from "./report-memory";
 import type { ReportOptions } from "./report-options";
+import type { ReportStyle } from "./report-styles";
 export interface ReportGeneratorOptions {
   providers?: Record<string, LlmProvider>;
   defaultProvider?: string;
@@ -99,6 +100,7 @@ export class ReportGenerator {
 
   async evaluateChunk(options: {
     activities: (ReportOptions["activities"][number] & { id: string })[];
+    projects?: ReportOptions["projects"];
     language: "es" | "en";
     signal?: AbortSignal;
   }): Promise<ChunkEvaluation> {
@@ -106,6 +108,7 @@ export class ReportGenerator {
     const prompt = buildChunkEvaluationPrompt(
       options.activities,
       options.language,
+      options.projects,
     );
     const allowed = new Map(
       options.activities.map((activity) => [
@@ -132,9 +135,10 @@ export class ReportGenerator {
     totals: ReportTotals;
     from: string;
     to: string;
-    projects?: string[];
+    projects?: ReportOptions["projects"];
     language: "es" | "en";
-    style: "summary" | "detailed";
+    style: ReportStyle;
+    customPrompt?: string;
     signal?: AbortSignal;
   }): Promise<{
     markdown: string;

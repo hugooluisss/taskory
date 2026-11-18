@@ -24,13 +24,24 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
   if (request.url === "/api/v1/auth/me")
     return { body: { id: request.authorization } };
   if (request.url === "/api/v1/projects" && request.method === "GET")
-    return { body: [{ id: "project-1", name: "Alpha", archived: false }] };
+    return {
+      body: [
+        {
+          id: "project-1",
+          name: "Alpha",
+          description: "Context",
+          archived: false,
+        },
+      ],
+    };
   if (request.url === "/api/v1/projects" && request.method === "POST")
     return {
       status: 201,
       body: {
         id: "new-project",
         name: (request.body as { name: string }).name,
+        description:
+          (request.body as { description?: string }).description ?? null,
         archived: false,
       },
     };
@@ -56,6 +67,17 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
         completionTokens: 3,
         costUsd: 0,
         activityCount: 3,
+      },
+    };
+  }
+  if (request.url === "/api/v1/reports/styles" && request.method === "GET") {
+    return {
+      body: {
+        styles: [
+          { id: "summary", prompt: { es: "Resumen", en: "Summary" } },
+          { id: "detailed", prompt: { es: "Detallado", en: "Detailed" } },
+        ],
+        customPrompt: "Saved custom prompt",
       },
     };
   }

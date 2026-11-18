@@ -31,7 +31,9 @@ export class ProjectsController {
 
   @Post()
   async create(@CurrentUser() user: AuthUser, @Body() body: CreateProjectDto) {
-    return this.serialize(await this.projects.create(user.id, body.name));
+    return this.serialize(
+      await this.projects.create(user.id, body.name, body.description),
+    );
   }
 
   @Patch(":id")
@@ -56,6 +58,7 @@ export class ProjectsController {
     return {
       id: project.id,
       name: project.name,
+      description: project.description ?? null,
       archived: project.archived,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,

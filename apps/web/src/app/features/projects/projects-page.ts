@@ -16,6 +16,7 @@ export class ProjectsPage {
   private projectsService = inject(ProjectsService);
   readonly projects = signal<Project[]>([]);
   readonly names = signal<Record<string, string>>({});
+  readonly descriptions = signal<Record<string, string>>({});
   readonly error = signal('');
   constructor() {
     this.load();
@@ -44,6 +45,17 @@ export class ProjectsPage {
       error: () => this.error.set('projects.saveError'),
     });
   }
+  describe(project: Project): void {
+    const description = this.descriptions()[project.id] ?? project.description ?? '';
+    if (description === (project.description ?? '')) return;
+    this.projectsService.describe(project.id, description).subscribe({
+      next: (updated) =>
+        this.projects.update((items) =>
+          items.map((item) => (item.id === updated.id ? updated : item)),
+        ),
+      error: () => this.error.set('projects.saveError'),
+    });
+  }
   remove(project: Project): void {
     this.error.set('');
     this.projectsService.remove(project.id).subscribe({
@@ -59,5 +71,11 @@ export class ProjectsPage {
   }
   updateName(id: string, event: Event): void {
     this.setName(id, (event.target as HTMLInputElement).value);
+  }
+  updateDescription(id: string, event: Event): void {
+    this.descriptions.update((items) => ({
+      ...items,
+      [id]: (event.target as HTMLTextAreaElement).value,
+    }));
   }
 }

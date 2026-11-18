@@ -33,12 +33,30 @@ export function registerGenerateReport(
         .default("en")
         .describe("Report language, English or Spanish."),
       style: z
-        .enum(["summary", "detailed"])
+        .enum(["summary", "detailed", "custom"])
         .optional()
         .describe("Optional report detail level."),
+      customPrompt: z
+        .string()
+        .optional()
+        .describe("Required for custom style; instruction prompt, up to 2000 characters."),
     },
     async (args, extra) => {
       try {
+        if (
+          args.style === "custom" &&
+          (!args.customPrompt?.trim() || args.customPrompt.trim().length > 2000)
+        ) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text",
+                text: "VALIDATION_ERROR: customPrompt must contain 1 to 2000 characters when style is custom.",
+              },
+            ],
+          };
+        }
         return toolResult(
           reportResult(await service.generate(bearerToken(extra), args)),
         );

@@ -1,11 +1,13 @@
 import { MAX_CHUNK_HIGHLIGHTS } from "./report-constants";
 import type { ReportOptions } from "./report-options";
+import { projectData } from "./report-options";
 
 export function buildChunkEvaluationPrompt(
   activities: ReportOptions["activities"],
   language: "es" | "en",
+  projects?: ReportOptions["projects"],
 ): { system: string; prompt: string } {
-  const activityJson = JSON.stringify(activities, null, 2).replaceAll(
+  const data = JSON.stringify({ projects: projectData(projects), activities }, null, 2).replaceAll(
     "<",
     "\\u003c",
   );
@@ -39,9 +41,9 @@ export function buildChunkEvaluationPrompt(
       "TASK: CHUNK_EVALUATION",
       instruction,
       untrusted,
-      "<activity_json>",
-      activityJson,
-      "</activity_json>",
+      "<report_data>",
+      data,
+      "</report_data>",
     ].join("\n"),
   };
 }

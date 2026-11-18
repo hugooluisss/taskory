@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { ReportStyles } from '../../core/models';
 import { ReportsService } from '../../core/services/reports.service';
 import { ProjectsService } from '../../core/services/projects.service';
 import { ReportFormComponent } from './report-form';
@@ -18,6 +19,15 @@ describe('Report generation', () => {
     validateRange: vi.fn((from: string, to: string) => {
       if (from > to) throw new RangeError();
     }),
+    getStyles: vi.fn(() =>
+      of<ReportStyles>({
+        styles: [
+          { id: 'summary' as const, prompt: { es: 'Resumen ES', en: 'Summary EN' } },
+          { id: 'detailed' as const, prompt: { es: 'Detallado ES', en: 'Detailed EN' } },
+        ],
+        customPrompt: null,
+      }),
+    ),
   };
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -30,9 +40,9 @@ describe('Report generation', () => {
           useValue: {
             list: () =>
               of([
-                { id: 'p1', name: 'Apollo', archived: false },
-                { id: 'p2', name: 'Zeus', archived: false },
-                { id: 'p3', name: 'Old', archived: true },
+                { id: 'p1', name: 'Apollo', description: null, archived: false },
+                { id: 'p2', name: 'Zeus', description: null, archived: false },
+                { id: 'p3', name: 'Old', description: null, archived: true },
               ]),
           },
         },
@@ -47,11 +57,82 @@ describe('Report generation', () => {
   });
   it('uses fixed report presets and the user language', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
     fixture.detectChanges();
     expect(fixture.componentInstance.from()).toBe('2026-11-16');
     expect(fixture.componentInstance.language()).toBe('es');
     fixture.componentInstance.selectPreset('lastMonth');
     expect(fixture.componentInstance.to()).toBe('2026-10-31');
+  });
+  it('shows the selected language prompt read-only', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    fixture.detectChanges();
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('Resumen ES');
+    expect(textarea.readOnly).toBe(true);
+    fixture.componentInstance.language.set('en');
+    fixture.detectChanges();
+    expect(textarea.value).toBe('Summary EN');
+  });
+  it('prefills custom prompt with the saved prompt and sends it only for custom style', () => {
+    reports.getStyles.mockImplementationOnce(() =>
+      of<ReportStyles>({
+        styles: [{ id: 'summary', prompt: { es: 'Resumen ES', en: 'Summary EN' } }],
+        customPrompt: 'Saved custom',
+      }),
+    );
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.detectChanges();
+    fixture.componentInstance.style.set('custom');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.customPrompt()).toBe('Saved custom');
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('Saved custom');
+    expect(textarea.maxLength).toBe(2000);
+    expect(textarea.getAttribute('aria-label')).toBe('reports.form.customPrompt');
+    textarea.value = 'Edited prompt';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.customPrompt()).toBe('Edited prompt');
+    fixture.componentInstance.submit();
+    const emitted = emit.mock.calls[0]![0]!;
+    expect(emitted.customPrompt).toBe('Edited prompt');
+    fixture.componentInstance.style.set('detailed');
+    fixture.componentInstance.submit();
+    expect(emit.mock.calls[1]![0]!).not.toHaveProperty('customPrompt');
+  });
+  it('blocks a blank custom prompt with an inline alert', () => {
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.componentInstance.style.set('custom');
+    fixture.componentInstance.customPrompt.set('   ');
+    fixture.componentInstance.submit();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+      'reports.form.customPromptRequired',
+    );
+    expect(emit).not.toHaveBeenCalled();
+  });
+  it('continues without visible prompts when styles cannot load', () => {
+    reports.getStyles.mockReturnValueOnce(throwError(() => new Error('Styles unavailable')));
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('textarea')).toBeNull();
+    const emit = vi.spyOn(fixture.componentInstance.generate, 'emit');
+    fixture.componentInstance.submit();
+    expect(emit).toHaveBeenCalled();
+  });
+  it('shows an empty editable custom prompt when styles cannot load', () => {
+    reports.getStyles.mockReturnValueOnce(throwError(() => new Error('Styles unavailable')));
+    const fixture = TestBed.createComponent(ReportFormComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.style.set('custom');
+    fixture.detectChanges();
+    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea).not.toBeNull();
+    expect(textarea.value).toBe('');
+    expect(textarea.readOnly).toBe(false);
   });
   it('rejects an inverted range without generating', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);

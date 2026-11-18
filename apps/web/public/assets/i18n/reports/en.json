@@ -20,6 +20,10 @@
     "style": "Style",
     "summary": "Summary",
     "detailed": "Detailed",
+    "custom": "Custom",
+    "prompt": "Style prompt",
+    "customPrompt": "Custom prompt",
+    "customPromptRequired": "Enter a custom prompt before generating the report.",
     "generate": "Generate report"
   },
   "progress": {

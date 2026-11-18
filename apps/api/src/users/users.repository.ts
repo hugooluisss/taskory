@@ -26,6 +26,10 @@ export class UsersRepository {
     return this.users.findOne({ where: { id } });
   }
 
+  async saveCustomReportPrompt(id: string, prompt: string): Promise<void> {
+    await this.users.update({ id }, { customReportPrompt: prompt });
+  }
+
   create(email: string, name: string, passwordHash: string): Promise<User> {
     return this.users
       .save(this.users.create({ email, name, passwordHash }))

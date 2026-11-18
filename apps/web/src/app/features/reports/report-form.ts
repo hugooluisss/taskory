@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ReportRequest, Language, Project } from '../../core/models';
+import { ReportRequest, Language, Project, ReportStyle, ReportStyles } from '../../core/models';
 import { ReportsService } from '../../core/services/reports.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AppButtonComponent } from '../../shared/app-button';
@@ -26,11 +26,23 @@ export class ReportFormComponent {
   readonly to = signal(this.presets.thisWeek.to);
   readonly selectedProjects = signal<string[]>([]);
   readonly language = signal<Language>(this.auth.user()?.language ?? 'en');
-  readonly style = signal<'summary' | 'detailed'>('summary');
+  readonly style = signal<ReportStyle>('summary');
+  readonly reportStyles = signal<ReportStyles | null>(null);
+  readonly customPrompt = signal('');
+  readonly customPromptError = signal(false);
   readonly rangeError = signal(false);
   readonly projectError = signal(false);
   readonly loading = signal(false);
   constructor() {
+    this.reports.getStyles().subscribe({
+      next: (styles) => {
+        this.reportStyles.set(styles);
+        this.customPrompt.set(
+          styles.customPrompt ?? this.promptFor('summary', this.language()) ?? '',
+        );
+      },
+      error: () => this.reportStyles.set(null),
+    });
     this.projectsService.list().subscribe({
       next: (projects) => {
         const available = projects.filter((project) => !project.archived);
@@ -53,6 +65,11 @@ export class ReportFormComponent {
     this.projectError.set(false);
   }
   submit(): void {
+    if (this.style() === 'custom' && !this.customPrompt().trim()) {
+      this.customPromptError.set(true);
+      return;
+    }
+    this.customPromptError.set(false);
     try {
       this.reports.validateRange(this.from(), this.to());
     } catch {
@@ -78,7 +95,16 @@ export class ReportFormComponent {
             : undefined,
       language: this.language(),
       style: this.style(),
+      ...(this.style() === 'custom' ? { customPrompt: this.customPrompt() } : {}),
     });
+  }
+  promptFor(style: ReportStyle, language = this.language()): string | undefined {
+    if (style === 'custom') return undefined;
+    return this.reportStyles()?.styles.find((item) => item.id === style)?.prompt[language];
+  }
+  updateCustomPrompt(event: Event): void {
+    this.customPrompt.set((event.target as HTMLTextAreaElement).value);
+    this.customPromptError.set(false);
   }
   finish(): void {
     this.loading.set(false);

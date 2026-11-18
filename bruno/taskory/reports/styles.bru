@@ -1,0 +1,37 @@
+meta {
+  name: List report styles
+  type: http
+  seq: 10
+}
+get {
+  url: {{baseUrl}}/reports/styles
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-styles+" + Date.now() + "@example.com", name: "Report styles", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: report-styles / Predefined styles expose their prompt / List styles.
+}
+tests {
+  test("lists report style prompts and an empty saved custom prompt", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.styles).to.be.an("array").with.length(2);
+    expect(res.body.styles[0]).to.have.all.keys("id", "prompt");
+    expect(res.body.styles[0].prompt).to.have.all.keys("es", "en");
+    expect(res.body.customPrompt).to.equal(null);
+  });
+}

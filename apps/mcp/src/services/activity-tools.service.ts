@@ -102,12 +102,42 @@ export class ActivityToolsService {
         (item) => item.name.toLowerCase() === name.toLowerCase(),
       );
       if (!project) {
-        project = await this.api.createProject(token, name);
+        project = await this.api.createProject(token, { name });
         catalog.push(project);
       }
       ids.push(project.id);
     }
     return [...new Set(ids)];
+  }
+
+  createProject(token: string, input: { name: string; description?: string }) {
+    return this.api.createProject(token, input);
+  }
+
+  async updateProject(
+    token: string,
+    input: {
+      id?: string;
+      name?: string;
+      description?: string | null;
+      archived?: boolean;
+    },
+  ) {
+    const { id, name, ...fields } = input;
+    const projectId = id ?? (await this.resolveProject(token, name!)).id;
+    return this.api.updateProject(token, projectId, {
+      ...fields,
+      ...(id && name ? { name } : {}),
+    });
+  }
+
+  private async resolveProject(token: string, name: string) {
+    const project = (await this.api.listProjects(token)).find(
+      (item) => item.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (!project)
+      throw new Error(`PROJECT_NOT_FOUND: Project not found: ${name}`);
+    return project;
   }
 
   async delete(

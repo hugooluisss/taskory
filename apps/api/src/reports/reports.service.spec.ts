@@ -6,7 +6,7 @@ import { Logger } from "@nestjs/common";
 
 describe("Report generation", () => {
   let activities: jest.Mocked<
-    Pick<ActivitiesService, "findReportSnapshot" | "findReportChunk">
+    Pick<ActivitiesService, "findReportSnapshot" | "findReportChunk" | "findReportProjects">
   >;
   let generator: {
     generate: jest.Mock;
@@ -27,6 +27,7 @@ describe("Report generation", () => {
     resumeQueued: jest.Mock;
   };
   let runs: { save: jest.Mock; list: jest.Mock };
+  let users: { findById: jest.Mock; saveCustomReportPrompt: jest.Mock };
   const request: CreateReportDto = {
     from: "2026-01-01",
     to: "2026-01-31",
@@ -44,6 +45,7 @@ describe("Report generation", () => {
       {
         id: "p1",
         name: "A",
+        description: null,
         userId: "user",
         archived: false,
         createdAt: new Date(),
@@ -59,6 +61,9 @@ describe("Report generation", () => {
     activities = {
       findReportSnapshot: jest.fn().mockResolvedValue([{ id: activity.id }]),
       findReportChunk: jest.fn().mockResolvedValue([activity]),
+      findReportProjects: jest.fn().mockResolvedValue([
+        { id: "p1", name: "A", description: null },
+      ]),
     };
     generator = {
       generate: jest.fn().mockResolvedValue({
@@ -89,12 +94,17 @@ describe("Report generation", () => {
       resumeQueued: jest.fn(),
     };
     runs = { save: jest.fn().mockResolvedValue(undefined), list: jest.fn() };
+    users = {
+      findById: jest.fn().mockResolvedValue({ customReportPrompt: null }),
+      saveCustomReportPrompt: jest.fn().mockResolvedValue(undefined),
+    };
     service = new ReportsService(
       activities as unknown as ActivitiesService,
       generator as never,
       jobs as never,
       queue,
       runs as never,
+      users as never,
     );
   });
 
@@ -148,6 +158,26 @@ describe("Report generation", () => {
     expect(generator.generate.mock.calls[0][0]).toMatchObject({
       language: "es",
       style: "detailed",
+    });
+  });
+
+  it("Generate with custom prompt", async () => {
+    await service.create("user", { ...request, style: "custom", customPrompt: "  Group by project.  " });
+    expect(users.saveCustomReportPrompt).toHaveBeenCalledWith("user", "Group by project.");
+    expect(generator.generate).toHaveBeenCalledWith(expect.objectContaining({ style: "custom", customPrompt: "Group by project." }));
+  });
+
+  it("Prompt only matters for custom", async () => {
+    await service.create("user", { ...request, customPrompt: "Ignored" });
+    expect(users.saveCustomReportPrompt).not.toHaveBeenCalled();
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("customPrompt");
+  });
+
+  it("List styles returns saved custom prompt", async () => {
+    users.findById.mockResolvedValue({ customReportPrompt: "Saved" });
+    await expect(service.listStyles("user")).resolves.toMatchObject({
+      styles: [{ id: "summary", prompt: { es: expect.any(String), en: expect.any(String) } }, { id: "detailed", prompt: { es: expect.any(String), en: expect.any(String) } }],
+      customPrompt: "Saved",
     });
   });
 

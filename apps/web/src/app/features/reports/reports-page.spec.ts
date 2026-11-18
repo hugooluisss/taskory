@@ -3,6 +3,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { ApiError } from '../../core/api-error';
 import { ReportJob } from '../../core/models';
+import { ReportStyles } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { ReportsService } from '../../core/services/reports.service';
@@ -23,6 +24,7 @@ describe('Long report progress', () => {
       lastMonth: { from: '2026-10-01', to: '2026-10-31' },
     })),
     validateRange: vi.fn(),
+    getStyles: vi.fn(() => of<ReportStyles>({ styles: [], customPrompt: null })),
     create: vi.fn(() =>
       of({
         kind: 'done',

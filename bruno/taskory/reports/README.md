@@ -6,7 +6,7 @@ Run deterministic requests from the collection root with:
 bru run reports --env local
 ```
 
-The successful, detailed-style, and ANY-of tag report requests are tagged `requires-llm` and live in their own folder. Run them only when Ollama is available:
+The successful, detailed-style, custom-style, and ANY-of tag report requests are tagged `requires-llm` and live in their own folder. Run them only when Ollama is available:
 
 ```sh
 bru run reports/requires-llm --env local -r

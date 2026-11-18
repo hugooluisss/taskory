@@ -10,10 +10,13 @@ export class ProjectsRepository {
   list() {
     return this.http.get<Project[]>(`${this.config.apiBaseUrl}/projects`);
   }
-  create(name: string) {
-    return this.http.post<Project>(`${this.config.apiBaseUrl}/projects`, { name });
+  create(name: string, description?: string) {
+    return this.http.post<Project>(`${this.config.apiBaseUrl}/projects`, {
+      name,
+      ...(description === undefined ? {} : { description }),
+    });
   }
-  update(id: string, body: { name?: string; archived?: boolean }) {
+  update(id: string, body: { name?: string; description?: string | null; archived?: boolean }) {
     return this.http.patch<Project>(`${this.config.apiBaseUrl}/projects/${id}`, body);
   }
   delete(id: string) {

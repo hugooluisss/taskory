@@ -15,12 +15,14 @@ import { REPORT_JOB_QUEUE } from "./report-job-queue";
 import { DatabaseModule } from "../common/database/database.module";
 import { ReportRun } from "./entities/report-run.entity";
 import { ReportRunsRepository } from "./report-runs.repository";
+import { UsersModule } from "../users/users.module";
 
 @Module({
   imports: [
     ActivitiesModule,
     DatabaseModule,
     TokenAuthModule,
+    UsersModule,
     TypeOrmModule.forFeature([ReportJob, ReportMemory, ReportRun]),
   ],
   controllers: [ReportsController],

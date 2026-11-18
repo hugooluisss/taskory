@@ -7,12 +7,15 @@ import { ProjectSelectorComponent } from './project-selector';
 
 describe('Project selector', () => {
   it('creates and selects a new project', async () => {
+    const create = vi.fn(() =>
+      of({ id: 'p2', name: 'New', description: 'Project context', archived: false }),
+    );
     await TestBed.configureTestingModule({
       imports: [ProjectSelectorComponent],
       providers: [
         {
           provide: ProjectsService,
-          useValue: { create: vi.fn(() => of({ id: 'p2', name: 'New', archived: false })) },
+          useValue: { create },
         },
       ],
     })
@@ -26,7 +29,9 @@ describe('Project selector', () => {
     const selected = vi.fn();
     fixture.componentInstance.selectedIdsChange.subscribe(selected);
     fixture.componentInstance.newName.set(' New ');
+    fixture.componentInstance.newDescription.set(' Project context ');
     fixture.componentInstance.create();
+    expect(create).toHaveBeenCalledWith('New', ' Project context ');
     expect(selected).toHaveBeenCalledWith(['p1', 'p2']);
     expect(fixture.componentInstance.allProjects()).toHaveLength(1);
   });

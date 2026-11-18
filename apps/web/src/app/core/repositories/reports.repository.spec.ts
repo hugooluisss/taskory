@@ -27,6 +27,12 @@ describe('ReportsRepository', () => {
     expect(request.request.method).toBe('GET');
     request.flush({});
   });
+  it('loads available styles and the saved custom prompt', () => {
+    repository.getStyles().subscribe((styles) => expect(styles.customPrompt).toBe('Saved'));
+    const request = http.expectOne('/api/v1/reports/styles');
+    expect(request.request.method).toBe('GET');
+    request.flush({ styles: [], customPrompt: 'Saved' });
+  });
   it('retryJob posts to the retry endpoint', () => {
     repository.retryJob('j1').subscribe();
     const request = http.expectOne('/api/v1/reports/j1/retry');

@@ -1,5 +1,5 @@
 import type { TaskoryApiClient } from "../repositories/taskory-api.client.js";
-import type { ReportJob, ReportResult } from "../types/api.js";
+import type { ReportJob, ReportResult, ReportStyles } from "../types/api.js";
 
 export class UnknownProjectError extends Error {
   constructor(name: string) {
@@ -19,7 +19,8 @@ export class ReportToolsService {
       projects?: string[];
       tags?: string[];
       language: "es" | "en";
-      style?: "summary" | "detailed";
+      style?: "summary" | "detailed" | "custom";
+      customPrompt?: string;
     },
   ): Promise<ReportResult | ReportJob> {
     return this.resolveAndGenerate(token, input);
@@ -33,7 +34,8 @@ export class ReportToolsService {
       projects?: string[];
       tags?: string[];
       language: "es" | "en";
-      style?: "summary" | "detailed";
+      style?: "summary" | "detailed" | "custom";
+      customPrompt?: string;
     },
   ): Promise<ReportResult | ReportJob> {
     const catalog = input.projects?.length
@@ -46,11 +48,16 @@ export class ReportToolsService {
       if (!project) throw new UnknownProjectError(name);
       return project.id;
     });
-    const { projects: _projects, ...fields } = input;
+    const { projects: _projects, customPrompt, ...fields } = input;
     return this.api.createReport(token, {
       ...fields,
+      ...(fields.style === "custom" ? { customPrompt: customPrompt?.trim() } : {}),
       ...(projectIds ? { projectIds: [...new Set(projectIds)] } : {}),
     });
+  }
+
+  listStyles(token: string): Promise<ReportStyles> {
+    return this.api.listReportStyles(token);
   }
 
   get(token: string, id: string): Promise<ReportJob> {

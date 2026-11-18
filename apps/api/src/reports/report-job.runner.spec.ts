@@ -8,6 +8,15 @@ import { ReportGeneratorPort } from "./ports/report-generator.port";
 
 describe("Chunked generation for large reports", () => {
   describe("Final report from memory", () => {
+    it("Prompt carries project context", async () => {
+      const context = createContext(jobWithCount(1));
+      context.runner.enqueue("report", "owner");
+      await context.runner.awaitIdle();
+      const projects = [{ id: "p1", name: "Core", description: "Platform" }];
+      expect(context.generator.evaluateChunk.mock.calls[0][0].projects).toEqual(projects);
+      expect(context.generator.writeFinal.mock.calls[0][0].projects).toEqual(projects);
+    });
+
     it("Completion", async () => {
       const context = createContext(jobWithCount(250));
       context.runner.enqueue("report", "owner");
@@ -631,6 +640,7 @@ describe("Chunked generation for large reports", () => {
       params: {
         from: "2026-01-01",
         to: "2026-01-31",
+        projects: [{ id: "p1", name: "Core", description: "Platform" }],
         language: "en",
         style: "summary",
       },

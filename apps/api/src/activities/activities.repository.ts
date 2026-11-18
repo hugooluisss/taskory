@@ -6,6 +6,7 @@ import {
   PaginationEnvelope,
 } from "../common/pagination/pagination";
 import { Activity } from "./entities/activity.entity";
+import { Project } from "../projects/entities/project.entity";
 import {
   ActivityFilters,
   CreateActivityInput,
@@ -147,6 +148,20 @@ export class ActivitiesRepository {
       .andWhere("activity.id IN (:...ids)", { ids })
       .leftJoinAndSelect("activity.projects", "project")
       .getMany();
+  }
+
+  async findReportProjects(userId: string, ids: string[]) {
+    if (!ids.length) return [];
+    return this.activities.manager
+      .getRepository(Project)
+      .createQueryBuilder("project")
+      .innerJoin("activity_projects", "link", "link.projectId = project.id")
+      .innerJoin("activities", "activity", "activity.id = link.activityId")
+      .where("activity.userId = :userId", { userId })
+      .andWhere("activity.id IN (:...ids)", { ids })
+      .select(["project.id AS id", "project.name AS name", "project.description AS description"])
+      .distinct(true)
+      .getRawMany<{ id: string; name: string; description: string | null }>();
   }
 
   private reportQuery(userId: string, filters: ReportActivityFilters) {

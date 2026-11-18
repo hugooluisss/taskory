@@ -6,6 +6,7 @@ import type {
   Project,
   ReportJob,
   ReportResult,
+  ReportStyles,
 } from "../types/api.js";
 
 type Fetcher = typeof fetch;
@@ -48,8 +49,24 @@ export class TaskoryApiClient {
     return this.get("/projects", token);
   }
 
-  createProject(token: string, name: string): Promise<Project> {
-    return this.send("/projects", token, "POST", { name });
+  createProject(
+    token: string,
+    input: { name: string; description?: string },
+  ): Promise<Project> {
+    return this.send("/projects", token, "POST", input);
+  }
+
+  updateProject(
+    token: string,
+    id: string,
+    input: { name?: string; description?: string | null; archived?: boolean },
+  ): Promise<Project> {
+    return this.send(
+      `/projects/${encodeURIComponent(id)}`,
+      token,
+      "PATCH",
+      input,
+    );
   }
 
   updateActivity(token: string, id: string, input: unknown): Promise<Activity> {
@@ -70,6 +87,10 @@ export class TaskoryApiClient {
     input: unknown,
   ): Promise<ReportResult | ReportJob> {
     return this.send("/reports", token, "POST", input);
+  }
+
+  listReportStyles(token: string): Promise<ReportStyles> {
+    return this.get("/reports/styles", token);
   }
 
   getReport(token: string, id: string): Promise<ReportJob> {

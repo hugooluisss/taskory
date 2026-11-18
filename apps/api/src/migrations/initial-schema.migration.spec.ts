@@ -72,6 +72,8 @@ describe("Schema is migration managed", () => {
   it("Merges case variants using the most frequent spelling and maps SIGEI special value", async () => {
     source = await createMySqlTestDatabase();
     await source.undoLastMigration();
+    await source.undoLastMigration();
+    await source.undoLastMigration();
     const userId = "00000000-0000-4000-8000-000000000011";
     await source.query("INSERT INTO users (id,email,name,passwordHash) VALUES (?,?,?,?)", [userId, "projects@example.test", "Test", "hash"]);
     for (const [id, name] of [

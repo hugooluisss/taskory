@@ -90,9 +90,38 @@
       >
         <option value="summary">{{ 'reports.form.summary' | transloco }}</option>
         <option value="detailed">{{ 'reports.form.detailed' | transloco }}</option>
+        <option value="custom">{{ 'reports.form.custom' | transloco }}</option>
       </select></label
     >
   </div>
+  @if (style() === 'custom') {
+    <label class="form-control gap-1">
+      <span>{{ 'reports.form.customPrompt' | transloco }}</span>
+      <textarea
+        class="textarea textarea-bordered w-full"
+        name="customPrompt"
+        [attr.aria-label]="'reports.form.customPrompt' | transloco"
+        maxlength="2000"
+        [value]="customPrompt()"
+        (input)="updateCustomPrompt($event)"
+      ></textarea>
+      <span class="text-right text-sm text-base-content/60"
+        >{{ customPrompt().length }} / 2000</span
+      >
+    </label>
+    @if (customPromptError()) {
+      <p class="text-error" role="alert">{{ 'reports.form.customPromptRequired' | transloco }}</p>
+    }
+  } @else if (promptFor(style())) {
+    <label class="form-control gap-1">
+      <span>{{ 'reports.form.prompt' | transloco }}</span>
+      <textarea
+        class="textarea textarea-bordered w-full"
+        readonly
+        [value]="promptFor(style())"
+      ></textarea>
+    </label>
+  }
   <app-button type="submit" [loading]="loading()">{{
     'reports.form.generate' | transloco
   }}</app-button>

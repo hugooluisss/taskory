@@ -9,7 +9,7 @@ describe("Project management", () => {
     await expect(
       new ProjectsService(repository).create("u1", " Alpha "),
     ).resolves.toMatchObject({ name: "Alpha" });
-    expect(repository.create).toHaveBeenCalledWith("u1", " Alpha ");
+    expect(repository.create).toHaveBeenCalledWith("u1", " Alpha ", null);
   });
 
   it("Rejects blank and oversized names", async () => {

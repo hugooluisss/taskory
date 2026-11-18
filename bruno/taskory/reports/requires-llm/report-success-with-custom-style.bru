@@ -1,0 +1,55 @@
+meta {
+  name: Successful custom-style report
+  type: http
+  seq: 5
+  tags: [
+    requires-llm
+  ]
+}
+post {
+  url: {{baseUrl}}/reports
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  Accept-Language: en
+}
+body:json {
+  {
+    "from": "2026-11-16",
+    "to": "2026-11-16",
+    "language": "en",
+    "style": "custom",
+    "customPrompt": "Summarize outcomes by project and call out completed work."
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-custom-style+" + Date.now() + "@example.com", name: "Custom report", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+  await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/activities",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token },
+    data: { date: "2026-11-16", title: "Custom report activity", description: "Completed a project milestone" }
+  });
+}
+docs {
+  Spec scenario: report-styles / Custom style / Generate with custom prompt. Requires a running Ollama provider; tag: requires-llm.
+}
+tests {
+  test("generates a custom Markdown report", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.markdown).to.be.a("string").and.not.empty;
+    expect(res.body.activityCount).to.equal(1);
+  });
+}

@@ -24,6 +24,8 @@ import { MySqlBaseline1770000000000 } from "./migrations/1770000000000-MySqlBase
 import { Project } from "./projects/entities/project.entity";
 import { ProjectsModule } from "./projects/projects.module";
 import { ProjectCatalog1771000000000 } from "./migrations/1771000000000-ProjectCatalog";
+import { ReportStyles1772000000000 } from "./migrations/1772000000000-ReportStyles";
+import { ProjectDescriptions1772100000000 } from "./migrations/1772100000000-ProjectDescriptions";
 
 export function databaseOptions() {
   const required = (name: string) => {
@@ -56,7 +58,12 @@ export function databaseOptions() {
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    migrations: [MySqlBaseline1770000000000, ProjectCatalog1771000000000],
+    migrations: [
+      MySqlBaseline1770000000000,
+      ProjectCatalog1771000000000,
+      ReportStyles1772000000000,
+      ProjectDescriptions1772100000000,
+    ],
     synchronize: false,
     migrationsRun: true,
   };
