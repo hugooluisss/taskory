@@ -2,7 +2,7 @@ import type { LlmProvider } from "../types/llm-provider";
 import { buildConsolidationPrompt } from "./consolidation.prompt";
 import { completeStructuredOutput } from "./chunk-evaluation";
 import {
-  MAX_CONSOLIDATION_CHARS,
+  maxConsolidationChars,
   MAX_MEMORY_HIGHLIGHTS,
   MAX_CONSOLIDATION_LEVELS,
 } from "./report-constants";
@@ -34,14 +34,14 @@ export async function consolidateMemory(
   let promptTokens = 0;
   let completionTokens = 0;
   let totalTokens = 0;
-  let current = memory.map((chunk) => trimOversizedChunk(chunk, language));
+  const maxChars = maxConsolidationChars(provider.id);
+  let current = memory.map((chunk) =>
+    trimOversizedChunk(chunk, language, maxChars),
+  );
   for (let level = 0; level < MAX_CONSOLIDATION_LEVELS; level += 1) {
-    if (
-      countHighlights(current) <= MAX_MEMORY_HIGHLIGHTS &&
-      fitsFinalPrompt(current, language, finalOptions)
-    )
+    if (fitsFinalPrompt(current, language, maxChars, finalOptions))
       return { memory: current, promptTokens, completionTokens, totalTokens };
-    const groups = groupMemory(current, language);
+    const groups = groupMemory(current, language, maxChars);
     const result: MemoryChunk[] = [];
     for (const [index, group] of groups.entries()) {
       if (signal?.aborted) throw new ReportCancelledError();
@@ -54,6 +54,7 @@ export async function consolidateMemory(
           model,
           language,
           signal,
+          maxChars,
         );
       } catch (error) {
         const usage = usageOf(error);
@@ -82,12 +83,11 @@ export async function consolidateMemory(
         ),
         { promptTokens, completionTokens, totalTokens },
       );
-    current = result.map((chunk) => trimOversizedChunk(chunk, language));
+    current = result.map((chunk) =>
+      trimOversizedChunk(chunk, language, maxChars),
+    );
   }
-  if (
-    !fitsFinalPrompt(current, language, finalOptions) ||
-    countHighlights(current) > MAX_MEMORY_HIGHLIGHTS
-  )
+  if (!fitsFinalPrompt(current, language, maxChars, finalOptions))
     throw Object.assign(
       new InvalidLlmOutputError(
         "Report memory cannot fit within the prompt budget",
@@ -120,6 +120,7 @@ function usageOf(error: unknown): {
 function fitsFinalPrompt(
   memory: MemoryChunk[],
   language: "es" | "en",
+  maxChars: number,
   options?: {
     totals: ReportTotals;
     from: string;
@@ -130,7 +131,7 @@ function fitsFinalPrompt(
 ): boolean {
   if (!options) return countHighlights(memory) <= MAX_MEMORY_HIGHLIGHTS;
   const prompt = buildFinalReportPrompt({ ...options, memory, language });
-  return serializedPromptSize(prompt) <= MAX_CONSOLIDATION_CHARS;
+  return serializedPromptSize(prompt) <= maxChars;
 }
 
 function serializedPromptSize(prompt: {
@@ -143,11 +144,12 @@ function serializedPromptSize(prompt: {
 function trimOversizedChunk(
   chunk: MemoryChunk,
   language: "es" | "en",
+  maxChars: number,
 ): MemoryChunk {
   const promptSize = serializedPromptSize(
     buildConsolidationPrompt([chunk], language),
   );
-  if (promptSize <= MAX_CONSOLIDATION_CHARS) return chunk;
+  if (promptSize <= maxChars) return chunk;
   const kept: MemoryChunk["highlights"] = [];
   const candidates = chunk.highlights
     .map((highlight, index) => ({ highlight, index }))
@@ -163,7 +165,7 @@ function trimOversizedChunk(
     const candidate = { ...chunk, highlights: [...kept, highlight] };
     if (
       serializedPromptSize(buildConsolidationPrompt([candidate], language)) >
-      MAX_CONSOLIDATION_CHARS
+      maxChars
     ) {
       full = true;
       continue;
@@ -186,6 +188,7 @@ function countHighlights(memory: MemoryChunk[]): number {
 function groupMemory(
   memory: MemoryChunk[],
   language: "es" | "en",
+  maxChars: number,
 ): MemoryChunk[][] {
   const groups: MemoryChunk[][] = [];
   let group: MemoryChunk[] = [];
@@ -196,7 +199,7 @@ function groupMemory(
       group.length > 0 &&
       (count + chunk.highlights.length > MAX_MEMORY_HIGHLIGHTS ||
         serializedPromptSize(buildConsolidationPrompt(candidate, language)) >
-          MAX_CONSOLIDATION_CHARS)
+          maxChars)
     ) {
       groups.push(group);
       group = [];
@@ -218,6 +221,7 @@ async function consolidateGroup(
   model: string,
   language: "es" | "en",
   signal?: AbortSignal,
+  maxChars = maxConsolidationChars(provider.id),
 ): Promise<{
   chunk: MemoryChunk;
   promptTokens: number;
@@ -230,7 +234,7 @@ async function consolidateGroup(
       .map((highlight) => [highlight.activityId, highlight]),
   );
   const prompt = buildConsolidationPrompt(chunks, language);
-  if (serializedPromptSize(prompt) > MAX_CONSOLIDATION_CHARS)
+  if (serializedPromptSize(prompt) > maxChars)
     throw new InvalidLlmOutputError(
       "Consolidation group exceeds the prompt budget",
     );

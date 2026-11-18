@@ -4,6 +4,7 @@ import { LlmUnavailableError } from "../src/errors/llm-unavailable.error";
 import { ReportCancelledError } from "../src/errors/report-cancelled.error";
 import { ReportGenerator } from "../src/report/report-generator";
 import { MAX_CONSOLIDATION_CHARS } from "../src/report/report-constants";
+import { DeepSeekProvider } from "../src/providers/deepseek.provider";
 import type { LlmProvider } from "../src/types/llm-provider";
 
 const activities = [
@@ -487,6 +488,68 @@ describe("Final report from memory", () => {
     });
 
     describe("Memory too large", () => {
+      it("skips consolidation when DeepSeek can fit realistic report memory", async () => {
+        const markdown =
+          "# Weekly report\n\nDelivered the migration and resolved production issues.";
+        const fetcher = vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              choices: [{ message: { content: markdown } }],
+              usage: {
+                prompt_tokens: 14_200,
+                completion_tokens: 180,
+                total_tokens: 14_380,
+              },
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          ),
+        );
+        const deepseek = new DeepSeekProvider({
+          apiKey: "test-key",
+          model: "deepseek-v4-flash",
+          fetcher,
+        });
+        const largeMemory = buildMemory(
+          Array.from({ length: 7 }, () => 15),
+        ).map((chunk) => ({
+          ...chunk,
+          highlights: chunk.highlights.map((highlight) => ({
+            ...highlight,
+            title: `${highlight.title} ${"useful evidence ".repeat(12)}`,
+          })),
+        }));
+        const result = await new ReportGenerator({
+          providers: { deepseek },
+          defaultProvider: "deepseek",
+        }).writeFinal({
+          memory: largeMemory,
+          totals: { byProject: {}, byDay: {} },
+          from: "2026-01-01",
+          to: "2026-01-03",
+          language: "en",
+          style: "summary",
+        });
+
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        expect(
+          JSON.parse(fetcher.mock.calls[0][1]!.body as string).messages[1]
+            .content,
+        ).toMatch(/^TASK: FINAL_REPORT/);
+        expect(
+          largeMemory.reduce(
+            (total, chunk) => total + chunk.highlights.length,
+            0,
+          ),
+        ).toBeGreaterThan(100);
+        expect(result).toMatchObject({
+          markdown,
+          provider: "deepseek",
+          model: "deepseek-v4-flash",
+          promptTokens: 14_200,
+          totalTokens: 14_380,
+        });
+      });
+
       it("consolidates many small chunks and keeps every provider prompt within budget", async () => {
         const smallChunks = buildMemory(Array.from({ length: 110 }, () => 1));
         const complete = vi
