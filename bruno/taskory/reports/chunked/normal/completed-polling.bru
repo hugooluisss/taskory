@@ -24,8 +24,7 @@ body:json {
   {
     "from": "2026-11-16",
     "to": "2026-11-16",
-    "language": "en",
-    "provider": "ollama"
+    "language": "en"
   }
 }
 script:pre-request {
@@ -55,5 +54,11 @@ tests {
     expect(report.markdown).to.include("Fake summary");
     expect(report.progress.done).to.equal(2);
     expect(report.progress.total).to.equal(2);
+    expect(report.provider).to.be.a("string").and.not.empty;
+    expect(report.model).to.be.a("string").and.not.empty;
+    expect(report.promptTokens).to.be.a("number");
+    expect(report.completionTokens).to.be.a("number");
+    expect(report.totalTokens).to.be.a("number");
+    expect(report.costUsd).to.be.a("number");
   });
 }

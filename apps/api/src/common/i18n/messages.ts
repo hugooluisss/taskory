@@ -13,7 +13,6 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.INTERNAL_ERROR]: "Internal server error",
     [ERROR_CODES.NO_ACTIVITIES]: "No activities found for this report",
     [ERROR_CODES.RANGE_TOO_LARGE]: "Too many activities for one report",
-    [ERROR_CODES.UNKNOWN_PROVIDER]: "Unknown LLM provider",
     [ERROR_CODES.LLM_UNAVAILABLE]: "LLM provider is unavailable",
     [ERROR_CODES.REPORT_IN_PROGRESS]: "A report is already in progress",
     [ERROR_CODES.REPORT_NOT_RETRYABLE]: "Only failed reports can be retried",
@@ -34,7 +33,6 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.NO_ACTIVITIES]:
       "No se encontraron actividades para el informe",
     [ERROR_CODES.RANGE_TOO_LARGE]: "Demasiadas actividades para un informe",
-    [ERROR_CODES.UNKNOWN_PROVIDER]: "Proveedor de IA desconocido",
     [ERROR_CODES.LLM_UNAVAILABLE]: "El proveedor de IA no está disponible",
     [ERROR_CODES.REPORT_IN_PROGRESS]: "Ya hay un informe en curso",
     [ERROR_CODES.REPORT_NOT_RETRYABLE]:

@@ -26,6 +26,10 @@ describe("generate_report 200 response", () => {
           markdown: "# Report",
           provider: "local",
           model: "test-model",
+          totalTokens: 10,
+          promptTokens: 7,
+          completionTokens: 3,
+          costUsd: 0,
           activityCount: 3,
         });
       },
@@ -39,12 +43,25 @@ describe("generate_report 200 response", () => {
       async ({ client, system }) => {
         await client.callTool({
           name: "generate_report",
-          arguments: { ...reportArgs, projects: ["Alpha", "Beta"] },
+          arguments: {
+            ...reportArgs,
+            projects: ["Alpha", "Beta"],
+            provider: "other",
+            model: "caller-choice",
+          },
         });
         expect(
           system.apiRequests.find((item) => item.url === "/api/v1/reports")
             ?.body,
         ).toMatchObject({ projects: ["Alpha", "Beta"] });
+        expect(
+          system.apiRequests.find((item) => item.url === "/api/v1/reports")
+            ?.body,
+        ).not.toHaveProperty("provider");
+        expect(
+          system.apiRequests.find((item) => item.url === "/api/v1/reports")
+            ?.body,
+        ).not.toHaveProperty("model");
       },
     );
   });

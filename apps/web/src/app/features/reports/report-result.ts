@@ -21,6 +21,17 @@ export class ReportResultComponent {
   get html(): string {
     return this.reports.renderMarkdown(this.report.markdown);
   }
+  get formattedCost(): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      currencyDisplay: 'code',
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6,
+    })
+      .format(this.report.costUsd)
+      .replace(/^USD\s?/, 'US$');
+  }
   async copy(): Promise<void> {
     this.copying.set(true);
     try {

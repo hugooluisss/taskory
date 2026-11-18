@@ -31,4 +31,8 @@ export class ReportJob {
   @Column({ type: "integer", nullable: true }) errorChunk!: number | null;
   @CreateDateColumn() createdAt!: Date;
   @Column({ type: "datetime", nullable: true }) finishedAt!: Date | null;
+  @Column({ type: "integer", default: 0 }) totalTokens!: number;
+  @Column({ type: "integer", default: 0 }) promptTokens!: number;
+  @Column({ type: "integer", default: 0 }) completionTokens!: number;
+  @Column({ type: "integer", default: 0 }) costMicros!: number;
 }

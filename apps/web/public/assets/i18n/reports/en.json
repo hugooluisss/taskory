@@ -19,13 +19,6 @@
     "style": "Style",
     "summary": "Summary",
     "detailed": "Detailed",
-    "advanced": "Advanced",
-    "provider": "Provider",
-    "defaultProvider": "Default provider",
-    "model": "Model",
-    "unavailable": "unavailable",
-    "unavailableHint": "Unavailable providers cannot be selected until they are online.",
-    "providersUnavailable": "Could not load provider choices. The default provider is still available.",
     "generate": "Generate report"
   },
   "progress": {
@@ -45,7 +38,7 @@
   "result": {
     "title": "Your report",
     "copy": "Copy as Markdown",
-    "metadata": "{{provider}} · {{model}} · {{count}} activities",
+    "metadata": "{{provider}} · {{model}} · {{tokens}} tokens · {{cost}} · {{count}} activities",
     "copied": "Report copied.",
     "copyFailed": "Could not copy the report.",
     "download": "Download report"
@@ -54,7 +47,6 @@
     "NO_ACTIVITIES": "No activities were found for these dates. Choose another date range or project.",
     "RANGE_TOO_LARGE": "This date range includes too many activities. Choose a shorter range.",
     "LLM_UNAVAILABLE": "The report service is unavailable. Try again in a moment.",
-    "UNKNOWN_PROVIDER": "That report provider is not recognized. Choose another provider.",
     "REPORT_IN_PROGRESS": "A report is already being generated. Open the active report to follow its progress.",
     "openActiveReport": "Open the active report",
     "VALIDATION_ERROR": "Check the report details and try again.",

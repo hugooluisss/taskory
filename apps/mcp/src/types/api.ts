@@ -25,6 +25,10 @@ export interface ReportResult {
   markdown: string;
   provider: string;
   model: string;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  costUsd: number;
   activityCount: number;
 }
 
@@ -33,5 +37,12 @@ export interface ReportJob {
   status: string;
   progress: { done: number; total: number };
   markdown?: string;
+  provider?: string;
+  model?: string;
+  totalTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  costUsd?: number;
+  activityCount?: number;
   error?: { code: string; chunk?: number };
 }

@@ -15,7 +15,6 @@ describe('Report generation', () => {
       thisMonth: { from: '2026-11-01', to: '2026-11-30' },
       lastMonth: { from: '2026-10-01', to: '2026-10-31' },
     })),
-    providers: vi.fn(() => of([{ id: 'local', defaultModel: 'm1', available: false }])),
     validateRange: vi.fn((from: string, to: string) => {
       if (from > to) throw new RangeError();
     }),
@@ -55,13 +54,6 @@ describe('Report generation', () => {
     fixture.componentInstance.submit();
     expect(fixture.componentInstance.rangeError()).toBe(true);
     expect(emit).not.toHaveBeenCalled();
-  });
-  it('disables an unavailable provider in Advanced settings', () => {
-    const fixture = TestBed.createComponent(ReportFormComponent);
-    fixture.detectChanges();
-    fixture.nativeElement.querySelector('.advanced-toggle').click();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('option[value="local"]').disabled).toBe(true);
   });
   it('offers project suggestions from activity metadata', () => {
     const fixture = TestBed.createComponent(ReportFormComponent);

@@ -25,29 +25,62 @@ export async function consolidateMemory(
     projects?: string[];
     style: "summary" | "detailed";
   },
-): Promise<MemoryChunk[]> {
+): Promise<{
+  memory: MemoryChunk[];
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}> {
+  let promptTokens = 0;
+  let completionTokens = 0;
+  let totalTokens = 0;
   let current = memory.map((chunk) => trimOversizedChunk(chunk, language));
   for (let level = 0; level < MAX_CONSOLIDATION_LEVELS; level += 1) {
     if (
       countHighlights(current) <= MAX_MEMORY_HIGHLIGHTS &&
       fitsFinalPrompt(current, language, finalOptions)
     )
-      return current;
+      return { memory: current, promptTokens, completionTokens, totalTokens };
     const groups = groupMemory(current, language);
     const result: MemoryChunk[] = [];
     for (const [index, group] of groups.entries()) {
       if (signal?.aborted) throw new ReportCancelledError();
-      result.push(
-        await consolidateGroup(group, index, provider, model, language, signal),
-      );
+      let consolidated: Awaited<ReturnType<typeof consolidateGroup>>;
+      try {
+        consolidated = await consolidateGroup(
+          group,
+          index,
+          provider,
+          model,
+          language,
+          signal,
+        );
+      } catch (error) {
+        const usage = usageOf(error);
+        throw Object.assign(
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            promptTokens: promptTokens + usage.promptTokens,
+            completionTokens: completionTokens + usage.completionTokens,
+            totalTokens: totalTokens + usage.totalTokens,
+          },
+        );
+      }
+      totalTokens += consolidated.totalTokens;
+      promptTokens += consolidated.promptTokens;
+      completionTokens += consolidated.completionTokens;
+      result.push(consolidated.chunk);
     }
     if (
       !result.length ||
       (result.length >= current.length &&
         countHighlights(result) >= countHighlights(current))
     )
-      throw new InvalidLlmOutputError(
-        "Report memory cannot fit within the prompt budget",
+      throw Object.assign(
+        new InvalidLlmOutputError(
+          "Report memory cannot fit within the prompt budget",
+        ),
+        { promptTokens, completionTokens, totalTokens },
       );
     current = result.map((chunk) => trimOversizedChunk(chunk, language));
   }
@@ -55,10 +88,33 @@ export async function consolidateMemory(
     !fitsFinalPrompt(current, language, finalOptions) ||
     countHighlights(current) > MAX_MEMORY_HIGHLIGHTS
   )
-    throw new InvalidLlmOutputError(
-      "Report memory cannot fit within the prompt budget",
+    throw Object.assign(
+      new InvalidLlmOutputError(
+        "Report memory cannot fit within the prompt budget",
+      ),
+      { promptTokens, completionTokens, totalTokens },
     );
-  return current;
+  return { memory: current, promptTokens, completionTokens, totalTokens };
+}
+
+function usageOf(error: unknown): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  if (typeof error !== "object" || error === null)
+    return { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  const value = (candidate: unknown) =>
+    Number.isInteger(candidate) && Number(candidate) >= 0
+      ? Number(candidate)
+      : 0;
+  return {
+    promptTokens: value((error as { promptTokens?: unknown }).promptTokens),
+    completionTokens: value(
+      (error as { completionTokens?: unknown }).completionTokens,
+    ),
+    totalTokens: value((error as { totalTokens?: unknown }).totalTokens),
+  };
 }
 
 function fitsFinalPrompt(
@@ -162,7 +218,12 @@ async function consolidateGroup(
   model: string,
   language: "es" | "en",
   signal?: AbortSignal,
-): Promise<MemoryChunk> {
+): Promise<{
+  chunk: MemoryChunk;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}> {
   const allowed = new Map(
     chunks
       .flatMap((chunk) => chunk.highlights)
@@ -181,14 +242,19 @@ async function consolidateGroup(
     signal,
   );
   return {
-    chunkIndex: index,
-    dateFrom: chunks[0].dateFrom,
-    dateTo: chunks[chunks.length - 1].dateTo,
-    activityCount: chunks.reduce(
-      (total, chunk) => total + chunk.activityCount,
-      0,
-    ),
-    summary: evaluation.summary,
-    highlights: evaluation.highlights,
+    chunk: {
+      chunkIndex: index,
+      dateFrom: chunks[0].dateFrom,
+      dateTo: chunks[chunks.length - 1].dateTo,
+      activityCount: chunks.reduce(
+        (total, chunk) => total + chunk.activityCount,
+        0,
+      ),
+      summary: evaluation.summary,
+      highlights: evaluation.highlights,
+    },
+    promptTokens: evaluation.promptTokens,
+    completionTokens: evaluation.completionTokens,
+    totalTokens: evaluation.totalTokens,
   };
 }

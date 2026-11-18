@@ -55,6 +55,9 @@ describe("Chunked generation for large reports", () => {
       expect.objectContaining({
         chunkIndex: 0,
         activityCount: 100,
+        promptTokens: 3,
+        completionTokens: 0,
+        totalTokens: 3,
         byProject: { none: 100 },
       }),
     );
@@ -100,6 +103,33 @@ describe("Chunked generation for large reports", () => {
     );
   });
 
+  it("Resume retains failed-call split usage exactly once", async () => {
+    const context = createContext(jobWithCount(100));
+    context.generator.evaluateChunk.mockRejectedValueOnce(
+      new ReportGenerationError("LLM_UNAVAILABLE", {
+        promptTokens: 2,
+        completionTokens: 1,
+        totalTokens: 3,
+      }),
+    );
+    context.runner.enqueue("report", "owner");
+    await context.runner.awaitIdle();
+    context.jobMap.set("report", {
+      ...context.jobMap.get("report")!,
+      status: "queued",
+    });
+
+    context.runner.enqueue("report", "owner");
+    await context.runner.awaitIdle();
+
+    expect(context.jobMap.get("report")).toMatchObject({
+      status: "completed",
+      promptTokens: 10,
+      completionTokens: 1,
+      totalTokens: 11,
+    });
+  });
+
   it("Maps invalid provider output to the exact failing chunk", async () => {
     const context = createContext(jobWithCount(300));
     context.generator.evaluateChunk
@@ -108,6 +138,9 @@ describe("Chunked generation for large reports", () => {
         highlights: [],
         provider: "fake",
         model: "fake",
+        totalTokens: 3,
+        promptTokens: 3,
+        completionTokens: 0,
       })
       .mockRejectedValueOnce(new ReportGenerationError("INVALID_LLM_OUTPUT"));
     context.runner.enqueue("report", "owner");
@@ -181,6 +214,9 @@ describe("Chunked generation for large reports", () => {
       highlights: [];
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
     }>();
     context.generator.evaluateChunk.mockImplementationOnce(() => {
       started.resolve();
@@ -194,6 +230,9 @@ describe("Chunked generation for large reports", () => {
       highlights: [],
       provider: "fake",
       model: "fake",
+      totalTokens: 3,
+      promptTokens: 3,
+      completionTokens: 0,
     });
     await context.runner.awaitIdle();
     expect(context.generator.evaluateChunk).toHaveBeenCalledTimes(1);
@@ -236,12 +275,18 @@ describe("Chunked generation for large reports", () => {
       highlights: [];
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
     }>();
     const secondResult = deferred<{
       summary: string;
       highlights: [];
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
     }>();
     context.generator.evaluateChunk
       .mockImplementationOnce(() => {
@@ -259,6 +304,9 @@ describe("Chunked generation for large reports", () => {
           highlights: [],
           provider: "fake",
           model: "fake",
+          totalTokens: 3,
+          promptTokens: 3,
+          completionTokens: 0,
         });
       });
     context.runner.enqueue("first", "owner-1");
@@ -271,6 +319,9 @@ describe("Chunked generation for large reports", () => {
       highlights: [],
       provider: "fake",
       model: "fake",
+      totalTokens: 3,
+      promptTokens: 3,
+      completionTokens: 0,
     });
     await thirdStarted.promise;
     secondResult.resolve({
@@ -278,6 +329,9 @@ describe("Chunked generation for large reports", () => {
       highlights: [],
       provider: "fake",
       model: "fake",
+      totalTokens: 3,
+      promptTokens: 3,
+      completionTokens: 0,
     });
     await context.runner.awaitIdle();
   });
@@ -301,12 +355,18 @@ describe("Chunked generation for large reports", () => {
       highlights: [];
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
     }>();
     const secondResult = deferred<{
       summary: string;
       highlights: [];
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
     }>();
     context.generator.evaluateChunk
       .mockImplementationOnce(() => {
@@ -327,12 +387,18 @@ describe("Chunked generation for large reports", () => {
       highlights: [],
       provider: "fake",
       model: "fake",
+      totalTokens: 3,
+      promptTokens: 3,
+      completionTokens: 0,
     });
     secondResult.resolve({
       summary: "second",
       highlights: [],
       provider: "fake",
       model: "fake",
+      totalTokens: 3,
+      promptTokens: 3,
+      completionTokens: 0,
     });
     await context.runner.awaitIdle();
     expect(context.generator.evaluateChunk).toHaveBeenCalledTimes(2);
@@ -493,6 +559,7 @@ describe("Chunked generation for large reports", () => {
       listMemory: jest.fn(async (_userId: string, id: string) => [
         ...(memory.get(id) ?? []),
       ]),
+      get: jest.fn(async (_userId: string, id: string) => jobMap.get(id)!),
       saveMemory: jest.fn(async (_userId: string, row: ReportMemory) => {
         memory.set(row.reportId, [...(memory.get(row.reportId) ?? []), row]);
       }),
@@ -512,6 +579,7 @@ describe("Chunked generation for large reports", () => {
       ),
     };
     const generator: {
+      configuration: jest.Mock;
       evaluateChunk: jest.Mock<
         ReturnType<ReportGeneratorPort["evaluateChunk"]>,
         Parameters<ReportGeneratorPort["evaluateChunk"]>
@@ -521,6 +589,7 @@ describe("Chunked generation for large reports", () => {
         Parameters<ReportGeneratorPort["writeFinal"]>
       >;
     } = {
+      configuration: jest.fn(() => ({ provider: "fake", model: "fake" })),
       evaluateChunk: jest.fn(
         async (
           _input: Parameters<ReportGeneratorPort["evaluateChunk"]>[0],
@@ -529,6 +598,9 @@ describe("Chunked generation for large reports", () => {
           highlights: [],
           provider: "fake",
           model: "fake",
+          totalTokens: 3,
+          promptTokens: 3,
+          completionTokens: 0,
         }),
       ),
       writeFinal: jest.fn(
@@ -536,6 +608,9 @@ describe("Chunked generation for large reports", () => {
           markdown: "# Report",
           provider: "fake",
           model: "fake",
+          totalTokens: 5,
+          promptTokens: 5,
+          completionTokens: 0,
         }),
       ),
     };
@@ -543,6 +618,7 @@ describe("Chunked generation for large reports", () => {
       lifecycle as never,
       activities as never,
       generator as never,
+      { save: jest.fn().mockResolvedValue(undefined) } as never,
     );
     return { runner, lifecycle, activities, generator, memory, jobMap };
   }
@@ -572,6 +648,10 @@ describe("Chunked generation for large reports", () => {
       errorChunk: null,
       createdAt: new Date(),
       finishedAt: null,
+      totalTokens: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      costMicros: 0,
     };
   }
 
@@ -583,6 +663,9 @@ describe("Chunked generation for large reports", () => {
       dateFrom: "2026-01-01",
       dateTo: "2026-01-01",
       activityCount: 100,
+      totalTokens: 0,
+      promptTokens: 0,
+      completionTokens: 0,
       summary: "summary",
       highlights: [],
       byProject: { none: 100 },
@@ -621,8 +704,19 @@ type ChunkResult = {
   highlights: [];
   provider: string;
   model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 };
 
 function chunkResult(summary: string): ChunkResult {
-  return { summary, highlights: [], provider: "fake", model: "fake" };
+  return {
+    summary,
+    highlights: [],
+    provider: "fake",
+    model: "fake",
+    promptTokens: 3,
+    completionTokens: 0,
+    totalTokens: 3,
+  };
 }

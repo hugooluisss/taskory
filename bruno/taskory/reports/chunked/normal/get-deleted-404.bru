@@ -22,7 +22,7 @@ script:pre-request {
   const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-get-deleted+" + Date.now() + "@example.com", name: "Chunked get deleted", password: bru.getEnvVar("password") } });
   bru.setVar("reportsToken", user.data.token);
   for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Deleted activity " + i } });
-  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
   await bru.sendRequest({ method: "DELETE", url: bru.getEnvVar("baseUrl") + "/reports/" + job.data.id, headers: { Authorization: "Bearer " + user.data.token } });
   bru.setVar("deletedReportId", job.data.id);
 }

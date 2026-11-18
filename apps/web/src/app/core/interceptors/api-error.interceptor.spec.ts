@@ -84,10 +84,10 @@ describe('Access', () => {
   it('uses an empty details record when the API error envelope has no extra fields', () => {
     let caught: unknown;
     TestBed.inject(HttpClient)
-      .get('/api/v1/reports/providers')
+      .get('/api/v1/reports/runs')
       .subscribe({ error: (error) => (caught = error) });
     http
-      .expectOne('/api/v1/reports/providers')
+      .expectOne('/api/v1/reports/runs')
       .flush(
         { statusCode: 502, code: 'LLM_UNAVAILABLE', message: 'Unavailable' },
         { status: 502, statusText: 'Bad Gateway' },

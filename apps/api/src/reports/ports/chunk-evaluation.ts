@@ -5,4 +5,7 @@ export interface ChunkEvaluation {
   highlights: Highlight[];
   provider: string;
   model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 }

@@ -9,8 +9,10 @@ function provider(overrides: Partial<LlmProvider> = {}): LlmProvider {
   return {
     id: "ollama",
     defaultModel: "base",
-    isAvailable: vi.fn().mockResolvedValue(true),
-    complete: vi.fn().mockResolvedValue("# report"),
+    complete: vi.fn().mockResolvedValue({
+      text: "# report",
+      usage: { promptTokens: 2, completionTokens: 2, totalTokens: 4 },
+    }),
     ...overrides,
   };
 }
@@ -79,12 +81,17 @@ describe("Report language and style", () => {
 });
 
 describe("Defaults", () => {
-  it("reports whether a provider is registered", () => {
+  it("reports whether the configured provider is registered", () => {
     const generator = new ReportGenerator({
       providers: { ollama: provider() },
     });
-    expect(generator.hasProvider("ollama")).toBe(true);
-    expect(generator.hasProvider("missing")).toBe(false);
+    expect(generator.hasProvider()).toBe(true);
+    expect(
+      new ReportGenerator({
+        providers: { ollama: provider() },
+        defaultProvider: "missing",
+      }).hasProvider(),
+    ).toBe(false);
   });
 
   it("No provider in request", async () => {
@@ -128,68 +135,22 @@ describe("Defaults", () => {
     );
   });
 
-  it("Other provider without model", async () => {
-    const ollama = provider({ id: "ollama", defaultModel: "ollama-base" });
-    const deepseek = provider({
-      id: "deepseek",
-      defaultModel: "deepseek-base",
-    });
-    const generator = new ReportGenerator({
-      providers: { ollama, deepseek },
-      defaultProvider: "ollama",
-      defaultModel: "configured-model",
-    });
-    const result = await generator.generate({
+  it("uses the server-wide provider and model configuration", async () => {
+    const p = provider({ id: "ollama", defaultModel: "base" });
+    const result = await new ReportGenerator({
+      providers: { ollama: p },
+      defaultModel: "configured",
+    }).generate({
       activities: [activity],
       from: "a",
       to: "b",
       language: "en",
-      provider: "deepseek",
     });
-    expect(result.model).toBe("deepseek-base");
-    expect(vi.mocked(deepseek.complete).mock.calls[0][0].model).toBe(
-      "deepseek-base",
-    );
-  });
-
-  it("uses explicit model and provider", async () => {
-    const p = provider({ id: "custom" });
-    const result = await new ReportGenerator({
-      providers: { chosen: p },
-    }).generate({
-      activities: [],
-      from: "a",
-      to: "b",
-      language: "en",
-      provider: "chosen",
-      model: "override",
+    expect(result).toMatchObject({
+      provider: "ollama",
+      model: "configured",
+      totalTokens: 4,
     });
-    expect(result).toMatchObject({ provider: "custom", model: "override" });
-    expect(vi.mocked(p.complete).mock.calls[0][0].model).toBe("override");
-  });
-
-  it("does not apply the default model to a selected non-default provider", async () => {
-    const ollama = provider({ id: "ollama", defaultModel: "ollama-model" });
-    const deepseek = provider({
-      id: "deepseek",
-      defaultModel: "deepseek-chat",
-    });
-    const generator = new ReportGenerator({
-      providers: { ollama, deepseek },
-      defaultProvider: "ollama",
-      defaultModel: "configured-ollama-model",
-    });
-    const result = await generator.generate({
-      activities: [],
-      from: "a",
-      to: "b",
-      language: "en",
-      provider: "deepseek",
-    });
-    expect(result.model).toBe("deepseek-chat");
-    expect(vi.mocked(deepseek.complete).mock.calls[0][0].model).toBe(
-      "deepseek-chat",
-    );
   });
 
   it("reads default provider and model from environment when constructed", async () => {
@@ -197,7 +158,7 @@ describe("Defaults", () => {
     vi.stubEnv("DEFAULT_LLM_MODEL", "configured-model");
     const deepseek = provider({
       id: "deepseek",
-      defaultModel: "deepseek-chat",
+      defaultModel: "deepseek-flash",
     });
     const generator = new ReportGenerator({ providers: { deepseek } });
     await generator.generate({
@@ -219,7 +180,6 @@ describe("Defaults", () => {
         from: "a",
         to: "b",
         language: "en",
-        provider: "missing",
       }),
     ).rejects.toMatchObject({ name: "UnknownProviderError" });
   });
@@ -247,16 +207,5 @@ describe("Defaults", () => {
         language: "en",
       }),
     ).rejects.toBeInstanceOf(LlmUnavailableError);
-  });
-
-  it("lists unreachable providers as unavailable", async () => {
-    const p = provider({
-      isAvailable: vi.fn().mockRejectedValue(new Error("offline")),
-    });
-    await expect(
-      new ReportGenerator({ providers: { ollama: p } }).listProviders(),
-    ).resolves.toEqual([
-      { id: "ollama", defaultModel: "base", available: false },
-    ]);
   });
 });

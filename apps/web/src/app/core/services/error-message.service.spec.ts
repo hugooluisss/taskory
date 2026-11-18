@@ -12,7 +12,6 @@ describe('ErrorMessageService', () => {
     TOO_MANY_REQUESTS: 'errors.tooManyRequests',
     NO_ACTIVITIES: 'errors.noActivities',
     RANGE_TOO_LARGE: 'errors.rangeTooLarge',
-    UNKNOWN_PROVIDER: 'errors.unknownProvider',
     LLM_UNAVAILABLE: 'errors.llmUnavailable',
     INVALID_LLM_OUTPUT: 'errors.invalidLlmOutput',
     REPORT_IN_PROGRESS: 'errors.reportInProgress',

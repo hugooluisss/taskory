@@ -44,7 +44,6 @@
     "tooManyRequests": "Too many attempts. Try again later.",
     "noActivities": "There are no activities in this date range.",
     "rangeTooLarge": "This date range contains too many activities.",
-    "unknownProvider": "That report provider is unavailable.",
     "llmUnavailable": "The report service is temporarily unavailable.",
     "invalidLlmOutput": "The report could not be created.",
     "reportInProgress": "A report is already running.",

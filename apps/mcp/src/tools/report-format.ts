@@ -7,6 +7,10 @@ export function reportResult(report: ReportResult | ReportJob): unknown {
         markdown: report.markdown,
         provider: report.provider,
         model: report.model,
+        totalTokens: report.totalTokens,
+        promptTokens: report.promptTokens,
+        completionTokens: report.completionTokens,
+        costUsd: report.costUsd,
         activityCount: report.activityCount,
       };
     }
@@ -15,6 +19,12 @@ export function reportResult(report: ReportResult | ReportJob): unknown {
       status: report.status,
       progress: report.progress,
       markdown: report.markdown,
+      provider: report.provider,
+      model: report.model,
+      promptTokens: report.promptTokens,
+      completionTokens: report.completionTokens,
+      totalTokens: report.totalTokens,
+      costUsd: report.costUsd,
     };
   }
   if ("id" in report) {

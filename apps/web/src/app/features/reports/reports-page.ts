@@ -151,6 +151,10 @@ export class ReportsPage {
             markdown: job.markdown ?? '',
             provider: job.provider,
             model: job.model,
+            totalTokens: job.totalTokens,
+            promptTokens: job.promptTokens,
+            completionTokens: job.completionTokens,
+            costUsd: job.costUsd,
             activityCount: job.activityCount,
           });
           this.clearJob();
@@ -177,7 +181,7 @@ export class ReportsPage {
   }
   private handleError(error: unknown): void {
     const code = error instanceof ApiError ? error.code : (error as { code?: string })?.code;
-    const key = `reports.errors.${code && ['NO_ACTIVITIES', 'RANGE_TOO_LARGE', 'LLM_UNAVAILABLE', 'UNKNOWN_PROVIDER', 'REPORT_IN_PROGRESS', 'VALIDATION_ERROR'].includes(code) ? code : 'UNKNOWN'}`;
+    const key = `reports.errors.${code && ['NO_ACTIVITIES', 'RANGE_TOO_LARGE', 'LLM_UNAVAILABLE', 'REPORT_IN_PROGRESS', 'VALIDATION_ERROR'].includes(code) ? code : 'UNKNOWN'}`;
     this.errorKey.set(key);
     const activeId = error instanceof ApiError ? error.details['id'] : undefined;
     this.activeReportId.set(

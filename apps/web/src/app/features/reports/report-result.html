@@ -25,7 +25,14 @@
   <p class="text-sm text-base-content/70">
     {{
       'reports.result.metadata'
-        | transloco: { provider: report.provider, model: report.model, count: report.activityCount }
+        | transloco
+          : {
+              provider: report.provider,
+              model: report.model,
+              tokens: report.totalTokens,
+              cost: formattedCost,
+              count: report.activityCount,
+            }
     }}
   </p>
   <article

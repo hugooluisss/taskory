@@ -32,7 +32,19 @@ const memory = [
 ];
 
 function provider(complete: LlmProvider["complete"]): LlmProvider {
-  return { id: "ollama", defaultModel: "fake", isAvailable: vi.fn(), complete };
+  return {
+    id: "ollama",
+    defaultModel: "fake",
+    complete: async (input) => {
+      const result = (await complete(input)) as unknown;
+      return typeof result === "string"
+        ? {
+            text: result,
+            usage: { promptTokens: 1, completionTokens: 0, totalTokens: 1 },
+          }
+        : (result as Awaited<ReturnType<LlmProvider["complete"]>>);
+    },
+  };
 }
 
 function response(highlightIds: string[] = ["a1"]): string {
@@ -93,6 +105,9 @@ describe("Chunked generation for large reports", () => {
         ],
         provider: "ollama",
         model: "fake",
+        promptTokens: 1,
+        completionTokens: 0,
+        totalTokens: 1,
       });
       expect(complete).toHaveBeenCalledWith(
         expect.objectContaining({ json: true }),
@@ -116,6 +131,27 @@ describe("Chunked generation for large reports", () => {
       expect(complete).toHaveBeenCalledTimes(2);
     });
 
+    it("sums split usage from every retry", async () => {
+      const complete = vi
+        .fn()
+        .mockResolvedValueOnce({
+          text: "not-json",
+          usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
+        })
+        .mockResolvedValueOnce({
+          text: response(),
+          usage: { promptTokens: 5, completionTokens: 7, totalTokens: 12 },
+        });
+      const result = await new ReportGenerator({
+        providers: { ollama: provider(complete) },
+      }).evaluateChunk({ activities, language: "en" });
+      expect(result).toMatchObject({
+        promptTokens: 7,
+        completionTokens: 10,
+        totalTokens: 17,
+      });
+    });
+
     it.each(["", " \n "])(
       "retries empty provider output %j exactly twice",
       async (content) => {
@@ -136,16 +172,14 @@ describe("Chunked generation for large reports", () => {
     });
 
     it("rejects an invalid impact", async () => {
-      const complete = vi
-        .fn()
-        .mockResolvedValue(
-          JSON.stringify({
-            summary: "valid summary",
-            highlights: [
-              { activityId: "a1", impact: "low", reason: "valid reason" },
-            ],
-          }),
-        );
+      const complete = vi.fn().mockResolvedValue(
+        JSON.stringify({
+          summary: "valid summary",
+          highlights: [
+            { activityId: "a1", impact: "low", reason: "valid reason" },
+          ],
+        }),
+      );
       await expect(evaluateChunk(complete)).rejects.toBeInstanceOf(
         InvalidLlmOutputError,
       );
@@ -173,16 +207,14 @@ describe("Chunked generation for large reports", () => {
     });
 
     it("rejects a reason longer than 240 characters", async () => {
-      const complete = vi
-        .fn()
-        .mockResolvedValue(
-          JSON.stringify({
-            summary: "valid",
-            highlights: [
-              { activityId: "a1", impact: "high", reason: "r".repeat(241) },
-            ],
-          }),
-        );
+      const complete = vi.fn().mockResolvedValue(
+        JSON.stringify({
+          summary: "valid",
+          highlights: [
+            { activityId: "a1", impact: "high", reason: "r".repeat(241) },
+          ],
+        }),
+      );
       await expect(evaluateChunk(complete)).rejects.toBeInstanceOf(
         InvalidLlmOutputError,
       );

@@ -17,6 +17,8 @@ import { ReportJobsService } from "./report-jobs.service";
 import { ReportGenerationError } from "./ports/report-generation-error";
 import { ReportJobQueue, REPORT_JOB_QUEUE } from "./report-job-queue";
 import { ReportNotFoundForMemoryError } from "./errors/report-not-found-for-memory.error";
+import { ReportRunsRepository } from "./report-runs.repository";
+import { reportCostMicros } from "./report-cost";
 
 interface QueuedReport {
   id: string;
@@ -37,10 +39,34 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
     private readonly lifecycle: ReportJobsService,
     private readonly activities: ActivitiesService,
     @Inject(REPORT_GENERATOR) private readonly generator: ReportGeneratorPort,
+    private readonly runs: ReportRunsRepository,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    await this.lifecycle.recover();
+    const interrupted = await this.lifecycle.recover();
+    for (const job of interrupted) {
+      const usage = {
+        promptTokens: job.promptTokens,
+        completionTokens: job.completionTokens,
+        totalTokens: job.totalTokens,
+      };
+      const configured = this.generator.configuration();
+      await this.runs.save({
+        userId: job.userId,
+        jobId: job.id,
+        from: job.params.from,
+        to: job.params.to,
+        projects: job.params.projects ?? [],
+        language: job.params.language,
+        style: job.params.style,
+        provider: configured.provider,
+        model: configured.model,
+        ...usage,
+        costMicros: reportCostMicros(configured.provider, usage),
+        activityCount: job.activityIds.length,
+        status: "failed",
+      });
+    }
     await this.resumeQueued();
   }
 
@@ -118,12 +144,14 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
     signal: AbortSignal,
   ): Promise<void> {
     let currentChunk: number | null = null;
+    let priorUsage = emptyUsage();
     try {
       const job = await this.lifecycle.queuedForDispatch(userId, id);
       if (!job || signal.aborted || this.cancelling.has(id)) return;
       await this.lifecycle.markRunning(job);
       if (signal.aborted || this.cancelling.has(id)) return;
       const memory = await this.lifecycle.listMemory(userId, id);
+      priorUsage = subtractUsage(job, sumUsage(memory));
       const completeMemory = await this.evaluateRemainingChunks(
         job,
         memory,
@@ -134,14 +162,14 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       );
       if (signal.aborted || this.cancelling.has(id)) return;
       currentChunk = null;
-      await this.writeFinalReport(job, completeMemory, signal);
+      await this.writeFinalReport(job, completeMemory, priorUsage, signal);
     } catch (error) {
       if (
         !signal.aborted &&
         !this.cancelling.has(id) &&
         !isCancellation(error)
       ) {
-        await this.failJob(userId, id, error, currentChunk);
+        await this.failJob(userId, id, error, currentChunk, priorUsage);
       }
     }
   }
@@ -181,8 +209,6 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
     const evaluated = await this.generator.evaluateChunk({
       activities: rows.map(toReportActivity),
       language: job.params.language,
-      provider: job.params.provider,
-      model: job.params.model,
       signal,
     });
     const chunkTotals = totals(rows);
@@ -195,6 +221,9 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       activityCount: rows.length,
       summary: evaluated.summary,
       highlights: evaluated.highlights,
+      promptTokens: evaluated.promptTokens,
+      completionTokens: evaluated.completionTokens,
+      totalTokens: evaluated.totalTokens,
       byProject: chunkTotals.byProject,
       byDay: chunkTotals.byDay,
     };
@@ -208,6 +237,9 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       dateFrom: job.params.from,
       dateTo: job.params.to,
       activityCount: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
       summary: "",
       highlights: [],
       byProject: {},
@@ -218,6 +250,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
   private async writeFinalReport(
     job: ReportJob,
     memory: ReportMemory[],
+    priorUsage: ReturnType<typeof emptyUsage>,
     signal: AbortSignal,
   ): Promise<void> {
     const final = await this.generator.writeFinal({
@@ -228,17 +261,44 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
       projects: job.params.projects,
       language: job.params.language,
       style: job.params.style,
-      provider: job.params.provider,
-      model: job.params.model,
       signal,
     });
     if (signal.aborted || this.cancelling.has(job.id)) return;
+    const memoryUsage = sumUsage(memory);
+    const usage = {
+      promptTokens:
+        memoryUsage.promptTokens + priorUsage.promptTokens + final.promptTokens,
+      completionTokens:
+        memoryUsage.completionTokens +
+        priorUsage.completionTokens +
+        final.completionTokens,
+      totalTokens:
+        memoryUsage.totalTokens + priorUsage.totalTokens + final.totalTokens,
+    };
+    const costMicros = reportCostMicros(final.provider, usage);
     await this.lifecycle.update(job.userId, job.id, {
       status: "completed",
       markdown: final.markdown,
       provider: final.provider,
       model: final.model,
+      ...usage,
+      costMicros,
       finishedAt: new Date(),
+    });
+    await this.runs.save({
+      userId: job.userId,
+      jobId: job.id,
+      from: job.params.from,
+      to: job.params.to,
+      projects: job.params.projects ?? [],
+      language: job.params.language,
+      style: job.params.style,
+      provider: final.provider,
+      model: final.model,
+      ...usage,
+      costMicros,
+      activityCount: job.activityIds.length,
+      status: "completed",
     });
   }
 
@@ -247,6 +307,7 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
     id: string,
     error: unknown,
     errorChunk: number | null,
+    priorUsage: ReturnType<typeof emptyUsage>,
   ): Promise<void> {
     let errorCode: string = ERROR_CODES.INTERNAL_ERROR;
     if (error instanceof ReportGenerationError) {
@@ -259,11 +320,48 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
           break;
       }
     }
+    const job = await this.lifecycle.get(userId, id);
+    const memory = await this.lifecycle.listMemory(userId, id);
+    const memoryUsage = sumUsage(memory);
+    const callUsage = usageOf(error);
+    const usage = {
+      promptTokens:
+        memoryUsage.promptTokens +
+        priorUsage.promptTokens +
+        callUsage.promptTokens,
+      completionTokens:
+        memoryUsage.completionTokens +
+        priorUsage.completionTokens +
+        callUsage.completionTokens,
+      totalTokens:
+        memoryUsage.totalTokens +
+        priorUsage.totalTokens +
+        callUsage.totalTokens,
+    };
+    const configured = this.generator.configuration();
+    const costMicros = reportCostMicros(configured.provider, usage);
     await this.lifecycle.update(userId, id, {
       status: "failed",
       errorCode,
       errorChunk,
+      ...usage,
+      costMicros,
       finishedAt: new Date(),
+    });
+    await this.runs.save({
+      userId,
+      jobId: id,
+      from: job.params.from,
+      to: job.params.to,
+      projects: job.params.projects ?? [],
+      language: job.params.language,
+      style: job.params.style,
+      provider: configured.provider,
+      model: configured.model,
+      ...usage,
+      costMicros,
+      activityCount: job.activityIds.length,
+      status: "failed",
     });
   }
 
@@ -293,6 +391,56 @@ export class ReportJobRunner implements ReportJobQueue, OnApplicationBootstrap {
   private repositoryQueued() {
     return this.lifecycle.listQueued();
   }
+}
+
+function usageOf(error: unknown): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  if (typeof error !== "object" || error === null) return emptyUsage();
+  const source =
+    "usage" in error && typeof error.usage === "object" && error.usage !== null
+      ? error.usage
+      : error;
+  const read = (key: string) => {
+    const value = Number((source as Record<string, unknown>)[key]);
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+  };
+  return {
+    promptTokens: read("promptTokens"),
+    completionTokens: read("completionTokens"),
+    totalTokens: read("totalTokens"),
+  };
+}
+
+function emptyUsage() {
+  return { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+}
+
+function subtractUsage(
+  total: ReportJob,
+  memory: ReturnType<typeof emptyUsage>,
+) {
+  return {
+    promptTokens: Math.max(0, total.promptTokens - memory.promptTokens),
+    completionTokens: Math.max(
+      0,
+      total.completionTokens - memory.completionTokens,
+    ),
+    totalTokens: Math.max(0, total.totalTokens - memory.totalTokens),
+  };
+}
+
+function sumUsage(memory: ReportMemory[]) {
+  return memory.reduce(
+    (usage, item) => ({
+      promptTokens: usage.promptTokens + item.promptTokens,
+      completionTokens: usage.completionTokens + item.completionTokens,
+      totalTokens: usage.totalTokens + item.totalTokens,
+    }),
+    emptyUsage(),
+  );
 }
 
 function isCancellation(error: unknown): boolean {

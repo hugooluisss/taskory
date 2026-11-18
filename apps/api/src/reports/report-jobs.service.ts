@@ -17,14 +17,16 @@ export class ReportJobsService implements OnModuleDestroy {
     private readonly memory: ReportMemoryRepository,
   ) {}
 
-  async recover(): Promise<void> {
+  async recover(): Promise<ReportJob[]> {
     await this.purgeExpired();
     await this.jobs.ensureActiveJobIndex();
+    const interrupted = await this.jobs.findRunning();
     await this.jobs.markRunningInterrupted();
     this.retentionTimer = setInterval(
       () => void this.purgeExpired(),
       24 * 60 * 60 * 1000,
     );
+    return interrupted;
   }
 
   onModuleDestroy(): void {

@@ -23,7 +23,7 @@ script:pre-request {
   const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-delete-active+" + Date.now() + "@example.com", name: "Chunked delete active", password: bru.getEnvVar("password") } });
   bru.setVar("reportsToken", user.data.token);
   for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Active delete activity " + i } });
-  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
   const axios = require("axios");
   const reportUrl = baseUrl + "/reports/" + job.data.id;
   const headers = { Authorization: "Bearer " + user.data.token };

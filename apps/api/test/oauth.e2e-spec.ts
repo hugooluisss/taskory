@@ -31,8 +31,12 @@ describe("OAuth authorization flow", () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(REPORT_GENERATOR)
       .useValue({
-        listProviders: async () => [],
-        generate: async () => ({ markdown: "", provider: "", model: "" }),
+        generate: async () => ({
+          markdown: "",
+          provider: "",
+          model: "",
+          totalTokens: 0,
+        }),
       })
       .overrideProvider(OAUTH_NOW)
       .useValue(() => new Date(currentTime))
@@ -231,7 +235,9 @@ describe("OAuth authorization flow", () => {
           })
           .redirects(0)
           .expect(302);
-        expect(new URL(accepted.headers.location).pathname).toBe("/oauth/consent");
+        expect(new URL(accepted.headers.location).pathname).toBe(
+          "/oauth/consent",
+        );
 
         const refused = await request(app.getHttpServer())
           .get("/oauth/authorize")
@@ -246,9 +252,9 @@ describe("OAuth authorization flow", () => {
           })
           .redirects(0)
           .expect(302);
-        expect(new URL(refused.headers.location).searchParams.get("error")).toBe(
-          "invalid_target",
-        );
+        expect(
+          new URL(refused.headers.location).searchParams.get("error"),
+        ).toBe("invalid_target");
       } finally {
         if (originalMcpPath === undefined) delete process.env.MCP_PATH;
         else process.env.MCP_PATH = originalMcpPath;
@@ -1331,14 +1337,11 @@ async function prepareGrant(
   };
 }
 function tokenCode(grant: PreparedGrant, verifier = grant.verifier) {
-  return request(appServer())
-    .post("/oauth/token")
-    .type("form")
-    .send({
-      grant_type: "authorization_code",
-      code: grant.code,
-      code_verifier: verifier,
-      client_id: grant.clientId,
-      redirect_uri: grant.redirectUri,
-    });
+  return request(appServer()).post("/oauth/token").type("form").send({
+    grant_type: "authorization_code",
+    code: grant.code,
+    code_verifier: verifier,
+    client_id: grant.clientId,
+    redirect_uri: grant.redirectUri,
+  });
 }

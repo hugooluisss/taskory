@@ -12,7 +12,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-ollama}
-      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-llama3.2}
+      DEFAULT_LLM_MODEL:
+      # Optional upper-bound USD/1M prices; ignores cache-hit and off-peak discounts.
+      LLM_PRICE_INPUT_PER_MTOK:
+      LLM_PRICE_OUTPUT_PER_MTOK:
     volumes:
       - taskory-data:/data
     networks:

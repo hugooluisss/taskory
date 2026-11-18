@@ -39,8 +39,12 @@ describe("OAuth security probe scenarios", () => {
       .useValue({ canActivate: () => true })
       .overrideProvider(REPORT_GENERATOR)
       .useValue({
-        listProviders: async () => [],
-        generate: async () => ({ markdown: "", provider: "", model: "" }),
+        generate: async () => ({
+          markdown: "",
+          provider: "",
+          model: "",
+          totalTokens: 0,
+        }),
       })
       .overrideProvider(OAUTH_NOW)
       .useValue(() => new Date(currentTime))
@@ -301,13 +305,11 @@ describe("OAuth security probe scenarios", () => {
       const issued = await exchange(grant).expect(200);
       const responses = await Promise.all(
         Array.from({ length: 30 }, () =>
-          request(app.getHttpServer())
-            .post("/oauth/token")
-            .send({
-              grant_type: "refresh_token",
-              refresh_token: issued.body.refresh_token,
-              client_id: grant.clientId,
-            }),
+          request(app.getHttpServer()).post("/oauth/token").send({
+            grant_type: "refresh_token",
+            refresh_token: issued.body.refresh_token,
+            client_id: grant.clientId,
+          }),
         ),
       );
       expect(

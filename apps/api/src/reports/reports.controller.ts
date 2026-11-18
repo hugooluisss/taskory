@@ -11,6 +11,7 @@ import {
   ParseUUIDPipe,
   Res,
   UseGuards,
+  Query,
 } from "@nestjs/common";
 import { Response } from "express";
 import { AuthGuard } from "../auth/guards/auth.guard";
@@ -18,15 +19,16 @@ import { AuthUser } from "../common/auth/auth-user";
 import { CurrentUser } from "../common/auth/current-user.decorator";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { ReportsService } from "./reports.service";
+import { ListReportRunsDto } from "./dto/list-report-runs.dto";
 
 @Controller("reports")
 @UseGuards(AuthGuard)
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
-  @Get("providers")
-  providers() {
-    return this.reports.listProviders();
+  @Get("runs")
+  listRuns(@CurrentUser() user: AuthUser, @Query() query: ListReportRunsDto) {
+    return this.reports.listRuns(user.id, query.page, query.limit);
   }
 
   @Post()

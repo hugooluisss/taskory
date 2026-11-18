@@ -450,8 +450,12 @@ async function createApp(): Promise<{
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(REPORT_GENERATOR)
     .useValue({
-      listProviders: async () => [],
-      generate: async () => ({ markdown: "", provider: "", model: "" }),
+      generate: async () => ({
+        markdown: "",
+        provider: "",
+        model: "",
+        totalTokens: 0,
+      }),
     })
     .overrideProvider(ACTIVITY_CLOCK)
     .useValue(() => new Date("2099-01-01T00:00:00.000Z"))

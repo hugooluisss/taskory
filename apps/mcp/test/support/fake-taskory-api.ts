@@ -40,6 +40,10 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
         markdown: "# Report",
         provider: "local",
         model: "test-model",
+        totalTokens: 10,
+        promptTokens: 7,
+        completionTokens: 3,
+        costUsd: 0,
         activityCount: 3,
       },
     };
@@ -53,6 +57,10 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
         markdown: "# Report",
         provider: "local",
         model: "test-model",
+        totalTokens: 10,
+        promptTokens: 7,
+        completionTokens: 3,
+        costUsd: 0,
         activityCount: 3,
       },
     };

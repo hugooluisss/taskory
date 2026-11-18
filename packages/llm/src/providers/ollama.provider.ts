@@ -1,12 +1,10 @@
 import type { CompleteInput, Fetch, LlmProvider } from "../types/llm-provider";
-import {
-  AVAILABILITY_TIMEOUT_MS,
-  fetchJson,
-  generationTimeout,
-} from "./http-json";
+import { fetchJson, generationTimeout } from "./http-json";
 
 interface OllamaResponse {
   message?: { content?: string };
+  prompt_eval_count?: number;
+  eval_count?: number;
 }
 
 export interface OllamaProviderOptions {
@@ -33,23 +31,17 @@ export class OllamaProvider implements LlmProvider {
     this.timeoutMs = generationTimeout(options.timeoutMs);
   }
 
-  async isAvailable(): Promise<boolean> {
-    try {
-      await fetchJson({
-        fetcher: this.fetcher,
-        url: `${this.baseUrl}/api/tags`,
-        init: {},
-        timeoutMs: AVAILABILITY_TIMEOUT_MS,
-        provider: this.id,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async complete(input: CompleteInput): Promise<string> {
-    return fetchJson<string>({
+  async complete(
+    input: CompleteInput,
+  ): Promise<{
+    text: string;
+    usage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
+  }> {
+    return fetchJson({
       fetcher: this.fetcher,
       url: `${this.baseUrl}/api/chat`,
       init: {
@@ -73,7 +65,16 @@ export class OllamaProvider implements LlmProvider {
         if (typeof content !== "string" || (!input.json && !content.trim())) {
           throw new Error("Invalid Ollama response");
         }
-        return content;
+        const response = data as OllamaResponse;
+        return {
+          text: content,
+          usage: {
+            promptTokens: response.prompt_eval_count ?? 0,
+            completionTokens: response.eval_count ?? 0,
+            totalTokens:
+              (response.prompt_eval_count ?? 0) + (response.eval_count ?? 0),
+          },
+        };
       },
     });
   }

@@ -23,7 +23,7 @@ script:pre-request {
   const user = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-delete-own+" + Date.now() + "@example.com", name: "Chunked delete own", password: bru.getEnvVar("password") } });
   bru.setVar("reportsToken", user.data.token);
   for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Delete activity " + i } });
-  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
   bru.setVar("reportId", job.data.id);
 }
 docs {

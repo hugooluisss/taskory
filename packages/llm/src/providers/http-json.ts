@@ -1,7 +1,6 @@
 import { LlmUnavailableError } from "../errors/llm-unavailable.error";
 import type { Fetch } from "../types/llm-provider";
 
-export const AVAILABILITY_TIMEOUT_MS = 5_000;
 export const GENERATION_TIMEOUT_MS = 180_000;
 
 export interface HttpJsonOptions<T> {

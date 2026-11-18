@@ -27,3 +27,7 @@ curl --fail http://127.0.0.1:${WEB_PORT:-8080}/api/v1/health
 
 Conecta un agente por MCP en `<PUBLIC_URL><MCP_PATH>` (`MCP_PATH` predeterminado: `/mcp`). Para habilitar Ollama, usa `docker compose --profile ollama up -d --build`; mantén `OLLAMA_BASE_URL=http://ollama:11434`.
 En el primer arranque del perfil Ollama, el servicio de descarga obtiene el modelo configurado (`DEFAULT_LLM_MODEL`, por defecto `llama3.2`); la descarga puede tardar.
+
+El proveedor y modelo (`DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`) son configuración global del servidor y se usan para todos los informes.
+Al configurar `DEFAULT_LLM_PROVIDER=deepseek`, el proveedor usa `deepseek-flash` de forma predeterminada; puedes cambiarlo globalmente con `DEFAULT_LLM_MODEL`.
+`LLM_PRICE_INPUT_PER_MTOK` y `LLM_PRICE_OUTPUT_PER_MTOK` fijan los precios globales en USD por millón de tokens. Si se omiten, Ollama cuesta $0 y DeepSeek usa $0.30/$1.20 para entrada/salida. Es una estimación de costo máximo: no considera descuentos por caché ni por horario no pico.

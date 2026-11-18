@@ -74,47 +74,6 @@
       </select></label
     >
   </div>
-  <button
-    class="advanced-toggle btn btn-ghost w-fit"
-    type="button"
-    [attr.aria-expanded]="advanced()"
-    (click)="advanced.set(!advanced())"
-  >
-    <app-icon name="chevron" />{{ 'reports.form.advanced' | transloco }}
-  </button>
-  @if (advanced()) {
-    <div class="grid gap-4 sm:grid-cols-2">
-      <label class="form-control gap-1"
-        ><span>{{ 'reports.form.provider' | transloco }}</span
-        ><select
-          class="select select-bordered w-full"
-          name="provider"
-          [ngModel]="provider()"
-          (ngModelChange)="provider.set($event)"
-        >
-          <option value="">{{ 'reports.form.defaultProvider' | transloco }}</option>
-          @for (item of providers(); track item.id) {
-            <option [value]="item.id" [disabled]="!item.available">
-              {{ item.id
-              }}{{ item.available ? '' : ' — ' + ('reports.form.unavailable' | transloco) }}
-            </option>
-          }
-        </select></label
-      ><label class="form-control gap-1"
-        ><span>{{ 'reports.form.model' | transloco }}</span
-        ><input
-          class="input input-bordered w-full"
-          name="model"
-          maxlength="100"
-          [ngModel]="model()"
-          (ngModelChange)="model.set($event)"
-      /></label>
-    </div>
-    <p class="text-sm text-base-content/70">{{ 'reports.form.unavailableHint' | transloco }}</p>
-    @if (providersUnavailable()) {
-      <p class="text-error" role="alert">{{ 'reports.form.providersUnavailable' | transloco }}</p>
-    }
-  }
   <app-button type="submit" [loading]="loading()">{{
     'reports.form.generate' | transloco
   }}</app-button>

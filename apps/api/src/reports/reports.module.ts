@@ -13,13 +13,15 @@ import { ReportJobsService } from "./report-jobs.service";
 import { ReportJobRunner } from "./report-job.runner";
 import { REPORT_JOB_QUEUE } from "./report-job-queue";
 import { DatabaseModule } from "../common/database/database.module";
+import { ReportRun } from "./entities/report-run.entity";
+import { ReportRunsRepository } from "./report-runs.repository";
 
 @Module({
   imports: [
     ActivitiesModule,
     DatabaseModule,
     TokenAuthModule,
-    TypeOrmModule.forFeature([ReportJob, ReportMemory]),
+    TypeOrmModule.forFeature([ReportJob, ReportMemory, ReportRun]),
   ],
   controllers: [ReportsController],
   providers: [
@@ -27,6 +29,7 @@ import { DatabaseModule } from "../common/database/database.module";
     reportGeneratorProvider,
     ReportJobsRepository,
     ReportMemoryRepository,
+    ReportRunsRepository,
     ReportJobsService,
     ReportJobRunner,
     { provide: REPORT_JOB_QUEUE, useExisting: ReportJobRunner },

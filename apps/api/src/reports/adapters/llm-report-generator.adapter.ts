@@ -33,12 +33,12 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
     );
   }
 
-  hasProvider(id?: string): boolean {
-    return this.generator.hasProvider(id);
+  hasProvider(): boolean {
+    return this.generator.hasProvider();
   }
 
-  listProviders() {
-    return this.generator.listProviders();
+  configuration() {
+    return this.generator.configuration();
   }
 
   private async translate<T>(operation: () => Promise<T>): Promise<T> {
@@ -46,20 +46,46 @@ export class LlmReportGeneratorAdapter implements ReportGeneratorPort {
       return await operation();
     } catch (error) {
       if (error instanceof ReportCancelledError) {
-        throw new ReportGenerationError("CANCELLED", { cause: error });
+        throw new ReportGenerationError("CANCELLED", usage(error), {
+          cause: error,
+        });
       }
       if (error instanceof InvalidLlmOutputError) {
-        throw new ReportGenerationError("INVALID_LLM_OUTPUT", { cause: error });
+        throw new ReportGenerationError("INVALID_LLM_OUTPUT", usage(error), {
+          cause: error,
+        });
       }
       if (
         error instanceof LlmUnavailableError ||
         error instanceof UnknownProviderError
       ) {
-        throw new ReportGenerationError("LLM_UNAVAILABLE", { cause: error });
+        throw new ReportGenerationError("LLM_UNAVAILABLE", usage(error), {
+          cause: error,
+        });
       }
       throw error;
     }
   }
+}
+
+function usage(error: unknown): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  if (typeof error !== "object" || error === null)
+    return { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  const value = (candidate: unknown) =>
+    Number.isInteger(candidate) && Number(candidate) >= 0
+      ? Number(candidate)
+      : 0;
+  return {
+    promptTokens: value((error as { promptTokens?: unknown }).promptTokens),
+    completionTokens: value(
+      (error as { completionTokens?: unknown }).completionTokens,
+    ),
+    totalTokens: value((error as { totalTokens?: unknown }).totalTokens),
+  };
 }
 
 export function createLlmReportGeneratorAdapter(): ReportGeneratorPort {

@@ -23,8 +23,7 @@ body:json {
   {
     "from": "2026-11-16",
     "to": "2026-11-16",
-    "language": "es",
-    "provider": "ollama"
+    "language": "es"
   }
 }
 script:pre-request {
@@ -51,6 +50,10 @@ tests {
     expect(res.body.markdown).to.be.a("string").and.not.empty;
     expect(res.body.provider).to.equal("ollama");
     expect(res.body.model).to.be.a("string").and.not.empty;
+    expect(res.body.totalTokens).to.be.a("number");
+    expect(res.body.promptTokens).to.be.a("number");
+    expect(res.body.completionTokens).to.be.a("number");
+    expect(res.body.costUsd).to.be.a("number");
     expect(res.body.activityCount).to.equal(1);
   });
 }

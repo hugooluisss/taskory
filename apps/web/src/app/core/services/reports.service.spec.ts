@@ -13,7 +13,6 @@ describe('ReportsService', () => {
   const pending = { id: 'j', status: 'running' } as ReportJob;
   const completed = { id: 'j', status: 'completed' } as ReportJob;
   const repository = {
-    providers: vi.fn(() => of([])),
     create: vi.fn(() => of(new HttpResponse({ status: 200, body: { markdown: 'done' } }))),
     getJob: vi.fn(() => of(completed)),
     retryJob: vi.fn(() => of(completed)),
@@ -49,7 +48,16 @@ describe('ReportsService', () => {
       of(
         new HttpResponse({
           status: 200,
-          body: { markdown: 'm', provider: 'p', model: 'm', activityCount: 1 },
+          body: {
+            markdown: 'm',
+            provider: 'p',
+            model: 'm',
+            promptTokens: 1,
+            completionTokens: 2,
+            totalTokens: 3,
+            costUsd: 0,
+            activityCount: 1,
+          },
         }),
       ),
     );
@@ -59,7 +67,16 @@ describe('ReportsService', () => {
       .subscribe((value) => (result = value));
     expect(result).toEqual({
       kind: 'done',
-      report: { markdown: 'm', provider: 'p', model: 'm', activityCount: 1 },
+      report: {
+        markdown: 'm',
+        provider: 'p',
+        model: 'm',
+        promptTokens: 1,
+        completionTokens: 2,
+        totalTokens: 3,
+        costUsd: 0,
+        activityCount: 1,
+      },
     });
   });
   it('returns a job result for HTTP 202', () => {
@@ -138,7 +155,6 @@ describe('ReportsService', () => {
     vi.unstubAllGlobals();
   });
   it('delegates retries and deletes to the repository', () => {
-    service.providers().subscribe();
     service.retry('j').subscribe();
     service.delete('j').subscribe();
     expect(repository.retryJob).toHaveBeenCalledWith('j');

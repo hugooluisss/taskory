@@ -20,10 +20,21 @@ describe('Long report progress', () => {
       thisMonth: { from: '2026-11-01', to: '2026-11-30' },
       lastMonth: { from: '2026-10-01', to: '2026-10-31' },
     })),
-    providers: vi.fn(() => of([])),
     validateRange: vi.fn(),
     create: vi.fn(() =>
-      of({ kind: 'done', report: { markdown: 'r', provider: 'p', model: 'm', activityCount: 1 } }),
+      of({
+        kind: 'done',
+        report: {
+          markdown: 'r',
+          provider: 'p',
+          model: 'm',
+          promptTokens: 1,
+          completionTokens: 2,
+          totalTokens: 3,
+          costUsd: 0,
+          activityCount: 1,
+        },
+      }),
     ),
     watchJob: vi.fn(() => progress.asObservable()),
     retry: vi.fn(() => of({ id: 'job-1', status: 'running', progress: { done: 0, total: 2 } })),

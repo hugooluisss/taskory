@@ -24,8 +24,7 @@ body:json {
   {
     "from": "2026-11-16",
     "to": "2026-11-16",
-    "language": "es",
-    "provider": "ollama"
+    "language": "es"
   }
 }
 script:pre-request {
@@ -35,7 +34,7 @@ script:pre-request {
   for (let i = 0; i < 101; i++) {
     await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Actividad activa " + i } });
   }
-  const first = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "es", provider: "ollama" } });
+  const first = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "es" } });
   bru.setVar("firstReportId", first.data.id);
 }
 docs {

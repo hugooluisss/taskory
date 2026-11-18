@@ -586,8 +586,12 @@ async function createApp(): Promise<{
   })
     .overrideProvider(REPORT_GENERATOR)
     .useValue({
-      listProviders: async () => [],
-      generate: async () => ({ markdown: "", provider: "", model: "" }),
+      generate: async () => ({
+        markdown: "",
+        provider: "",
+        model: "",
+        totalTokens: 0,
+      }),
     })
     .compile();
   const app = module.createNestApplication();

@@ -61,12 +61,20 @@ describe("generate_report", () => {
         markdown: "# Report",
         provider: "local",
         model: "m",
+        totalTokens: 8,
+        promptTokens: 5,
+        completionTokens: 3,
+        costUsd: 0.000001,
         activityCount: 1,
       }),
     ).toMatchObject({
       markdown: "# Report",
       provider: "local",
       model: "m",
+      totalTokens: 8,
+      promptTokens: 5,
+      completionTokens: 3,
+      costUsd: 0.000001,
       activityCount: 1,
     });
   });

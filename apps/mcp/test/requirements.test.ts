@@ -18,12 +18,16 @@ describe("MCP endpoint and authentication", () => {
     await withMcpSystem(
       defaultFakeTaskoryHandler,
       async (system) => {
-        const response = await fetch(`${system.root}/taskory-mcp`, { method: "POST" });
+        const response = await fetch(`${system.root}/taskory-mcp`, {
+          method: "POST",
+        });
         expect(response.status).toBe(401);
         expect(response.headers.get("www-authenticate")).toBe(
           'Bearer resource_metadata="https://taskory.test/.well-known/oauth-protected-resource/taskory-mcp"',
         );
-        const options = await fetch(`${system.root}/taskory-mcp`, { method: "OPTIONS" });
+        const options = await fetch(`${system.root}/taskory-mcp`, {
+          method: "OPTIONS",
+        });
         expect(options.status).toBe(204);
         expect(options.headers.get("access-control-allow-origin")).toBe("*");
       },
@@ -536,6 +540,10 @@ describe("generate_report", () => {
           markdown: "# Report",
           provider: "local",
           model: "test-model",
+          totalTokens: 10,
+          promptTokens: 7,
+          completionTokens: 3,
+          costUsd: 0,
           activityCount: 3,
         });
       },

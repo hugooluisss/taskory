@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ActivitiesService } from "../activities/activities.service";
 import { Activity } from "../activities/entities/activity.entity";
 import { ApiException } from "../common/errors/api-exception";
@@ -16,19 +16,20 @@ import { ReportJobsService } from "./report-jobs.service";
 import { REPORT_JOB_QUEUE, ReportJobQueue } from "./report-job-queue";
 import { ReportGenerationError } from "./ports/report-generation-error";
 import { messages } from "../common/i18n/messages";
+import { ReportRunsRepository } from "./report-runs.repository";
+import { reportCostMicros } from "./report-cost";
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     private readonly activities: ActivitiesService,
     @Inject(REPORT_GENERATOR) private readonly generator: ReportGeneratorPort,
     private readonly jobs: ReportJobsService,
     @Inject(REPORT_JOB_QUEUE) private readonly queue: ReportJobQueue,
+    private readonly runs: ReportRunsRepository,
   ) {}
-
-  listProviders() {
-    return this.generator.listProviders();
-  }
 
   async create(userId: string, input: CreateReportDto) {
     if (
@@ -38,8 +39,8 @@ export class ReportsService {
     ) {
       throw new ApiException(400, ERROR_CODES.VALIDATION_ERROR);
     }
-    if (!this.generator.hasProvider(input.provider)) {
-      throw new ApiException(400, ERROR_CODES.UNKNOWN_PROVIDER);
+    if (!this.generator.hasProvider()) {
+      throw new ApiException(502, ERROR_CODES.LLM_UNAVAILABLE);
     }
     const projects = [
       ...new Set((input.projects ?? []).map((project) => project.trim())),
@@ -74,8 +75,9 @@ export class ReportsService {
       userId,
       snapshot.map(({ id }) => id),
     );
+    let result: Awaited<ReturnType<ReportGeneratorPort["generate"]>>;
     try {
-      const result = await this.generator.generate({
+      result = await this.generator.generate({
         activities: activities.map((activity: Activity) => ({
           id: activity.id,
           date: activity.date,
@@ -89,12 +91,35 @@ export class ReportsService {
         to: input.to,
         projects,
         language: input.language,
-        provider: input.provider,
-        model: input.model,
         style: input.style ?? "summary",
       });
-      return { ...result, activityCount: activities.length };
     } catch (error) {
+      const configured = this.generator.configuration();
+      const usage = usageOf(error);
+      try {
+        await this.runs.save({
+          userId,
+          jobId: null,
+          from: input.from,
+          to: input.to,
+          projects,
+          language: input.language,
+          style: input.style ?? "summary",
+          provider: configured.provider,
+          model: configured.model,
+          ...usage,
+          costMicros: reportCostMicros(configured.provider, usage),
+          activityCount: activities.length,
+          status: "failed",
+        });
+      } catch (recordingError) {
+        this.logger.error(
+          "Failed to record failed report run",
+          recordingError instanceof Error
+            ? recordingError.stack
+            : String(recordingError),
+        );
+      }
       if (error instanceof ReportGenerationError) {
         switch (error.code) {
           case "LLM_UNAVAILABLE":
@@ -106,6 +131,33 @@ export class ReportsService {
       }
       throw error;
     }
+    const costMicros = reportCostMicros(result.provider, result);
+    await this.runs.save({
+      userId,
+      jobId: null,
+      from: input.from,
+      to: input.to,
+      projects,
+      language: input.language,
+      style: input.style ?? "summary",
+      provider: result.provider,
+      model: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      costMicros,
+      activityCount: activities.length,
+      status: "completed",
+    });
+    return {
+      ...result,
+      costUsd: costMicros / 1_000_000,
+      activityCount: activities.length,
+    };
+  }
+
+  listRuns(userId: string, page?: number, limit?: number) {
+    return this.runs.list(userId, page, limit);
   }
 
   status(userId: string, id: string, acceptLanguage?: string) {
@@ -121,6 +173,10 @@ export class ReportsService {
             markdown: job.markdown,
             provider: job.provider,
             model: job.model,
+            totalTokens: job.totalTokens,
+            promptTokens: job.promptTokens,
+            completionTokens: job.completionTokens,
+            costUsd: job.costMicros / 1_000_000,
             activityCount: job.activityIds.length,
           }
         : {}),
@@ -158,4 +214,37 @@ export class ReportsService {
       this.queue.finishCancellation(id);
     }
   }
+}
+
+function usageOf(error: unknown): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  if (typeof error !== "object" || error === null)
+    return { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  if (
+    "usage" in error &&
+    typeof error.usage === "object" &&
+    error.usage !== null
+  ) {
+    return normalizeUsage(error.usage);
+  }
+  return normalizeUsage(error);
+}
+
+function normalizeUsage(source: object): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  const read = (key: string) => {
+    const value = Number((source as Record<string, unknown>)[key]);
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+  };
+  return {
+    promptTokens: read("promptTokens"),
+    completionTokens: read("completionTokens"),
+    totalTokens: read("totalTokens"),
+  };
 }

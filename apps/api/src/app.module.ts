@@ -11,6 +11,7 @@ import { Activity } from "./activities/entities/activity.entity";
 import { ReportsModule } from "./reports/reports.module";
 import { ReportJob } from "./reports/entities/report-job.entity";
 import { ReportMemory } from "./reports/entities/report-memory.entity";
+import { ReportRun } from "./reports/entities/report-run.entity";
 import { OAuthClient } from "./oauth/entities/oauth-client.entity";
 import { OAuthAuthorizationRequest } from "./oauth/entities/oauth-authorization-request.entity";
 import { OAuthAuthorization } from "./oauth/entities/oauth-authorization.entity";
@@ -20,6 +21,7 @@ import { OAuthModule } from "./oauth/oauth.module";
 import { ConnectedAppsModule } from "./connected-apps/connected-apps.module";
 import { OAuthHttpModule } from "./oauth/oauth-http.module";
 import { InitialSchema1763400000000 } from "./migrations/1763400000000-InitialSchema";
+import { ReportRuns1763500000000 } from "./migrations/1763500000000-ReportRuns";
 
 const synchronize =
   process.env.DB_SYNCHRONIZE === "true" ||
@@ -40,13 +42,14 @@ export function databaseOptions(
       Activity,
       ReportJob,
       ReportMemory,
+      ReportRun,
       OAuthClient,
       OAuthAuthorizationRequest,
       OAuthAuthorization,
       OAuthAuthorizationCode,
       OAuthToken,
     ],
-    migrations: [InitialSchema1763400000000],
+    migrations: [InitialSchema1763400000000, ReportRuns1763500000000],
     synchronize,
     migrationsRun: !synchronize,
   };

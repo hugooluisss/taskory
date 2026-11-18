@@ -30,9 +30,14 @@ describe('Report generation', () => {
         '[external](https://outside.test)\n\n![private image](https://outside.test/image.png)\n\n<script>alert(1)</script>',
       provider: 'p',
       model: 'm',
+      promptTokens: 100,
+      completionTokens: 50,
+      totalTokens: 150,
+      costUsd: 0.0123,
       activityCount: 1,
     };
     fixture.detectChanges();
+    expect(fixture.componentInstance.formattedCost).toBe('US$0.0123');
     const article: HTMLElement = fixture.nativeElement.querySelector('.markdown');
     const link = article.querySelector('a')!;
     expect(link.target).toBe('_blank');
@@ -66,6 +71,10 @@ describe('Report generation', () => {
       markdown: '<script>x</script><img src=x onerror=alert(1)>[x](javascript:alert(1))',
       provider: 'p',
       model: 'm',
+      promptTokens: 100,
+      completionTokens: 50,
+      totalTokens: 150,
+      costUsd: 0,
       activityCount: 4,
     };
     fixture.detectChanges();
@@ -111,6 +120,10 @@ describe('Report generation', () => {
       markdown: 'x',
       provider: 'p',
       model: 'm',
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      costUsd: 0,
       activityCount: 0,
     };
     await fixture.componentInstance.copy();

@@ -50,12 +50,69 @@ describe("Report generation", () => {
 
   it("Successful report", async () => {
     await create(owner, { date: "2026-11-16", title: "Owned" });
-    const response = await report(owner).expect(200);
+    const response = await report(owner, {
+      provider: "deepseek",
+      model: "caller-choice",
+    }).expect(200);
     expect(response.body).toEqual({
       markdown: "# Report",
       provider: "ollama",
       model: "test",
+      totalTokens: 12,
+      promptTokens: 12,
+      completionTokens: 0,
+      costUsd: 0,
       activityCount: 1,
+    });
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("provider");
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("model");
+  });
+
+  it("Report run history is paginated and isolated by owner", async () => {
+    await create(owner, { date: "2026-11-16", title: "Owner activity" });
+    await create(other, { date: "2026-11-16", title: "Other activity" });
+    await report(owner).expect(200);
+    await report(other).expect(200);
+
+    const history = await request(app.getHttpServer())
+      .get("/api/v1/reports/runs?page=1&limit=1")
+      .set(auth(owner))
+      .expect(200);
+    expect(history.body).toMatchObject({ total: 1, page: 1, limit: 1 });
+    expect(history.body.items).toHaveLength(1);
+    expect(history.body.items[0]).toMatchObject({
+      userId: ownerId,
+      provider: "ollama",
+      model: "test",
+      totalTokens: 12,
+      promptTokens: 12,
+      completionTokens: 0,
+      costUsd: 0,
+      activityCount: 1,
+      status: "completed",
+    });
+  });
+
+  it("Persists failed synchronous usage", async () => {
+    await create(owner, { date: "2026-11-16", title: "Consumed activity" });
+    generator.generate.mockRejectedValueOnce(
+      new ReportGenerationError("LLM_UNAVAILABLE", {
+        promptTokens: 5,
+        completionTokens: 2,
+        totalTokens: 7,
+      }),
+    );
+    await report(owner).expect(502);
+    const history = await request(app.getHttpServer())
+      .get("/api/v1/reports/runs")
+      .set(auth(owner))
+      .expect(200);
+    expect(history.body.items[0]).toMatchObject({
+      status: "failed",
+      promptTokens: 5,
+      completionTokens: 2,
+      totalTokens: 7,
+      costUsd: 0,
     });
   });
 
@@ -129,6 +186,12 @@ describe("Report generation", () => {
         status: "completed",
         progress: { done: 3, total: 3 },
         markdown: "# Final report",
+        promptTokens: 14,
+        completionTokens: 0,
+        totalTokens: 14,
+        costUsd: 0,
+        provider: "ollama",
+        model: "test",
       });
       expect(generator.evaluateChunk).toHaveBeenCalledTimes(3);
       expect(generator.writeFinal).toHaveBeenCalledTimes(1);
@@ -244,6 +307,9 @@ describe("Report generation", () => {
         highlights: [];
         provider: string;
         model: string;
+        totalTokens: number;
+        promptTokens: number;
+        completionTokens: number;
       }>();
       generator.evaluateChunk.mockImplementation(() => {
         started.resolve();
@@ -274,6 +340,9 @@ describe("Report generation", () => {
         highlights: [],
         provider: "fake",
         model: "fake",
+        totalTokens: 3,
+        promptTokens: 3,
+        completionTokens: 0,
       });
       await app.get(ReportJobRunner).awaitIdle();
     });
@@ -377,6 +446,18 @@ describe("Report generation", () => {
         status: "completed",
         progress: { done: 2, total: 2 },
       });
+      const history = await request(app.getHttpServer())
+        .get("/api/v1/reports/runs")
+        .set(auth(owner))
+        .expect(200);
+      expect(history.body.items[0]).toMatchObject({
+        jobId: interrupted.id,
+        status: "failed",
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        costUsd: 0,
+      });
       expect(generator.evaluateChunk).toHaveBeenCalledTimes(1);
       await expect(
         app.get(ReportMemoryRepository).list(ownerId, interrupted.id),
@@ -395,6 +476,9 @@ describe("Report generation", () => {
         highlights: [];
         provider: string;
         model: string;
+        totalTokens: number;
+        promptTokens: number;
+        completionTokens: number;
       }>();
       generator.evaluateChunk.mockImplementation(() => {
         started.resolve();
@@ -423,6 +507,9 @@ describe("Report generation", () => {
         highlights: [],
         provider: "fake",
         model: "fake",
+        totalTokens: 3,
+        promptTokens: 3,
+        completionTokens: 0,
       });
       await app.get(ReportJobRunner).awaitIdle();
     });
@@ -470,6 +557,9 @@ describe("Report generation", () => {
         highlights: [];
         provider: string;
         model: string;
+        totalTokens: number;
+        promptTokens: number;
+        completionTokens: number;
       }>();
       generator.evaluateChunk.mockImplementation(() => {
         started.resolve();
@@ -488,6 +578,9 @@ describe("Report generation", () => {
         highlights: [],
         provider: "fake",
         model: "fake",
+        totalTokens: 3,
+        promptTokens: 3,
+        completionTokens: 0,
       });
       await app.get(ReportJobRunner).awaitIdle();
 
@@ -602,23 +695,11 @@ describe("Report generation", () => {
     expect(generator.generate.mock.calls[0][0].activities).toHaveLength(1);
   });
 
-  it("Model over 100 characters", async () => {
-    await report(owner, { model: "x".repeat(101) })
-      .expect(400)
-      .expect(({ body }) => expect(body.code).toBe("VALIDATION_ERROR"));
-  });
-
   it("Inverted range", async () => {
     await report(owner, { from: "2026-12-01", to: "2026-11-30" })
       .expect(400)
       .expect(({ body }) => expect(body.code).toBe("VALIDATION_ERROR"));
     expect(generator.generate).not.toHaveBeenCalled();
-  });
-
-  it("Unknown provider", async () => {
-    await report(owner, { provider: "unknown" })
-      .expect(400)
-      .expect(({ body }) => expect(body.code).toBe("UNKNOWN_PROVIDER"));
   });
 
   it("Provider down", async () => {
@@ -631,20 +712,16 @@ describe("Report generation", () => {
       .expect(({ body }) => expect(body.code).toBe("LLM_UNAVAILABLE"));
   });
 
-  it("Unreachable provider", async () => {
-    generator.listProviders.mockResolvedValue([
-      { id: "ollama", defaultModel: "test", available: false },
-    ]);
-    await request(app.getHttpServer())
-      .get("/api/v1/reports/providers")
-      .set(auth(owner))
-      .expect(200, [{ id: "ollama", defaultModel: "test", available: false }]);
+  it("Configured provider unavailable", async () => {
+    generator.hasProvider.mockReturnValue(false);
+    await create(owner, { date: "2026-11-16", title: "Owned" });
+    await report(owner)
+      .expect(502)
+      .expect(({ body }) => expect(body.code).toBe("LLM_UNAVAILABLE"));
   });
 
   it("Missing token", async () => {
-    await request(app.getHttpServer())
-      .get("/api/v1/reports/providers")
-      .expect(401);
+    await request(app.getHttpServer()).get("/api/v1/reports/runs").expect(401);
     await request(app.getHttpServer())
       .post("/api/v1/reports")
       .send({})
@@ -667,23 +744,28 @@ class FakeGenerator {
     markdown: "# Report",
     provider: "ollama",
     model: "test",
+    totalTokens: 12,
+    promptTokens: 12,
+    completionTokens: 0,
   });
-  listProviders = jest
-    .fn()
-    .mockResolvedValue([
-      { id: "ollama", defaultModel: "test", available: true },
-    ]);
-  hasProvider = jest.fn((id = "ollama") => id === "ollama");
+  hasProvider = jest.fn(() => true);
+  configuration = jest.fn(() => ({ provider: "ollama", model: "test" }));
   evaluateChunk = jest.fn().mockResolvedValue({
     summary: "Summary",
     highlights: [],
     provider: "ollama",
     model: "test",
+    totalTokens: 3,
+    promptTokens: 3,
+    completionTokens: 0,
   });
   writeFinal = jest.fn().mockResolvedValue({
     markdown: "# Final report",
     provider: "ollama",
     model: "test",
+    totalTokens: 5,
+    promptTokens: 5,
+    completionTokens: 0,
   });
 }
 
@@ -725,6 +807,10 @@ function seedJob(
     errorChunk: null,
     createdAt: new Date(),
     finishedAt: null,
+    totalTokens: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    costMicros: 0,
   };
 }
 
@@ -752,6 +838,9 @@ function memoryRow(
     dateFrom: "2026-11-16",
     dateTo: "2026-11-16",
     activityCount: 100,
+    totalTokens: 0,
+    promptTokens: 0,
+    completionTokens: 0,
     summary: "Stored summary",
     highlights: [],
     byProject: { none: 100 },

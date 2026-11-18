@@ -13,8 +13,6 @@ export interface ReportOptions {
   from: string;
   to: string;
   language: "es" | "en";
-  provider?: string;
-  model?: string;
   style?: "summary" | "detailed";
   projects?: string[];
 }

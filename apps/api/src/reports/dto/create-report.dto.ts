@@ -4,7 +4,6 @@ import {
   IsIn,
   IsOptional,
   IsString,
-  MaxLength,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -51,15 +50,6 @@ export class CreateReportDto {
 
   @IsIn(["es", "en"])
   language!: "es" | "en";
-
-  @IsOptional()
-  @IsString()
-  provider?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  model?: string;
 
   @IsOptional()
   @IsIn(["summary", "detailed"])

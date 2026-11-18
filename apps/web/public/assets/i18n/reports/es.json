@@ -19,13 +19,6 @@
     "style": "Estilo",
     "summary": "Resumen",
     "detailed": "Detallado",
-    "advanced": "Avanzado",
-    "provider": "Proveedor",
-    "defaultProvider": "Proveedor predeterminado",
-    "model": "Modelo",
-    "unavailable": "no disponible",
-    "unavailableHint": "Los proveedores no disponibles no se pueden seleccionar hasta que estén conectados.",
-    "providersUnavailable": "No se pudieron cargar las opciones de proveedor. El proveedor predeterminado sigue disponible.",
     "generate": "Generar informe"
   },
   "progress": {
@@ -45,7 +38,7 @@
   "result": {
     "title": "Tu informe",
     "copy": "Copiar como Markdown",
-    "metadata": "{{provider}} · {{model}} · {{count}} actividades",
+    "metadata": "{{provider}} · {{model}} · {{tokens}} tokens · {{cost}} · {{count}} actividades",
     "copied": "Informe copiado.",
     "copyFailed": "No se pudo copiar el informe.",
     "download": "Descargar informe"
@@ -54,7 +47,6 @@
     "NO_ACTIVITIES": "No encontramos actividades en estas fechas. Elige otro periodo o proyecto.",
     "RANGE_TOO_LARGE": "Este periodo contiene demasiadas actividades. Elige un periodo más corto.",
     "LLM_UNAVAILABLE": "El servicio de informes no está disponible. Inténtalo de nuevo en un momento.",
-    "UNKNOWN_PROVIDER": "No reconocemos ese proveedor. Elige otro.",
     "REPORT_IN_PROGRESS": "Ya se está generando un informe. Abre el informe activo para ver su progreso.",
     "openActiveReport": "Abrir el informe activo",
     "VALIDATION_ERROR": "Revisa los detalles del informe e inténtalo de nuevo.",

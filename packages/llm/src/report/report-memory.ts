@@ -12,6 +12,9 @@ export type ChunkEvaluation = {
   highlights: Highlight[];
   provider: string;
   model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 };
 
 export type MemoryChunk = {
@@ -22,6 +25,9 @@ export type MemoryChunk = {
   summary: string;
   highlights: Highlight[];
   droppedHighlights?: number;
+  totalTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
 };
 
 export type ReportTotals = {

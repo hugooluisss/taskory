@@ -37,9 +37,6 @@ export class ReportsService {
   private repository = inject(ReportsRepository);
   private sanitizer = inject(DomSanitizer);
   private scheduler = inject(REPORT_SCHEDULER);
-  providers() {
-    return this.repository.providers();
-  }
   presets(now = new Date()): ReportPresets {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const mondayOffset = (date.getDay() + 6) % 7;

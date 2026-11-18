@@ -1,24 +1,17 @@
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ReportRequest, ProviderInfo, Language } from '../../core/models';
+import { ReportRequest, Language } from '../../core/models';
 import { ReportsService } from '../../core/services/reports.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { AppButtonComponent } from '../../shared/app-button';
-import { AppIconComponent } from '../../shared/app-icon';
 import { AppChipsInputComponent } from '../../shared/app-chips-input';
 
 @Component({
   selector: 'app-report-form',
   standalone: true,
-  imports: [
-    FormsModule,
-    TranslocoPipe,
-    AppButtonComponent,
-    AppIconComponent,
-    AppChipsInputComponent,
-  ],
+  imports: [FormsModule, TranslocoPipe, AppButtonComponent, AppChipsInputComponent],
   templateUrl: './report-form.html',
 })
 export class ReportFormComponent {
@@ -27,25 +20,16 @@ export class ReportFormComponent {
   private activities = inject(ActivitiesService);
   @Output() generate = new EventEmitter<ReportRequest>();
   readonly presets = this.reports.presets();
-  readonly providers = signal<ProviderInfo[]>([]);
   readonly projects = signal<string[]>([]);
   readonly projectsUnavailable = signal(false);
-  readonly providersUnavailable = signal(false);
   readonly from = signal(this.presets.thisWeek.from);
   readonly to = signal(this.presets.thisWeek.to);
   readonly selectedProjects = signal<string[]>([]);
   readonly language = signal<Language>(this.auth.user()?.language ?? 'en');
   readonly style = signal<'summary' | 'detailed'>('summary');
-  readonly provider = signal('');
-  readonly model = signal('');
   readonly rangeError = signal(false);
   readonly loading = signal(false);
-  readonly advanced = signal(false);
   constructor() {
-    this.reports.providers().subscribe({
-      next: (items) => this.providers.set(items),
-      error: () => this.providersUnavailable.set(true),
-    });
     this.activities.meta().subscribe({
       next: (meta) => this.projects.set(meta.projects),
       error: () => this.projectsUnavailable.set(true),
@@ -71,8 +55,6 @@ export class ReportFormComponent {
       projects: this.selectedProjects().length ? this.selectedProjects() : undefined,
       language: this.language(),
       style: this.style(),
-      provider: this.provider() || undefined,
-      model: this.model().trim() || undefined,
     });
   }
   finish(): void {

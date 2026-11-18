@@ -44,7 +44,6 @@
     "tooManyRequests": "Demasiados intentos. Prueba más tarde.",
     "noActivities": "No hay actividades en estas fechas.",
     "rangeTooLarge": "El rango incluye demasiadas actividades.",
-    "unknownProvider": "Ese proveedor de informes no está disponible.",
     "llmUnavailable": "El servicio de informes no está disponible ahora.",
     "invalidLlmOutput": "No se pudo crear el informe.",
     "reportInProgress": "Ya hay un informe en curso.",

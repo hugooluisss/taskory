@@ -14,12 +14,6 @@ describe('ReportsRepository', () => {
     repository = TestBed.inject(ReportsRepository);
   });
   afterEach(() => http.verify());
-  it('providers gets available providers', () => {
-    repository.providers().subscribe();
-    const request = http.expectOne('/api/v1/reports/providers');
-    expect(request.request.method).toBe('GET');
-    request.flush([]);
-  });
   it('create preserves the HTTP status', () => {
     repository.create({ from: '2026-01-01', to: '2026-01-02', language: 'en' }).subscribe();
     const request = http.expectOne('/api/v1/reports');

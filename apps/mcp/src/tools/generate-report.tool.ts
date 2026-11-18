@@ -32,15 +32,6 @@ export function registerGenerateReport(
         .enum(["es", "en"])
         .default("en")
         .describe("Report language, English or Spanish."),
-      provider: z
-        .string()
-        .optional()
-        .describe("Optional configured report provider."),
-      model: z
-        .string()
-        .max(100)
-        .optional()
-        .describe("Optional model override."),
       style: z
         .enum(["summary", "detailed"])
         .optional()

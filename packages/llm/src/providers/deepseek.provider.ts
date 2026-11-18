@@ -1,13 +1,14 @@
 import type { CompleteInput, Fetch, LlmProvider } from "../types/llm-provider";
 import { LlmUnavailableError } from "../errors/llm-unavailable.error";
-import {
-  AVAILABILITY_TIMEOUT_MS,
-  fetchJson,
-  generationTimeout,
-} from "./http-json";
+import { fetchJson, generationTimeout } from "./http-json";
 
 interface DeepSeekResponse {
   choices?: { message?: { content?: string } }[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 export interface DeepSeekProviderOptions {
@@ -28,41 +29,24 @@ export class DeepSeekProvider implements LlmProvider {
   constructor(options: DeepSeekProviderOptions = {}) {
     this.fetcher = options.fetcher ?? fetch;
     this.apiKey = options.apiKey ?? process.env.DEEPSEEK_API_KEY;
-    this.defaultModel = options.model ?? "deepseek-chat";
+    this.defaultModel = options.model ?? "deepseek-flash";
     this.timeoutMs = generationTimeout(options.timeoutMs);
   }
 
-  async isAvailable(): Promise<boolean> {
-    if (!this.apiKey) {
-      return false;
-    }
-    try {
-      await fetchJson({
-        fetcher: this.fetcher,
-        url: this.url,
-        init: {
-          method: "POST",
-          headers: this.headers(),
-          body: JSON.stringify({
-            model: this.defaultModel,
-            messages: [{ role: "user", content: "ping" }],
-            max_tokens: 1,
-          }),
-        },
-        timeoutMs: AVAILABILITY_TIMEOUT_MS,
-        provider: this.id,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async complete(input: CompleteInput): Promise<string> {
+  async complete(
+    input: CompleteInput,
+  ): Promise<{
+    text: string;
+    usage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
+  }> {
     if (!this.apiKey) {
       throw new LlmUnavailableError("DeepSeek API key is missing");
     }
-    return fetchJson<string>({
+    return fetchJson({
       fetcher: this.fetcher,
       url: this.url,
       init: {
@@ -86,7 +70,18 @@ export class DeepSeekProvider implements LlmProvider {
         if (typeof content !== "string" || (!input.json && !content.trim())) {
           throw new Error("Invalid DeepSeek response");
         }
-        return content;
+        const response = data as DeepSeekResponse;
+        const promptTokens = response.usage?.prompt_tokens ?? 0;
+        const completionTokens = response.usage?.completion_tokens ?? 0;
+        return {
+          text: content,
+          usage: {
+            promptTokens,
+            completionTokens,
+            totalTokens:
+              response.usage?.total_tokens ?? promptTokens + completionTokens,
+          },
+        };
       },
     });
   }

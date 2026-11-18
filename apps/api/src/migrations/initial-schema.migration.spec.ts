@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { DataSource } from "typeorm";
 import { databaseOptions } from "../app.module";
 import { InitialSchema1763400000000 } from "./1763400000000-InitialSchema";
+import { ReportRuns1763500000000 } from "./1763500000000-ReportRuns";
 
 describe("Initial database migration", () => {
   const migratedPath = join(
@@ -31,7 +32,7 @@ describe("Initial database migration", () => {
       ...databaseOptions(migratedPath),
       synchronize: false,
       migrationsRun: false,
-      migrations: [InitialSchema1763400000000],
+      migrations: [InitialSchema1763400000000, ReportRuns1763500000000],
     });
     synchronized = new DataSource({
       ...databaseOptions(synchronizedPath),
@@ -40,7 +41,7 @@ describe("Initial database migration", () => {
       migrations: [],
     });
     await Promise.all([migrated.initialize(), synchronized.initialize()]);
-    expect(await migrated.runMigrations()).toHaveLength(1);
+    expect(await migrated.runMigrations()).toHaveLength(2);
     expect(await migrated.runMigrations()).toHaveLength(0);
 
     const schema = async (source: DataSource) =>

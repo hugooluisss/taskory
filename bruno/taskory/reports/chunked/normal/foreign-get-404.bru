@@ -25,7 +25,7 @@ script:pre-request {
   const foreign = await bru.sendRequest({ method: "POST", url: baseUrl + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-foreign+" + Date.now() + "@example.com", name: "Chunked foreign", password } });
   bru.setVar("reportsToken", foreign.data.token);
   for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: baseUrl + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + owner.data.token }, data: { date: "2026-11-16", title: "Owner activity " + i } });
-  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + owner.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const job = await bru.sendRequest({ method: "POST", url: baseUrl + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + owner.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
   bru.setVar("reportId", job.data.id);
 }
 docs {

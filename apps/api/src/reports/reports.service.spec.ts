@@ -2,6 +2,7 @@ import { ActivitiesService } from "../activities/activities.service";
 import { Activity } from "../activities/entities/activity.entity";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { ReportsService } from "./reports.service";
+import { Logger } from "@nestjs/common";
 
 describe("Report generation", () => {
   let activities: jest.Mocked<
@@ -9,8 +10,8 @@ describe("Report generation", () => {
   >;
   let generator: {
     generate: jest.Mock;
-    listProviders: jest.Mock;
     hasProvider: jest.Mock;
+    configuration: jest.Mock;
   };
   let service: ReportsService;
   let jobs: {
@@ -25,6 +26,7 @@ describe("Report generation", () => {
     finishCancellation: jest.Mock;
     resumeQueued: jest.Mock;
   };
+  let runs: { save: jest.Mock; list: jest.Mock };
   const request: CreateReportDto = {
     from: "2026-01-01",
     to: "2026-01-31",
@@ -54,13 +56,14 @@ describe("Report generation", () => {
         markdown: "# Informe",
         provider: "ollama",
         model: "test",
+        promptTokens: 10,
+        completionTokens: 2,
+        totalTokens: 12,
       }),
-      listProviders: jest
-        .fn()
-        .mockResolvedValue([
-          { id: "ollama", defaultModel: "test", available: true },
-        ]),
       hasProvider: jest.fn().mockReturnValue(true),
+      configuration: jest
+        .fn()
+        .mockReturnValue({ provider: "ollama", model: "test" }),
     };
     jobs = {
       enqueue: jest
@@ -76,11 +79,13 @@ describe("Report generation", () => {
       finishCancellation: jest.fn(),
       resumeQueued: jest.fn(),
     };
+    runs = { save: jest.fn().mockResolvedValue(undefined), list: jest.fn() };
     service = new ReportsService(
       activities as unknown as ActivitiesService,
       generator as never,
       jobs as never,
       queue,
+      runs as never,
     );
   });
 
@@ -89,11 +94,44 @@ describe("Report generation", () => {
       markdown: "# Informe",
       provider: "ollama",
       model: "test",
+      promptTokens: 10,
+      completionTokens: 2,
+      totalTokens: 12,
+      costUsd: 0,
       activityCount: 1,
     });
     expect(generator.generate).toHaveBeenCalledWith(
       expect.objectContaining({ language: "es", style: "detailed" }),
     );
+  });
+
+  it("Does not record a failed run when saving a completed run fails", async () => {
+    const error = new Error("database unavailable");
+    runs.save.mockRejectedValue(error);
+    await expect(service.create("user", request)).rejects.toBe(error);
+    expect(runs.save).toHaveBeenCalledTimes(1);
+    expect(runs.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed" }),
+    );
+  });
+
+  it("Preserves the generation error and logs when failed-run recording fails", async () => {
+    const generationError = new Error("provider failed");
+    const recordingError = new Error("database unavailable");
+    const log = jest.spyOn(Logger.prototype, "error").mockImplementation();
+    generator.generate.mockRejectedValue(generationError);
+    runs.save.mockRejectedValue(recordingError);
+    try {
+      await expect(service.create("user", request)).rejects.toBe(
+        generationError,
+      );
+      expect(log).toHaveBeenCalledWith(
+        "Failed to record failed report run",
+        recordingError.stack,
+      );
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("Spanish detailed report", async () => {
@@ -104,9 +142,10 @@ describe("Report generation", () => {
     });
   });
 
-  it("No provider in request", async () => {
+  it("Uses configured provider and model", async () => {
     await service.create("user", request);
-    expect(generator.generate.mock.calls[0][0].provider).toBeUndefined();
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("provider");
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("model");
   });
 
   it("No activities", async () => {
@@ -147,12 +186,11 @@ describe("Report generation", () => {
     );
   });
 
-  it("Unknown provider", async () => {
+  it("Configured provider unavailable", async () => {
     generator.hasProvider.mockReturnValue(false);
-    activities.findReportSnapshot.mockResolvedValue([]);
     await expect(service.create("user", request)).rejects.toMatchObject({
-      status: 400,
-      response: { code: "UNKNOWN_PROVIDER" },
+      status: 502,
+      response: { code: "LLM_UNAVAILABLE" },
     });
     expect(activities.findReportSnapshot).not.toHaveBeenCalled();
   });
@@ -177,12 +215,6 @@ describe("Report generation", () => {
     const error = new Error("unexpected");
     generator.generate.mockRejectedValue(error);
     await expect(service.create("user", request)).rejects.toBe(error);
-  });
-
-  it("Unreachable provider", async () => {
-    await expect(service.listProviders()).resolves.toEqual([
-      { id: "ollama", defaultModel: "test", available: true },
-    ]);
   });
 
   it("Chunked generation", async () => {

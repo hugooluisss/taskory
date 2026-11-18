@@ -18,7 +18,7 @@ Taskory stores a user's daily work activities and generates AI reports from them
 - Paginated list endpoints (activities) return `{ "items": [], "total": number, "page": number, "limit": number }`; query `page` (default 1), `limit` (default 50, max 200). Small bounded lists (api-keys, connected-apps, report providers) return a plain array.
 - A user can have at most 20 active API keys (409 `API_KEY_LIMIT` beyond that).
 - Passwords: argon2 or bcrypt. Never log secrets. API keys are stored hashed; plaintext shown only once at creation.
-- Config via env vars: `JWT_SECRET`, `DATABASE_PATH`, `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`.
+- Config via env vars: `JWT_SECRET`, `DATABASE_PATH`, `OLLAMA_BASE_URL`, `DEEPSEEK_API_KEY`, `DEFAULT_LLM_PROVIDER`, `DEFAULT_LLM_MODEL`, `LLM_PRICE_INPUT_PER_MTOK`, `LLM_PRICE_OUTPUT_PER_MTOK`.
 
 ## Activity
 ```json
@@ -53,13 +53,13 @@ Taskory stores a user's daily work activities and generates AI reports from them
 | PATCH | /activities/:id | yes | partial Activity | 200 Activity |
 | DELETE | /activities/:id | yes | — | 204 |
 | GET | /activities/meta | yes | — | 200 `{projects:[], tags:[]}` distinct values of the user |
-| GET | /reports/providers | yes | — | 200 `[{id:"ollama",defaultModel,available}]` |
-| POST | /reports | yes | `{from,to,projects?,tags?,language:"es"|"en",provider?,model?,style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, activityCount}` |
+| POST | /reports | yes | `{from,to,projects?,tags?,language:"es"|"en",style?:"summary"|"detailed"}` | 200 `{markdown, provider, model, promptTokens, completionTokens, totalTokens, costUsd, activityCount}` |
+| GET | /reports/runs | yes | `page` (default 1), `limit` (default 50, max 200) | 200 paginated caller-owned report run history, newest first |
 
 Notes:
 - `/activities/meta` must be declared before `/activities/:id`.
-- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `projects?` (max 20; trimmed, non-empty names of at most 100 characters, duplicates removed; an activity matches if its project is ANY listed value; omitted/empty means all projects), `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `provider?`, `model?` (max 100 chars), `style?`. The provider is validated first: 400 `UNKNOWN_PROVIDER`. Then 400 `VALIDATION_ERROR` (inverted range or invalid projects), 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` (more than 300 activities in this phase; raised by change 03b), 502 `LLM_UNAVAILABLE` (provider down, timeout, HTTP error, invalid or EMPTY output). The provider is never called on 4xx.
-- `DEFAULT_LLM_MODEL` applies only when the resolved provider is the default provider; otherwise the provider's own default model is used.
+- `POST /reports` body: `from`, `to` (calendar dates, `from <= to`), `projects?` (max 20; trimmed, non-empty names of at most 100 characters, duplicates removed; an activity matches if its project is ANY listed value; omitted/empty means all projects), `tags?` (max 20; an activity matches if it has ANY of them, tags are normalized like on activity writes), `language` (`es`|`en`), `style?`. Provider and model are server-wide settings from `DEFAULT_LLM_PROVIDER` and `DEFAULT_LLM_MODEL`; callers cannot override them. The configured provider being unavailable returns 502 `LLM_UNAVAILABLE`. Other errors include 400 `VALIDATION_ERROR`, 422 `NO_ACTIVITIES`, 422 `RANGE_TOO_LARGE` and 502 `LLM_UNAVAILABLE`. The provider is never called on 4xx.
+- Every report execution is recorded, including failed executions, with provider, model, split token usage, and cost. Providers that omit usage count as zero. Completed asynchronous job responses and run history include `provider`, `model`, `promptTokens`, `completionTokens`, `totalTokens`, and `costUsd` (USD number). Cost uses `LLM_PRICE_INPUT_PER_MTOK` and `LLM_PRICE_OUTPUT_PER_MTOK`; unset rates default to zero for Ollama and USD 0.30/1.20 per million input/output tokens for DeepSeek. The estimate is an upper bound and ignores cache-hit and off-peak discounts; the database stores cost in integer micro-dollars.
 - Rate-limit `/auth/*` (e.g. @nestjs/throttler).
 
 ## OAuth for MCP clients (phase 04)
@@ -71,7 +71,7 @@ Auth: OAuth access token (primary, zero-config for users) or personal API key `t
 - `list_activities {from?, to?, project?, tag?, q?, limit?}`
 - `update_activity {id, ...partial}`
 - `delete_activity {id}`
-- `generate_report {from, to, projects?, language?, provider?, model?}`
+- `generate_report {from, to, projects?, language?, style?}`
 Env: `TASKORY_API_URL`.
 
 ## Architecture (mandatory)

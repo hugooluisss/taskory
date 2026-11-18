@@ -1,0 +1,37 @@
+meta {
+  name: List report run history
+  type: http
+  seq: 9
+}
+get {
+  url: {{baseUrl}}/reports/runs?page=1&limit=20
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/auth/register",
+    headers: { "Content-Type": "application/json" },
+    data: { email: "reports-runs+" + Date.now() + "@example.com", name: "Report runs", password: bru.getEnvVar("password") }
+  });
+  bru.setVar("reportsToken", user.data.token);
+}
+docs {
+  Spec scenario: report-usage-tracking / Read report run history / Own history.
+}
+tests {
+  test("lists paginated report runs for the caller", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.items).to.be.an("array");
+    expect(res.body.page).to.equal(1);
+    expect(res.body.limit).to.equal(20);
+    expect(res.body.total).to.be.a("number");
+  });
+}

@@ -10,19 +10,20 @@ export interface ReportGeneratorPort {
     to: string;
     projects?: string[];
     language: "es" | "en";
-    provider?: string;
-    model?: string;
     style: "summary" | "detailed";
-  }): Promise<{ markdown: string; provider: string; model: string }>;
-  hasProvider(id?: string): boolean;
-  listProviders(): Promise<
-    { id: string; defaultModel: string; available: boolean }[]
-  >;
+  }): Promise<{
+    markdown: string;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  }>;
+  hasProvider(): boolean;
+  configuration(): { provider: string; model: string };
   evaluateChunk(options: {
     activities: ReportActivity[];
     language: "es" | "en";
-    provider?: string;
-    model?: string;
     signal?: AbortSignal;
   }): Promise<ChunkEvaluation>;
   writeFinal(options: {
@@ -33,8 +34,13 @@ export interface ReportGeneratorPort {
     projects?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
-    provider?: string;
-    model?: string;
     signal?: AbortSignal;
-  }): Promise<{ markdown: string; provider: string; model: string }>;
+  }): Promise<{
+    markdown: string;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  }>;
 }

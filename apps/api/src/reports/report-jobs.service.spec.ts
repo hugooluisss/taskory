@@ -11,6 +11,7 @@ describe("Report job lifecycle", () => {
       | "ensureActiveJobIndex"
       | "markRunningInterrupted"
       | "findQueued"
+      | "findRunning"
       | "findActiveForUser"
       | "create"
       | "find"
@@ -45,6 +46,7 @@ describe("Report job lifecycle", () => {
       markRunningInterrupted: jest.fn().mockResolvedValue(undefined),
       ensureActiveJobIndex: jest.fn().mockResolvedValue(undefined),
       findQueued: jest.fn().mockResolvedValue([]),
+      findRunning: jest.fn().mockResolvedValue([]),
       findActiveForUser: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockResolvedValue(job),
       find: jest.fn().mockResolvedValue(job),

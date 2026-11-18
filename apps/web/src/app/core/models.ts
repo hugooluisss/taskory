@@ -53,8 +53,6 @@ export interface ReportRequest {
   projects?: string[];
   tags?: string[];
   language: Language;
-  provider?: string;
-  model?: string;
   style?: 'summary' | 'detailed';
 }
 
@@ -62,6 +60,10 @@ export interface ReportResult {
   markdown: string;
   provider: string;
   model: string;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  costUsd: number;
   activityCount: number;
 }
 
@@ -74,6 +76,10 @@ export type ReportJob =
       markdown: string;
       provider: string;
       model: string;
+      totalTokens: number;
+      promptTokens: number;
+      completionTokens: number;
+      costUsd: number;
       activityCount: number;
     }
   | {
@@ -87,12 +93,6 @@ export interface RetryReportJob {
   id: string;
   status: 'queued' | 'running';
   progress: { done: number; total: number };
-}
-
-export interface ProviderInfo {
-  id: string;
-  defaultModel: string;
-  available: boolean;
 }
 
 export interface ConnectedApp {

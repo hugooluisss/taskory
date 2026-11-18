@@ -8,7 +8,13 @@ describe("Provider abstraction", () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(
-        new Response(JSON.stringify({ message: { content: "ok" } })),
+        new Response(
+          JSON.stringify({
+            message: { content: "ok" },
+            prompt_eval_count: 3,
+            eval_count: 4,
+          }),
+        ),
       );
     const provider = new OllamaProvider({
       fetcher,
@@ -16,9 +22,12 @@ describe("Provider abstraction", () => {
       model: "model-x",
       timeoutMs: 42_000,
     });
-    await expect(provider.complete({ system: "s", prompt: "p" })).resolves.toBe(
-      "ok",
-    );
+    await expect(
+      provider.complete({ system: "s", prompt: "p" }),
+    ).resolves.toEqual({
+      text: "ok",
+      usage: { promptTokens: 3, completionTokens: 4, totalTokens: 7 },
+    });
     expect(fetcher).toHaveBeenCalledWith(
       "http://ollama/api/chat",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
@@ -51,7 +60,10 @@ describe("Provider abstraction", () => {
     const provider = new OllamaProvider({ fetcher, baseUrl: "http://ollama" });
     await expect(
       provider.complete({ system: "s", prompt: "p", json: true }),
-    ).resolves.toBe("  ");
+    ).resolves.toEqual({
+      text: "  ",
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    });
   });
 
   it("DeepSeek provider generates text through API", async () => {
@@ -59,19 +71,28 @@ describe("Provider abstraction", () => {
       .fn<typeof fetch>()
       .mockResolvedValue(
         new Response(
-          JSON.stringify({ choices: [{ message: { content: "ok" } }] }),
+          JSON.stringify({
+            choices: [{ message: { content: "ok" } }],
+            usage: { prompt_tokens: 6, completion_tokens: 3, total_tokens: 9 },
+          }),
         ),
       );
     const provider = new DeepSeekProvider({ fetcher, apiKey: "secret" });
-    await expect(provider.complete({ system: "s", prompt: "p" })).resolves.toBe(
-      "ok",
-    );
+    await expect(
+      provider.complete({ system: "s", prompt: "p" }),
+    ).resolves.toEqual({
+      text: "ok",
+      usage: { promptTokens: 6, completionTokens: 3, totalTokens: 9 },
+    });
     expect(fetcher).toHaveBeenCalledWith(
       "https://api.deepseek.com/chat/completions",
       expect.objectContaining({
         headers: expect.objectContaining({ authorization: "Bearer secret" }),
       }),
     );
+    expect(JSON.parse(String(fetcher.mock.calls[0][1]?.body))).toMatchObject({
+      model: "deepseek-flash",
+    });
   });
 
   it("DeepSeek provider requests JSON object mode when requested", async () => {
@@ -100,29 +121,15 @@ describe("Provider abstraction", () => {
     const provider = new DeepSeekProvider({ fetcher, apiKey: "secret" });
     await expect(
       provider.complete({ system: "s", prompt: "p", json: true }),
-    ).resolves.toBe("");
-  });
-
-  it("unreachable provider is listed unavailable", async () => {
-    const provider = new OllamaProvider({
-      fetcher: vi.fn<typeof fetch>().mockRejectedValue(new Error("offline")),
+    ).resolves.toEqual({
+      text: "",
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
     });
-    await expect(provider.isAvailable()).resolves.toBe(false);
   });
 
-  it("unreachable provider status is listed unavailable", async () => {
-    const provider = new OllamaProvider({
-      fetcher: vi
-        .fn<typeof fetch>()
-        .mockResolvedValue(new Response("", { status: 503 })),
-    });
-    await expect(provider.isAvailable()).resolves.toBe(false);
-  });
-
-  it("missing DeepSeek credentials report unavailable", async () => {
+  it("missing DeepSeek credentials fail with a controlled error", async () => {
     const fetcher = vi.fn<typeof fetch>();
     const provider = new DeepSeekProvider({ fetcher, apiKey: "" });
-    await expect(provider.isAvailable()).resolves.toBe(false);
     expect(fetcher).not.toHaveBeenCalled();
     await expect(
       provider.complete({ system: "", prompt: "" }),

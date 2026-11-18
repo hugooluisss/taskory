@@ -36,29 +36,31 @@ export class ReportGenerator {
       );
     this.defaultProvider =
       options.defaultProvider ?? process.env.DEFAULT_LLM_PROVIDER ?? "ollama";
-    this.defaultModel = options.defaultModel ?? process.env.DEFAULT_LLM_MODEL;
+    this.defaultModel =
+      options.defaultModel ??
+      (process.env.DEFAULT_LLM_MODEL?.trim() || undefined);
   }
 
-  async listProviders(): Promise<
-    { id: string; defaultModel: string; available: boolean }[]
-  > {
-    return Promise.all(
-      Object.values(this.providers).map(async (provider) => ({
-        id: provider.id,
-        defaultModel: provider.defaultModel,
-        available: await provider.isAvailable().catch(() => false),
-      })),
-    );
+  hasProvider(): boolean {
+    return Object.hasOwn(this.providers, this.defaultProvider);
   }
 
-  hasProvider(id = this.defaultProvider): boolean {
-    return Object.hasOwn(this.providers, id);
+  configuration(): { provider: string; model: string } {
+    const { provider, model } = this.resolveProvider();
+    return { provider: provider.id, model };
   }
 
   async generate(
     options: ReportOptions,
-  ): Promise<{ markdown: string; provider: string; model: string }> {
-    const providerId = options.provider ?? this.defaultProvider;
+  ): Promise<{
+    markdown: string;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  }> {
+    const providerId = this.defaultProvider;
     const provider = this.providers[providerId];
     if (!provider) {
       throw new UnknownProviderError(providerId);
@@ -66,37 +68,41 @@ export class ReportGenerator {
 
     const configuredDefaultModel =
       providerId === this.defaultProvider ? this.defaultModel : undefined;
-    const model =
-      options.model ?? configuredDefaultModel ?? provider.defaultModel;
+    const model = configuredDefaultModel ?? provider.defaultModel;
     const { system, prompt } = buildReportPrompt({
       ...options,
       style: options.style ?? "summary",
     });
 
+    let usage = emptyUsage();
     try {
-      const markdown = await provider.complete({ system, prompt, model });
-      if (!markdown.trim()) {
+      const completion = await provider.complete({ system, prompt, model });
+      usage = completion.usage;
+      if (!completion.text.trim()) {
         throw new Error("Provider returned empty content");
       }
-      return { markdown, provider: provider.id, model };
+      return {
+        markdown: completion.text,
+        provider: provider.id,
+        model,
+        ...usage,
+      };
     } catch (cause) {
-      throw new LlmUnavailableError(`${provider.id} completion failed`, {
-        cause,
-      });
+      throw Object.assign(
+        new LlmUnavailableError(`${provider.id} completion failed`, {
+          cause,
+        }),
+        usage,
+      );
     }
   }
 
   async evaluateChunk(options: {
     activities: (ReportOptions["activities"][number] & { id: string })[];
     language: "es" | "en";
-    provider?: string;
-    model?: string;
     signal?: AbortSignal;
   }): Promise<ChunkEvaluation> {
-    const { provider, model } = this.resolveProvider(
-      options.provider,
-      options.model,
-    );
+    const { provider, model } = this.resolveProvider();
     const prompt = buildChunkEvaluationPrompt(
       options.activities,
       options.language,
@@ -129,48 +135,86 @@ export class ReportGenerator {
     projects?: string[];
     language: "es" | "en";
     style: "summary" | "detailed";
-    provider?: string;
-    model?: string;
     signal?: AbortSignal;
-  }): Promise<{ markdown: string; provider: string; model: string }> {
-    const { provider, model } = this.resolveProvider(
-      options.provider,
-      options.model,
-    );
-    const memory = await consolidateMemory(
-      options.memory,
-      provider,
-      model,
-      options.language,
-      options.signal,
-      options,
-    );
-    const prompt = buildFinalReportPrompt({ ...options, memory });
+  }): Promise<{
+    markdown: string;
+    provider: string;
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  }> {
+    const { provider, model } = this.resolveProvider();
+    let consolidated: Awaited<ReturnType<typeof consolidateMemory>>;
+    try {
+      consolidated = await consolidateMemory(
+        options.memory,
+        provider,
+        model,
+        options.language,
+        options.signal,
+        options,
+      );
+    } catch (error) {
+      throw Object.assign(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          ...tokenUsage(error),
+        },
+      );
+    }
+    const prompt = buildFinalReportPrompt({
+      ...options,
+      memory: consolidated.memory,
+    });
+    let finalUsage = emptyUsage();
     try {
       if (options.signal?.aborted) throw new ReportCancelledError();
-      const markdown = await provider.complete({
+      const completion = await provider.complete({
         ...prompt,
         model,
         signal: options.signal,
       });
-      if (!markdown.trim()) {
+      finalUsage = completion.usage;
+      if (!completion.text.trim()) {
         throw new Error("Provider returned empty content");
       }
-      return { markdown, provider: provider.id, model };
+      return {
+        markdown: completion.text,
+        provider: provider.id,
+        model,
+        promptTokens: consolidated.promptTokens + finalUsage.promptTokens,
+        completionTokens:
+          consolidated.completionTokens + finalUsage.completionTokens,
+        totalTokens: consolidated.totalTokens + finalUsage.totalTokens,
+      };
     } catch (cause) {
       if (options.signal?.aborted || cause instanceof ReportCancelledError)
         throw new ReportCancelledError();
-      throw new LlmUnavailableError(`${provider.id} completion failed`, {
-        cause,
-      });
+      throw Object.assign(
+        new LlmUnavailableError(`${provider.id} completion failed`, {
+          cause,
+        }),
+        {
+          promptTokens:
+            consolidated.promptTokens +
+            finalUsage.promptTokens +
+            tokenUsage(cause).promptTokens,
+          completionTokens:
+            consolidated.completionTokens +
+            finalUsage.completionTokens +
+            tokenUsage(cause).completionTokens,
+          totalTokens:
+            consolidated.totalTokens +
+            finalUsage.totalTokens +
+            tokenUsage(cause).totalTokens,
+        },
+      );
     }
   }
 
-  private resolveProvider(
-    providerId?: string,
-    requestedModel?: string,
-  ): { provider: LlmProvider; model: string } {
-    const id = providerId ?? this.defaultProvider;
+  private resolveProvider(): { provider: LlmProvider; model: string } {
+    const id = this.defaultProvider;
     const provider = this.providers[id];
     if (!provider) {
       throw new UnknownProviderError(id);
@@ -179,7 +223,33 @@ export class ReportGenerator {
       id === this.defaultProvider ? this.defaultModel : undefined;
     return {
       provider,
-      model: requestedModel ?? configuredModel ?? provider.defaultModel,
+      model: configuredModel ?? provider.defaultModel,
     };
   }
+}
+
+function emptyUsage(): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  return { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+}
+
+function tokenUsage(error: unknown): {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+} {
+  if (typeof error !== "object" || error === null) return emptyUsage();
+  const source = error as Partial<ReturnType<typeof emptyUsage>>;
+  const value = (candidate: unknown) =>
+    Number.isInteger(candidate) && Number(candidate) >= 0
+      ? Number(candidate)
+      : 0;
+  return {
+    promptTokens: value(source.promptTokens),
+    completionTokens: value(source.completionTokens),
+    totalTokens: value(source.totalTokens),
+  };
 }

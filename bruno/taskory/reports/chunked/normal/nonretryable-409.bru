@@ -22,7 +22,7 @@ script:pre-request {
   const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "chunked-not-retry+" + Date.now() + "@example.com", name: "Chunked not retryable", password: bru.getEnvVar("password") } });
   bru.setVar("reportsToken", user.data.token);
   for (let i = 0; i < 101; i++) await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { date: "2026-11-16", title: "Retry activity " + i } });
-  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en", provider: "ollama" } });
+  const job = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers: { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token }, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
   let report;
   for (let attempt = 0; attempt < 60; attempt++) {
     report = await require("axios").get(bru.getEnvVar("baseUrl") + "/reports/" + job.data.id, { headers: { Authorization: "Bearer " + user.data.token } });
