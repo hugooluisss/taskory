@@ -1,0 +1,22 @@
+meta {
+  name: Unknown public share token returns 404
+  type: http
+  seq: 11
+}
+get {
+  url: {{baseUrl}}/shared/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+docs {
+  Public endpoint: an unknown token returns 404 without authentication.
+}
+tests {
+  test("returns 404 for an unknown share token", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal("NOT_FOUND");
+  });
+}

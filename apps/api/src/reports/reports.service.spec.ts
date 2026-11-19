@@ -3,10 +3,14 @@ import { Activity } from "../activities/entities/activity.entity";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { ReportsService } from "./reports.service";
 import { Logger } from "@nestjs/common";
+import { ReportJob } from "./entities/report-job.entity";
 
 describe("Report generation", () => {
   let activities: jest.Mocked<
-    Pick<ActivitiesService, "findReportSnapshot" | "findReportChunk" | "findReportProjects">
+    Pick<
+      ActivitiesService,
+      "findReportSnapshot" | "findReportChunk" | "findReportProjects"
+    >
   >;
   let generator: {
     generate: jest.Mock;
@@ -19,6 +23,11 @@ describe("Report generation", () => {
     get: jest.Mock;
     retry: jest.Mock;
     delete: jest.Mock;
+    createCompleted: jest.Mock;
+    list: jest.Mock;
+    update: jest.Mock;
+    clearMemory: jest.Mock;
+    findByShareHash: jest.Mock;
   };
   let queue: {
     enqueue: jest.Mock;
@@ -34,6 +43,38 @@ describe("Report generation", () => {
     language: "es",
     style: "detailed",
   };
+  const reportParams = {
+    from: "2026-01-01",
+    to: "2026-01-31",
+    language: "en" as const,
+    style: "summary" as const,
+  };
+  function reportJob(overrides: Partial<ReportJob> = {}): ReportJob {
+    return {
+      id: "report",
+      userId: "user",
+      status: "completed",
+      params: reportParams,
+      activityIds: ["activity"],
+      chunkSize: 100,
+      progressDone: 0,
+      progressTotal: 1,
+      markdown: null,
+      provider: "ollama",
+      model: "test",
+      errorCode: null,
+      errorChunk: null,
+      createdAt: new Date(),
+      finishedAt: null,
+      totalTokens: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      costMicros: 0,
+      shareTokenHash: null,
+      shareExpiresAt: null,
+      ...overrides,
+    };
+  }
   const activity = {
     id: "id",
     date: "2026-01-02",
@@ -61,9 +102,9 @@ describe("Report generation", () => {
     activities = {
       findReportSnapshot: jest.fn().mockResolvedValue([{ id: activity.id }]),
       findReportChunk: jest.fn().mockResolvedValue([activity]),
-      findReportProjects: jest.fn().mockResolvedValue([
-        { id: "p1", name: "A", description: null },
-      ]),
+      findReportProjects: jest
+        .fn()
+        .mockResolvedValue([{ id: "p1", name: "A", description: null }]),
     };
     generator = {
       generate: jest.fn().mockResolvedValue({
@@ -86,6 +127,11 @@ describe("Report generation", () => {
       get: jest.fn().mockResolvedValue({ id: "job" }),
       retry: jest.fn(),
       delete: jest.fn().mockResolvedValue(undefined),
+      createCompleted: jest.fn().mockResolvedValue({ id: "report-id" }),
+      list: jest.fn().mockResolvedValue([[], 0]),
+      update: jest.fn().mockResolvedValue(undefined),
+      clearMemory: jest.fn().mockResolvedValue(undefined),
+      findByShareHash: jest.fn().mockResolvedValue(null),
     };
     queue = {
       enqueue: jest.fn(),
@@ -118,6 +164,9 @@ describe("Report generation", () => {
       totalTokens: 12,
       costUsd: 0,
       activityCount: 1,
+      id: "report-id",
+      shareUrl: expect.stringContaining("/shared/"),
+      shareExpiresAt: expect.any(Date),
     });
     expect(generator.generate).toHaveBeenCalledWith(
       expect.objectContaining({ language: "es", style: "detailed" }),
@@ -162,23 +211,144 @@ describe("Report generation", () => {
   });
 
   it("Generate with custom prompt", async () => {
-    await service.create("user", { ...request, style: "custom", customPrompt: "  Group by project.  " });
-    expect(users.saveCustomReportPrompt).toHaveBeenCalledWith("user", "Group by project.");
-    expect(generator.generate).toHaveBeenCalledWith(expect.objectContaining({ style: "custom", customPrompt: "Group by project." }));
+    await service.create("user", {
+      ...request,
+      style: "custom",
+      customPrompt: "  Group by project.  ",
+    });
+    expect(users.saveCustomReportPrompt).toHaveBeenCalledWith(
+      "user",
+      "Group by project.",
+    );
+    expect(generator.generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        style: "custom",
+        customPrompt: "Group by project.",
+      }),
+    );
   });
 
   it("Prompt only matters for custom", async () => {
     await service.create("user", { ...request, customPrompt: "Ignored" });
     expect(users.saveCustomReportPrompt).not.toHaveBeenCalled();
-    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("customPrompt");
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty(
+      "customPrompt",
+    );
   });
 
   it("List styles returns saved custom prompt", async () => {
     users.findById.mockResolvedValue({ customReportPrompt: "Saved" });
     await expect(service.listStyles("user")).resolves.toMatchObject({
-      styles: [{ id: "summary", prompt: { es: expect.any(String), en: expect.any(String) } }, { id: "detailed", prompt: { es: expect.any(String), en: expect.any(String) } }],
+      styles: [
+        {
+          id: "summary",
+          prompt: { es: expect.any(String), en: expect.any(String) },
+        },
+        {
+          id: "detailed",
+          prompt: { es: expect.any(String), en: expect.any(String) },
+        },
+      ],
       customPrompt: "Saved",
     });
+  });
+
+  it("Lists summaries without markdown", async () => {
+    jobs.list.mockResolvedValue([
+      [
+        reportJob({
+          params: {
+            ...reportParams,
+            projects: [{ id: "p1", name: "Alpha", description: null }],
+          },
+        }),
+      ],
+      1,
+    ]);
+    await expect(service.list("user", 2, 10)).resolves.toMatchObject({
+      page: 2,
+      limit: 10,
+      total: 1,
+      items: [{ projects: [{ id: "p1", name: "Alpha" }], activityCount: 1 }],
+    });
+    expect(jobs.list).toHaveBeenCalledWith("user", 10, 10);
+  });
+
+  it("Returns custom prompt and localized error in detail", async () => {
+    jobs.get.mockResolvedValue(
+      reportJob({
+        params: { ...reportParams, style: "custom", customPrompt: "Custom" },
+        status: "failed",
+        errorCode: "UNKNOWN",
+        errorChunk: 2,
+      }),
+    );
+    const result = await service.detail("user", "report", "es-MX");
+    expect(result).toMatchObject({
+      markdown: null,
+      customPrompt: "Custom",
+      error: { code: "UNKNOWN", chunk: 2, message: expect.any(String) },
+      progress: { done: 0, total: 1 },
+    });
+  });
+
+  it("Renews the share token hash and expiry", async () => {
+    const result = await service.renewShare("user", "report");
+    expect(result.shareUrl).toMatch(
+      /^http:\/\/localhost:4200\/shared\/[A-Za-z0-9_-]{43}$/,
+    );
+    const update = jobs.update.mock.calls[0][2];
+    expect(update.shareTokenHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(update.shareTokenHash).not.toBe(result.shareUrl.split("/").at(-1));
+    expect(update.shareExpiresAt).toEqual(result.shareExpiresAt);
+  });
+
+  it("Regenerate with custom prompt keeps the report snapshot", async () => {
+    jobs.get.mockResolvedValue(reportJob({ status: "completed" }));
+    await expect(
+      service.regenerate("user", "report", {
+        style: "custom",
+        customPrompt: "  Group  ",
+      }),
+    ).resolves.toMatchObject({
+      id: "report",
+      status: "queued",
+      progress: { total: 1 },
+    });
+    expect(jobs.clearMemory).toHaveBeenCalledWith("user", "report");
+    expect(jobs.update).toHaveBeenCalledWith(
+      "user",
+      "report",
+      expect.objectContaining({
+        status: "queued",
+        params: expect.objectContaining({ customPrompt: "Group" }),
+      }),
+    );
+    expect(users.saveCustomReportPrompt).toHaveBeenCalledWith("user", "Group");
+    expect(queue.enqueue).toHaveBeenCalledWith("report", "user");
+  });
+
+  it("Regenerate refuses active reports and unavailable providers", async () => {
+    jobs.get.mockResolvedValue(reportJob({ status: "running" }));
+    await expect(
+      service.regenerate("user", "report", { style: "summary" }),
+    ).rejects.toMatchObject({ status: 409 });
+    jobs.get.mockResolvedValue(reportJob({ status: "completed" }));
+    generator.hasProvider.mockReturnValue(false);
+    await expect(
+      service.regenerate("user", "report", { style: "summary" }),
+    ).rejects.toMatchObject({ status: 502 });
+  });
+
+  it("Regenerate custom prompt validation follows saved prompt rules", async () => {
+    jobs.get.mockResolvedValue(reportJob({ status: "completed" }));
+    await expect(
+      service.regenerate("user", "report", {
+        style: "custom",
+        customPrompt: " ",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(users.saveCustomReportPrompt).not.toHaveBeenCalled();
   });
 
   it("Uses configured provider and model", async () => {
@@ -264,6 +434,8 @@ describe("Report generation", () => {
       id: "job",
       status: "queued",
       progress: { done: 0, total: 2 },
+      shareUrl: expect.stringContaining("/shared/"),
+      shareExpiresAt: expect.any(Date),
     });
     expect(activities.findReportChunk).not.toHaveBeenCalled();
     expect(generator.generate).not.toHaveBeenCalled();

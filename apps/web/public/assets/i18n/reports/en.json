@@ -62,5 +62,35 @@
     "message": "This report and its progress will be deleted.",
     "confirm": "Delete",
     "cancel": "Keep report"
+  },
+  "library": {
+    "title": "Reports",
+    "description": "Your saved reports",
+    "new": "New report",
+    "allProjects": "All projects",
+    "activities": "activities",
+    "empty": "No reports yet."
+  },
+  "detail": {
+    "back": "All reports",
+    "print": "Print report",
+    "delete": "Delete report",
+    "copy": "Copy markdown",
+    "prompt": "Report prompt",
+    "regenerate": "Regenerate",
+    "activitiesIncluded": "Activities included",
+    "expired": "This link has expired.",
+    "validUntil": "Link valid until",
+    "renew": "Renew link",
+    "metadata": "{{style}} · {{language}} · {{provider}} / {{model}} · {{tokens}} tokens · {{count}} activities",
+    "customPrompt": "Custom report prompt",
+    "language": "Report language",
+    "qrAlt": "QR code for the shared activities link"
+  },
+  "shared": {
+    "title": "Activities included",
+    "loading": "Loading shared report…",
+    "expired": "This share link has expired.",
+    "unknown": "This share link is unavailable."
   }
 }

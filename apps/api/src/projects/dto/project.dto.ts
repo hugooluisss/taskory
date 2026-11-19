@@ -14,7 +14,7 @@ export class CreateProjectDto {
   name!: string;
 
   @ValidateIf((_object, value) => value !== undefined && value !== null)
-  @Transform(({ value }) => typeof value === "string" ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   @MaxLength(1000)
   description?: string | null;
@@ -32,7 +32,7 @@ export class UpdateProjectDto {
   archived?: boolean;
 
   @ValidateIf((_object, value) => value !== undefined && value !== null)
-  @Transform(({ value }) => typeof value === "string" ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   @MaxLength(1000)
   description?: string | null;

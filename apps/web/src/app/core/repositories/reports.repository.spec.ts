@@ -46,4 +46,34 @@ describe('ReportsRepository', () => {
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
   });
+  it('lists reports with pagination', () => {
+    repository.list(2, 10).subscribe();
+    const request = http.expectOne('/api/v1/reports?page=2&limit=10');
+    expect(request.request.method).toBe('GET');
+    request.flush({ items: [], total: 0, page: 2, limit: 10 });
+  });
+  it('regenerates with the selected prompt', () => {
+    repository
+      .regenerate('r1', { style: 'custom', customPrompt: 'Focus', language: 'es' })
+      .subscribe();
+    const request = http.expectOne('/api/v1/reports/r1/regenerate');
+    expect(request.request.body).toEqual({
+      style: 'custom',
+      customPrompt: 'Focus',
+      language: 'es',
+    });
+    request.flush({});
+  });
+  it('renews the share URL', () => {
+    repository.renewShare('r1').subscribe();
+    const request = http.expectOne('/api/v1/reports/r1/share/renew');
+    expect(request.request.method).toBe('POST');
+    request.flush({ shareUrl: 'https://example/shared/t', shareExpiresAt: '2026-12-01' });
+  });
+  it('loads a public shared report', () => {
+    repository.getShared('a/b').subscribe();
+    const request = http.expectOne('/api/v1/shared/a%2Fb');
+    expect(request.request.method).toBe('GET');
+    request.flush({ period: { from: '', to: '' }, language: 'en', projects: [], activities: [] });
+  });
 });

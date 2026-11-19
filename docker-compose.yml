@@ -7,6 +7,7 @@ services:
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       PUBLIC_URL: ${PUBLIC_URL:?Set PUBLIC_URL in .env}
+      WEB_PUBLIC_URL: ${WEB_PUBLIC_URL:?Set WEB_PUBLIC_URL in .env}
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       DB_HOST: ${DB_HOST:-mysql}
       DB_PORT: ${DB_PORT:-3306}

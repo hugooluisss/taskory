@@ -29,6 +29,7 @@ export interface ActivityList {
 }
 
 export interface ReportResult {
+  id: string;
   markdown: string;
   provider: string;
   model: string;
@@ -37,6 +38,8 @@ export interface ReportResult {
   completionTokens: number;
   costUsd: number;
   activityCount: number;
+  shareUrl: string;
+  shareExpiresAt: string;
 }
 
 export interface ReportStyles {
@@ -51,6 +54,8 @@ export interface ReportJob {
   id: string;
   status: string;
   progress: { done: number; total: number };
+  shareUrl?: string;
+  shareExpiresAt?: string;
   markdown?: string;
   provider?: string;
   model?: string;
@@ -60,4 +65,29 @@ export interface ReportJob {
   costUsd?: number;
   activityCount?: number;
   error?: { code: string; chunk?: number };
+  [key: string]: unknown;
+}
+
+export interface ReportSummary {
+  id: string;
+  status: string;
+  from: string;
+  to: string;
+  language: string;
+  style: string;
+  projects: Array<{ id: string; name: string }>;
+  activityCount: number;
+  provider: string | null;
+  model: string | null;
+  totalTokens: number;
+  costUsd: number;
+  createdAt: string;
+  finishedAt: string | null;
+}
+
+export interface ReportList {
+  items: ReportSummary[];
+  total: number;
+  page: number;
+  limit: number;
 }

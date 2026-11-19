@@ -1,0 +1,40 @@
+meta {
+  name: Get report detail
+  type: http
+  seq: 6
+  tags: [requires-llm]
+}
+get {
+  url: {{baseUrl}}/reports/{{reportId}}
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+  Accept-Language: en
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "report-detail+" + Date.now() + "@example.com", name: "Report detail", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token };
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "Report detail activity" } });
+  const report = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
+  bru.setVar("reportId", report.data.id);
+}
+docs {
+  Gets a persisted report detail. Setup creates one report and requires an available LLM.
+}
+tests {
+  test("returns report detail without reissuing its share URL", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.id).to.equal(bru.getVar("reportId"));
+    expect(res.body).to.have.property("status");
+    expect(res.body).to.have.property("markdown");
+    expect(res.body).to.have.property("progress");
+    expect(res.body).to.have.property("shareExpiresAt");
+    expect(res.body).not.to.have.property("shareUrl");
+  });
+}

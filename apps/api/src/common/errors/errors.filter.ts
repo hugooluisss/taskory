@@ -37,12 +37,10 @@ export class ErrorsFilter implements ExceptionFilter {
     }
     if (path.startsWith("/oauth/") || path.startsWith("/.well-known/")) {
       if (exception instanceof OAuthError) {
-        response
-          .status(exception.httpStatus)
-          .json({
-            error: exception.error,
-            error_description: exception.description,
-          });
+        response.status(exception.httpStatus).json({
+          error: exception.error,
+          error_description: exception.description,
+        });
         return;
       }
       if (exception instanceof HttpException) {

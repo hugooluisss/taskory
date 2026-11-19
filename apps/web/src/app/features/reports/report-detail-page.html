@@ -1,0 +1,124 @@
+<main
+  class="mx-auto grid w-full min-w-0 max-w-5xl gap-5 px-4 py-6 sm:px-6"
+  *ngIf="report() as item"
+>
+  <div class="no-print flex min-w-0 flex-wrap items-center justify-between gap-2">
+    <a routerLink="/reports" class="link">{{ 'reports.detail.back' | transloco }}</a>
+    <div class="flex gap-2">
+      <button
+        class="btn btn-square btn-outline tooltip no-print"
+        [attr.aria-label]="'reports.detail.print' | transloco"
+        [attr.data-tip]="'reports.detail.print' | transloco"
+        (click)="print()"
+      >
+        <app-icon name="download" /></button
+      ><button
+        class="btn btn-square btn-error btn-outline tooltip no-print"
+        [attr.aria-label]="'reports.detail.delete' | transloco"
+        [attr.data-tip]="'reports.detail.delete' | transloco"
+        (click)="delete()"
+      >
+        <app-icon name="delete" />
+      </button>
+    </div>
+  </div>
+  <h1 class="min-w-0 break-words text-2xl font-bold">
+    {{ item.from }} – {{ item.to }} <span class="font-normal">{{ projectNames(item) }}</span>
+  </h1>
+  <p class="min-w-0 break-all text-sm text-base-content/70">
+    {{
+      'reports.detail.metadata'
+        | transloco
+          : {
+              style: styleLabel,
+              language: languageLabel,
+              provider: item.provider,
+              model: item.model,
+              tokens: item.totalTokens,
+              count: item.activityCount,
+            }
+    }}
+  </p>
+  @if (item.status === 'queued' || item.status === 'running' || item.status === 'failed') {
+    <app-report-progress
+      [job]="progress(item)"
+      [active]="item.status !== 'failed'"
+      (retry)="regenerate()"
+    />
+  }
+  @if (item.status === 'failed' && item.error) {
+    <p class="alert alert-error" role="alert">{{ item.error.message }}</p>
+  }
+  @if (result(); as rendered) {
+    <app-report-result [report]="rendered" [shareUrl]="item.shareUrl" />
+  }
+  <section class="no-print card min-w-0 gap-3 bg-base-100 p-5 shadow">
+    <h2 class="font-semibold">{{ 'reports.detail.prompt' | transloco }}</h2>
+    <p class="text-sm opacity-70">{{ 'reports.form.style' | transloco }}: {{ styleLabel }}</p>
+    <textarea
+      class="textarea textarea-bordered w-full max-w-full"
+      rows="6"
+      [attr.aria-label]="'reports.detail.customPrompt' | transloco"
+      maxlength="2000"
+      [ngModel]="promptText()"
+      (ngModelChange)="edited.set($event)"
+    ></textarea>
+    <select
+      class="select select-bordered w-full max-w-full"
+      [attr.aria-label]="'reports.detail.language' | transloco"
+      [ngModel]="language()"
+      (ngModelChange)="language.set($event)"
+    >
+      <option value="en">English</option>
+      <option value="es">Español</option></select
+    ><button class="btn btn-primary no-print w-fit" (click)="regenerate()">
+      {{ 'reports.detail.regenerate' | transloco }}
+    </button>
+  </section>
+  @if (item.status === 'completed') {
+    <section class="activities-included card gap-3 bg-base-100 p-5 shadow">
+      <h2>
+        {{ 'reports.detail.activitiesIncluded' | transloco }} —
+        {{ 'reports.detail.validUntil' | transloco }}
+        {{ item.shareExpiresAt | date: 'mediumDate' }}
+      </h2>
+      @if (expired) {
+        <p>{{ 'reports.detail.expired' | transloco }}</p>
+        <button
+          class="btn btn-square btn-outline tooltip no-print"
+          [attr.aria-label]="'reports.detail.renew' | transloco"
+          [attr.data-tip]="'reports.detail.renew' | transloco"
+          (click)="renew()"
+        >
+          <app-icon name="refresh" />
+        </button>
+      } @else if (item.shareUrl) {
+        <div class="flex flex-wrap items-center gap-4">
+          <img
+            class="shared-report-qr w-full max-w-full sm:w-auto"
+            [src]="qr()"
+            [alt]="'reports.detail.qrAlt' | transloco"
+            width="240"
+            height="240"
+          />
+          <a class="min-w-0 break-all" [href]="item.shareUrl">{{ item.shareUrl }}</a>
+        </div>
+      } @else {
+        <p>
+          {{ 'reports.detail.validUntil' | transloco }}
+          {{ item.shareExpiresAt | date: 'mediumDate' }}
+        </p>
+      }
+      @if (!expired) {
+        <button
+          class="btn btn-square btn-outline tooltip no-print"
+          [attr.aria-label]="'reports.detail.renew' | transloco"
+          [attr.data-tip]="'reports.detail.renew' | transloco"
+          (click)="renew()"
+        >
+          <app-icon name="refresh" />
+        </button>
+      }
+    </section>
+  }
+</main>

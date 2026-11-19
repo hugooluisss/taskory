@@ -44,18 +44,16 @@ describe("API key creation", () => {
 
   it("Key is never shown again", async () => {
     const repository = {
-      list: jest
-        .fn()
-        .mockResolvedValue([
-          {
-            id: "key-1",
-            name: "MCP",
-            prefix: "tk_abcd",
-            createdAt: new Date(),
-            lastUsedAt: null,
-            keyHash: "hash",
-          },
-        ]),
+      list: jest.fn().mockResolvedValue([
+        {
+          id: "key-1",
+          name: "MCP",
+          prefix: "tk_abcd",
+          createdAt: new Date(),
+          lastUsedAt: null,
+          keyHash: "hash",
+        },
+      ]),
     };
     const service = new ApiKeysService(
       repository as unknown as ApiKeysRepository,

@@ -11,9 +11,10 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);
   const apiBaseUrl = inject(ConfigService).apiBaseUrl;
   const isApiRequest = request.url.startsWith(apiBaseUrl);
+  const isSharedRequest = request.url.includes('/shared/');
   const token = auth.token();
   const authorized =
-    isApiRequest && token
+    isApiRequest && token && !isSharedRequest
       ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : request;
   return next(authorized).pipe(
@@ -33,7 +34,7 @@ export const apiErrorInterceptor: HttpInterceptorFn = (request, next) => {
         Object.entries(body).filter(([key]) => !['statusCode', 'code', 'message'].includes(key)),
       );
       const isAuthRequest = /\/auth\/(login|register)(\?|$)/.test(request.url);
-      if (isApiRequest && error.status === 401 && !isAuthRequest) {
+      if (isApiRequest && !isSharedRequest && error.status === 401 && !isAuthRequest) {
         auth.logout();
         void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
       }

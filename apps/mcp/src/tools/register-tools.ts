@@ -4,6 +4,7 @@ import type { ReportToolsService } from "../services/report-tools.service.js";
 import { registerDeleteActivity } from "./delete-activity.tool.js";
 import { registerGenerateReport } from "./generate-report.tool.js";
 import { registerGetReport } from "./get-report.tool.js";
+import { registerListReports } from "./list-reports.tool.js";
 import { registerListActivities } from "./list-activities.tool.js";
 import { registerListProjects } from "./list-projects.tool.js";
 import { registerLogActivity } from "./log-activity.tool.js";
@@ -27,4 +28,5 @@ export function registerTools(
   registerGenerateReport(server, reports);
   registerListReportStyles(server, reports);
   registerGetReport(server, reports);
+  registerListReports(server, reports);
 }

@@ -1,0 +1,41 @@
+meta {
+  name: Update project description
+  type: http
+  seq: 7
+}
+patch {
+  url: {{baseUrl}}/projects/{{describedProjectId}}
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{token}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "description": null
+  }
+}
+script:pre-request {
+  const project = await bru.sendRequest({
+    method: "POST",
+    url: bru.getEnvVar("baseUrl") + "/projects",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + bru.getVar("token") },
+    data: { name: "clear-description-" + Date.now(), description: "To clear" }
+  });
+  bru.setVar("describedProjectId", project.data.id);
+}
+docs {
+  Clears a project description by sending null.
+}
+tests {
+  test("clears the project description", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.id).to.equal(bru.getVar("describedProjectId"));
+    expect(res.body.description).to.equal(null);
+  });
+}

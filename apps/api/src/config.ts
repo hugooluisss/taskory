@@ -35,4 +35,32 @@ export function validateConfig(): void {
   getTrustProxyHops();
   getPublicUrl();
   getMcpPath();
+  getWebPublicUrl();
+}
+
+export function getWebPublicUrl(): string {
+  const value = process.env.WEB_PUBLIC_URL;
+  if (process.env.NODE_ENV === "production" && !value)
+    throw new Error("WEB_PUBLIC_URL is required in production");
+  if (!value) return "http://localhost:4200";
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(
+      "WEB_PUBLIC_URL must be an absolute HTTP(S) URL without a trailing slash",
+    );
+  }
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.username ||
+    parsed.password ||
+    value.endsWith("/") ||
+    parsed.search ||
+    parsed.hash
+  )
+    throw new Error(
+      "WEB_PUBLIC_URL must be an absolute HTTP(S) URL without a trailing slash",
+    );
+  return value;
 }

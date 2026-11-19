@@ -1,0 +1,35 @@
+meta {
+  name: Renew report share link
+  type: http
+  seq: 8
+  tags: [requires-llm]
+}
+post {
+  url: {{baseUrl}}/reports/{{reportId}}/share/renew
+  body: none
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "report-renew+" + Date.now() + "@example.com", name: "Renew report link", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token };
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "Shared report activity" } });
+  const report = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
+  bru.setVar("reportId", report.data.id);
+}
+docs {
+  Replaces the report's previous share token and returns a new 30-day link. Setup requires an available LLM.
+}
+tests {
+  test("returns a new share URL and expiry", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.shareUrl).to.match(/^https?:\/\/.+\/shared\/[A-Za-z0-9_-]{43}$/);
+    expect(new Date(res.body.shareExpiresAt).toString()).not.to.equal("Invalid Date");
+  });
+}

@@ -8,6 +8,7 @@ import {
   CHUNK_SIZE,
   reportActivityLimit,
   REPORT_SYNC_MAX_ACTIVITIES,
+  SHARE_EXPIRY_DAYS,
 } from "./constants";
 import { CreateReportDto } from "./dto/create-report.dto";
 import { REPORT_GENERATOR } from "./report-generator.provider";
@@ -20,6 +21,12 @@ import { ReportRunsRepository } from "./report-runs.repository";
 import { reportCostMicros } from "./report-cost";
 import { UsersService } from "../users/users.service";
 import { reportStylePrompts } from "@taskory/llm";
+import { createHash, randomBytes } from "node:crypto";
+import { pagination } from "../common/pagination/pagination";
+import { getWebPublicUrl } from "../config";
+import { ReportJob } from "./entities/report-job.entity";
+import { ReportJobParams } from "./entities/report-job-params";
+import { RegenerateReportDto } from "./dto/regenerate-report.dto";
 
 @Injectable()
 export class ReportsService {
@@ -71,18 +78,34 @@ export class ReportsService {
       input.customPrompt = customPrompt;
       await this.users.saveCustomReportPrompt(userId, customPrompt);
     }
+    const params: ReportJobParams = {
+      from: input.from,
+      to: input.to,
+      projectIds,
+      tags: input.tags,
+      language: input.language,
+      style: input.style ?? "summary",
+      projects,
+      ...(input.style === "custom" ? { customPrompt: input.customPrompt } : {}),
+    };
+    const shareToken = randomBytes(32).toString("base64url");
+    const shareTokenHash = hashToken(shareToken);
+    const shareExpiresAt = new Date(Date.now() + SHARE_EXPIRY_DAYS * 86400000);
     if (snapshot.length > REPORT_SYNC_MAX_ACTIVITIES) {
       const job = await this.jobs.enqueue(
         userId,
-        { ...input, projects, style: input.style ?? "summary" },
+        params,
         snapshot.map(({ id }) => id),
         CHUNK_SIZE,
+        { shareTokenHash, shareExpiresAt },
       );
       this.queue.enqueue(job.id, userId);
       return {
         id: job.id,
         status: job.status,
         progress: { done: 0, total: job.progressTotal },
+        shareUrl: `${getWebPublicUrl()}/shared/${shareToken}`,
+        shareExpiresAt,
       };
     }
     const activities = await this.activities.findReportChunk(
@@ -107,7 +130,9 @@ export class ReportsService {
         projects,
         language: input.language,
         style: input.style ?? "summary",
-        ...(input.style === "custom" ? { customPrompt: input.customPrompt } : {}),
+        ...(input.style === "custom"
+          ? { customPrompt: input.customPrompt }
+          : {}),
       });
     } catch (error) {
       const configured = this.generator.configuration();
@@ -148,9 +173,26 @@ export class ReportsService {
       throw error;
     }
     const costMicros = reportCostMicros(result.provider, result);
+    const completed = await this.jobs.createCompleted(userId, {
+      params,
+      activityIds: snapshot.map(({ id }) => id),
+      chunkSize: CHUNK_SIZE,
+      progressDone: 1,
+      progressTotal: 1,
+      markdown: result.markdown,
+      provider: result.provider,
+      model: result.model,
+      ...resultUsage(result),
+      costMicros,
+      finishedAt: new Date(),
+      shareTokenHash,
+      shareExpiresAt,
+      errorCode: null,
+      errorChunk: null,
+    });
     await this.runs.save({
       userId,
-      jobId: null,
+      jobId: completed.id,
       from: input.from,
       to: input.to,
       projectIds,
@@ -166,9 +208,139 @@ export class ReportsService {
       status: "completed",
     });
     return {
+      id: completed.id,
       ...result,
       costUsd: costMicros / 1_000_000,
       activityCount: activities.length,
+      shareUrl: `${getWebPublicUrl()}/shared/${shareToken}`,
+      shareExpiresAt,
+    };
+  }
+
+  async list(userId: string, page?: number, limit?: number) {
+    const paging = pagination(page, limit);
+    const [jobs, total] = await this.jobs.list(
+      userId,
+      paging.skip,
+      paging.limit,
+    );
+    return {
+      items: jobs.map((job) => this.summary(job)),
+      total,
+      page: paging.page,
+      limit: paging.limit,
+    };
+  }
+
+  async detail(userId: string, id: string, acceptLanguage?: string) {
+    const job = await this.jobs.get(userId, id);
+    const language = /^es(?:-|$)/i.test(acceptLanguage ?? "") ? "es" : "en";
+    return {
+      ...this.summary(job),
+      promptTokens: job.promptTokens,
+      completionTokens: job.completionTokens,
+      markdown: job.markdown,
+      ...(job.params.style === "custom"
+        ? { customPrompt: job.params.customPrompt }
+        : {}),
+      progress: { done: job.progressDone, total: job.progressTotal },
+      ...(job.errorCode
+        ? {
+            error: {
+              code: job.errorCode,
+              chunk: job.errorChunk,
+              message:
+                messages[language][job.errorCode] ??
+                messages[language][ERROR_CODES.INTERNAL_ERROR],
+            },
+          }
+        : {}),
+      shareExpiresAt: job.shareExpiresAt,
+    };
+  }
+
+  async renewShare(userId: string, id: string) {
+    const job = await this.jobs.get(userId, id);
+    const token = randomBytes(32).toString("base64url");
+    const expires = new Date(Date.now() + SHARE_EXPIRY_DAYS * 86400000);
+    await this.jobs.update(userId, id, {
+      shareTokenHash: hashToken(token),
+      shareExpiresAt: expires,
+    });
+    return {
+      shareUrl: `${getWebPublicUrl()}/shared/${token}`,
+      shareExpiresAt: expires,
+    };
+  }
+
+  async regenerate(userId: string, id: string, input: RegenerateReportDto) {
+    const job = await this.jobs.get(userId, id);
+    if (job.status === "queued" || job.status === "running")
+      throw new ApiException(409, ERROR_CODES.REPORT_IN_PROGRESS);
+    if (!this.generator.hasProvider())
+      throw new ApiException(502, ERROR_CODES.LLM_UNAVAILABLE);
+    let customPrompt: string | undefined;
+    if (input.style === "custom") {
+      customPrompt = input.customPrompt?.trim();
+      if (!customPrompt || customPrompt.length > 2000)
+        throw new ApiException(400, ERROR_CODES.VALIDATION_ERROR);
+      await this.users.saveCustomReportPrompt(userId, customPrompt);
+    }
+    const priorParams = { ...job.params };
+    delete priorParams.customPrompt;
+    const params = {
+      ...priorParams,
+      style: input.style,
+      language: input.language ?? job.params.language,
+      ...(input.style === "custom" ? { customPrompt } : {}),
+    };
+    await this.jobs.clearMemory(userId, id);
+    try {
+      await this.jobs.update(userId, id, {
+        params,
+        status: "queued",
+        markdown: null,
+        errorCode: null,
+        errorChunk: null,
+        progressDone: 0,
+        progressTotal: Math.ceil(job.activityIds.length / job.chunkSize),
+        finishedAt: null,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        costMicros: 0,
+      });
+      this.queue.enqueue(id, userId);
+    } catch (error) {
+      throw error;
+    }
+    return {
+      id,
+      status: "queued",
+      progress: {
+        done: 0,
+        total: Math.ceil(job.activityIds.length / job.chunkSize),
+      },
+    };
+  }
+
+  private summary(job: ReportJob) {
+    return {
+      id: job.id,
+      status: job.status,
+      from: job.params.from,
+      to: job.params.to,
+      language: job.params.language,
+      style: job.params.style,
+      projects:
+        job.params.projects?.map(({ id, name }) => ({ id, name })) ?? [],
+      activityCount: job.activityIds.length,
+      provider: job.provider,
+      model: job.model,
+      totalTokens: job.totalTokens,
+      costUsd: job.costMicros / 1_000_000,
+      createdAt: job.createdAt,
+      finishedAt: job.finishedAt,
     };
   }
 
@@ -241,6 +413,21 @@ export class ReportsService {
       this.queue.finishCancellation(id);
     }
   }
+}
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+function resultUsage(result: {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}) {
+  return {
+    promptTokens: result.promptTokens,
+    completionTokens: result.completionTokens,
+    totalTokens: result.totalTokens,
+  };
 }
 
 function usageOf(error: unknown): {

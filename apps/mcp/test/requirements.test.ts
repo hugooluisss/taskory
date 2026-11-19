@@ -876,6 +876,7 @@ describe("generate_report", () => {
           arguments: { from: "2026-02-01", to: "2026-02-28" },
         });
         expect(JSON.parse(contentText(result))).toEqual({
+          id: reportId,
           markdown: "# Report",
           provider: "local",
           model: "test-model",
@@ -884,6 +885,8 @@ describe("generate_report", () => {
           completionTokens: 3,
           costUsd: 0,
           activityCount: 3,
+          shareUrl: "https://taskory.test/shared/token",
+          shareExpiresAt: "2026-03-30T00:00:00.000Z",
         });
       },
     );
@@ -897,7 +900,7 @@ describe("Tool descriptions guide the agent", () => {
       validToken,
       async ({ client }) => {
         const listed = await client.listTools();
-        expect(listed.tools).toHaveLength(10);
+        expect(listed.tools).toHaveLength(11);
         for (const tool of listed.tools) {
           expect(tool.description).toMatch(/use/i);
           const properties = tool.inputSchema.properties as Record<
@@ -925,6 +928,8 @@ describe("Asynchronous reports", () => {
                 id: reportId,
                 status: "queued",
                 progress: { done: 0, total: 3 },
+                shareUrl: "https://taskory.test/shared/token",
+                shareExpiresAt: "2026-03-30T00:00:00.000Z",
               },
             }
           : defaultFakeTaskoryHandler(request),
@@ -942,6 +947,8 @@ describe("Asynchronous reports", () => {
           id: reportId,
           status: "queued",
           progress: { done: 0, total: 3 },
+          shareUrl: "https://taskory.test/shared/token",
+          shareExpiresAt: "2026-03-30T00:00:00.000Z",
         });
         expect(result.instruction).toContain(`get_report with id ${reportId}`);
       },

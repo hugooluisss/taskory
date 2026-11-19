@@ -28,13 +28,11 @@ describe("Authorization with PKCE", () => {
       decidedAt: null,
     };
     clients = {
-      find: jest
-        .fn()
-        .mockResolvedValue({
-          id: "client-1",
-          name: "Client",
-          redirectUris: [request.redirectUri],
-        }),
+      find: jest.fn().mockResolvedValue({
+        id: "client-1",
+        name: "Client",
+        redirectUris: [request.redirectUri],
+      }),
     };
     requests = {
       create: jest

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { LessThan, QueryFailedError, Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 import { ReportJob } from "./entities/report-job.entity";
 import { ActiveReportExistsError } from "./errors/active-report-exists.error";
 import { TransactionRunner } from "../common/database/transaction-runner";
@@ -23,6 +23,19 @@ export class ReportJobsRepository {
 
   find(userId: string, id: string): Promise<ReportJob | null> {
     return this.jobs.findOne({ where: { userId, id } });
+  }
+
+  list(userId: string, skip: number, take: number) {
+    return this.jobs.findAndCount({
+      where: { userId },
+      order: { createdAt: "DESC" },
+      skip,
+      take,
+    });
+  }
+
+  findByShareHash(hash: string) {
+    return this.jobs.findOne({ where: { shareTokenHash: hash } });
   }
 
   findActiveForUser(userId: string): Promise<ReportJob | null> {
@@ -51,7 +64,13 @@ export class ReportJobsRepository {
   }
 
   update(userId: string, id: string, values: Partial<ReportJob>) {
-    return this.jobs.update({ userId, id }, values as never);
+    return this.jobs
+      .update({ userId, id }, values as never)
+      .catch((error: unknown) => {
+        if (isActiveReportConstraint(error))
+          throw new ActiveReportExistsError({ cause: error });
+        throw error;
+      });
   }
 
   async retry(userId: string, id: string): Promise<boolean> {
@@ -97,14 +116,6 @@ export class ReportJobsRepository {
         .delete({ userId, id });
       return result.affected === 1;
     });
-  }
-
-  async purgeExpired(before: Date): Promise<{ id: string; userId: string }[]> {
-    const expired = await this.jobs.find({
-      select: { id: true, userId: true },
-      where: { finishedAt: LessThan(before) },
-    });
-    return expired;
   }
 }
 

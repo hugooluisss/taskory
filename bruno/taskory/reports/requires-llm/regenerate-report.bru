@@ -1,0 +1,44 @@
+meta {
+  name: Regenerate report
+  type: http
+  seq: 7
+  tags: [requires-llm]
+}
+post {
+  url: {{baseUrl}}/reports/{{reportId}}/regenerate
+  body: json
+  auth: bearer
+}
+auth:bearer {
+  token: {{reportsToken}}
+}
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+body:json {
+  {
+    "style": "detailed",
+    "language": "en"
+  }
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "report-regenerate+" + Date.now() + "@example.com", name: "Regenerate report", password: bru.getEnvVar("password") } });
+  bru.setVar("reportsToken", user.data.token);
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token };
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "Regeneration activity" } });
+  const report = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
+  bru.setVar("reportId", report.data.id);
+}
+docs {
+  Queues a new report run over the existing report's activity snapshot. Requires an available LLM.
+}
+tests {
+  test("returns the queued regeneration status", function() {
+    expect(res.status).to.equal(202);
+    expect(res.body.id).to.equal(bru.getVar("reportId"));
+    expect(res.body.status).to.equal("queued");
+    expect(res.body.progress.done).to.equal(0);
+    expect(res.body.progress.total).to.be.a("number");
+  });
+}

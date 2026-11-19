@@ -1,0 +1,56 @@
+<main class="mx-auto grid w-full max-w-4xl gap-6 px-4 py-8">
+  @if (state() === 'ready' && data(); as report) {
+    <header>
+      <h1 class="text-2xl font-bold">{{ 'reports.shared.title' | transloco }}</h1>
+      <p>{{ report.period.from }} – {{ report.period.to }}</p>
+      @if (report.projects.length) {
+        <div class="mt-2 flex flex-wrap gap-1">
+          @for (project of report.projects; track project) {
+            <span class="badge badge-outline">{{ project }}</span>
+          }
+        </div>
+      }
+    </header>
+    @for (activity of report.activities; track $index) {
+      @if ($first || report.activities[$index - 1].date !== activity.date) {
+        <h2 class="mt-4 text-xl font-semibold">{{ activity.date }}</h2>
+      }
+      <article class="card gap-2 bg-base-100 p-5 shadow">
+        <h3 class="font-semibold">{{ activity.title }}</h3>
+        @if (activity.description) {
+          <p class="whitespace-pre-wrap">{{ activity.description }}</p>
+        }
+        @if (activity.projects.length || activity.tags.length) {
+          <div class="flex flex-wrap items-center gap-1">
+            @for (project of activity.projects; track project) {
+              <span class="badge badge-outline">{{ project }}</span>
+            }
+            @for (tag of activity.tags; track tag) {
+              <span class="badge badge-ghost">{{ tag }}</span>
+            }
+          </div>
+        }
+        @for (url of activity.referenceUrls; track url) {
+          <a
+            [href]="url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="link link-primary break-all"
+            >{{ url }}</a
+          >
+        }
+      </article>
+    }
+  } @else {
+    <section class="alert" role="status">
+      {{
+        (state() === 'expired'
+          ? 'reports.shared.expired'
+          : state() === 'unknown'
+            ? 'reports.shared.unknown'
+            : 'reports.shared.loading'
+        ) | transloco
+      }}
+    </section>
+  }
+</main>

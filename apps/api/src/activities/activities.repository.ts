@@ -159,7 +159,11 @@ export class ActivitiesRepository {
       .innerJoin("activities", "activity", "activity.id = link.activityId")
       .where("activity.userId = :userId", { userId })
       .andWhere("activity.id IN (:...ids)", { ids })
-      .select(["project.id AS id", "project.name AS name", "project.description AS description"])
+      .select([
+        "project.id AS id",
+        "project.name AS name",
+        "project.description AS description",
+      ])
       .distinct(true)
       .getRawMany<{ id: string; name: string; description: string | null }>();
   }

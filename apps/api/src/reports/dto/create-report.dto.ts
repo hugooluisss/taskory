@@ -52,7 +52,7 @@ export class CreateReportDto {
   style: "summary" | "detailed" | "custom" = "summary";
 
   @ValidateIf((report: CreateReportDto) => report.style === "custom")
-  @Transform(({ value }) => typeof value === "string" ? value.trim() : value)
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   @MinLength(1)
   @MaxLength(2000)

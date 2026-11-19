@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { ReportToolsService } from "../services/report-tools.service.js";
 import { toolError, toolResult } from "./tool-result.js";
 import { bearerToken } from "./token.js";
-import { reportResult } from "./report-format.js";
 
 export function registerGetReport(
   server: McpServer,
@@ -11,7 +10,7 @@ export function registerGetReport(
 ): void {
   server.tool(
     "get_report",
-    "Check an asynchronous report job. Use with the id returned by generate_report when it says to check later.",
+    "Use a report id to read its status and Markdown.",
     {
       id: z
         .string()
@@ -21,11 +20,7 @@ export function registerGetReport(
     async (args, extra) => {
       try {
         const report = await service.get(bearerToken(extra), args.id);
-        return toolResult(
-          report.status === "completed" && report.markdown
-            ? reportResult(report)
-            : report,
-        );
+        return toolResult(report);
       } catch (error) {
         return toolError(error);
       }

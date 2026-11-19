@@ -95,4 +95,14 @@ describe('Access', () => {
     expect(caught).toBeInstanceOf(ApiError);
     expect((caught as ApiError).details).toEqual({});
   });
+  it('public shared links send no session token or redirect on unauthorized responses', () => {
+    TestBed.inject(HttpClient)
+      .get('/api/v1/shared/public-token')
+      .subscribe({ error: () => undefined });
+    const request = http.expectOne('/api/v1/shared/public-token');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(auth.logout).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
 });

@@ -25,11 +25,31 @@ export const routes: Routes = [
     data: { title: 'nav.activities' },
   },
   {
+    path: 'reports/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/reports/new-report-page').then((module) => module.NewReportPage),
+    data: { title: 'nav.reports' },
+  },
+  {
+    path: 'reports/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/reports/report-detail-page').then((module) => module.ReportDetailPage),
+    data: { title: 'nav.reports' },
+  },
+  {
     path: 'reports',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/reports/reports-page').then((module) => module.ReportsPage),
     data: { title: 'nav.reports' },
+  },
+  {
+    path: 'shared/:token',
+    loadComponent: () =>
+      import('./features/reports/shared-report-page').then((module) => module.SharedReportPage),
+    data: { public: true },
   },
   {
     path: 'projects',

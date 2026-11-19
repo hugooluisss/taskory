@@ -36,9 +36,14 @@ describe('Report generation', () => {
       costUsd: 0.0123,
       activityCount: 1,
     };
+    const sanitizerWarning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     fixture.detectChanges();
+    sanitizerWarning.mockRestore();
     expect(fixture.componentInstance.formattedCost).toBe('US$0.0123');
     const article: HTMLElement = fixture.nativeElement.querySelector('.markdown');
+    expect(article.classList.contains('min-w-0')).toBe(true);
+    expect(article.className).toContain('overflow-x-auto');
+    expect(article.className).toContain('[&_table]');
     const link = article.querySelector('a')!;
     expect(link.target).toBe('_blank');
     expect(link.rel).toBe('noopener noreferrer');

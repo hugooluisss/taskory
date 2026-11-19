@@ -26,6 +26,8 @@ import { ProjectsModule } from "./projects/projects.module";
 import { ProjectCatalog1771000000000 } from "./migrations/1771000000000-ProjectCatalog";
 import { ReportStyles1772000000000 } from "./migrations/1772000000000-ReportStyles";
 import { ProjectDescriptions1772100000000 } from "./migrations/1772100000000-ProjectDescriptions";
+import { ReportSharing1772200000000 } from "./migrations/1772200000000-ReportSharing";
+import { SharedReportsModule } from "./shared-reports/shared-reports.module";
 
 export function databaseOptions() {
   const required = (name: string) => {
@@ -63,6 +65,7 @@ export function databaseOptions() {
       ProjectCatalog1771000000000,
       ReportStyles1772000000000,
       ProjectDescriptions1772100000000,
+      ReportSharing1772200000000,
     ],
     synchronize: false,
     migrationsRun: true,
@@ -82,6 +85,7 @@ export function databaseOptions() {
     OAuthModule,
     ConnectedAppsModule,
     OAuthHttpModule,
+    SharedReportsModule,
   ],
 })
 export class AppModule {}

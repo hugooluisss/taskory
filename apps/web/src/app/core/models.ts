@@ -74,6 +74,9 @@ export interface ReportStyles {
 }
 
 export interface ReportResult {
+  id?: string;
+  shareUrl?: string;
+  shareExpiresAt?: string;
   markdown: string;
   provider: string;
   model: string;
@@ -110,6 +113,46 @@ export interface RetryReportJob {
   id: string;
   status: 'queued' | 'running';
   progress: { done: number; total: number };
+}
+
+export interface ReportSummary {
+  id: string;
+  status: ReportJob['status'];
+  from: string;
+  to: string;
+  language: Language;
+  style: ReportStyle;
+  projects: { id: string; name: string }[];
+  activityCount: number;
+  provider: string | null;
+  model: string | null;
+  totalTokens: number;
+  costUsd: number;
+  createdAt: string;
+  finishedAt: string | null;
+}
+export interface ReportDetail extends ReportSummary {
+  promptTokens: number;
+  completionTokens: number;
+  markdown: string | null;
+  progress: { done: number; total: number };
+  shareExpiresAt: string | null;
+  customPrompt?: string;
+  error?: { code: string; chunk: number | null; message: string };
+  shareUrl?: string;
+}
+export interface SharedReport {
+  period: { from: string; to: string };
+  language: Language;
+  projects: string[];
+  activities: {
+    date: string;
+    title: string;
+    description: string | null;
+    projects: string[];
+    tags: string[];
+    referenceUrls: string[];
+  }[];
 }
 
 export interface ConnectedApp {

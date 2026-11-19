@@ -64,3 +64,31 @@
     outline-offset: 2px;
   }
 }
+
+@media (max-width: 639px) {
+  .tooltip::before,
+  .tooltip::after {
+    display: none;
+  }
+}
+
+@media print {
+  .no-print,
+  button,
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+
+  header.navbar,
+  app-confirm-dialog,
+  app-toast {
+    display: none !important;
+  }
+
+  .shared-report-qr {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

@@ -17,10 +17,14 @@ describe("Report job lifecycle", () => {
       | "update"
       | "retry"
       | "remove"
-      | "purgeExpired"
+      | "list"
+      | "findByShareHash"
+      | "findQueuedJob"
     >
   >;
-  let memory: jest.Mocked<Pick<ReportMemoryRepository, "list" | "save">>;
+  let memory: jest.Mocked<
+    Pick<ReportMemoryRepository, "list" | "save" | "clear">
+  >;
   let service: ReportJobsService;
   const job = {
     id: "job-id",
@@ -51,11 +55,14 @@ describe("Report job lifecycle", () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       retry: jest.fn().mockResolvedValue(true),
       remove: jest.fn().mockResolvedValue(true),
-      purgeExpired: jest.fn().mockResolvedValue([]),
+      list: jest.fn().mockResolvedValue([[], 0]),
+      findByShareHash: jest.fn().mockResolvedValue(null),
+      findQueuedJob: jest.fn().mockResolvedValue(job),
     };
     memory = {
       list: jest.fn().mockResolvedValue([]),
       save: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockResolvedValue(undefined),
     };
     service = new ReportJobsService(repository as never, memory as never);
   });
@@ -137,14 +144,6 @@ describe("Report job lifecycle", () => {
     expect(repository.remove).toHaveBeenCalledWith("user-id", "job-id");
   });
 
-  it("Retention purges expired jobs and memory", async () => {
-    repository.purgeExpired.mockResolvedValue([
-      { id: "expired", userId: "user-id" },
-    ]);
-    await service.purgeExpired();
-    expect(repository.remove).toHaveBeenCalledWith("user-id", "expired");
-  });
-
   it("Passes memory and progress operations through their repositories", async () => {
     const row = { reportId: "job-id", userId: "user-id" } as never;
     await service.listQueued();
@@ -155,5 +154,34 @@ describe("Report job lifecycle", () => {
     expect(memory.list).toHaveBeenCalledWith("user-id", "job-id");
     expect(memory.save).toHaveBeenCalledWith("user-id", row);
     expect(repository.update).toHaveBeenCalledTimes(2);
+  });
+
+  it("Passes completed creation, list, and share lookup to repositories", async () => {
+    await service.createCompleted("user-id", { params, activityIds: ["a"] });
+    await service.list("user-id", 0, 10);
+    await service.findByShareHash("hash");
+    await service.queuedForDispatch("user-id", "job-id");
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed", userId: "user-id" }),
+    );
+    expect(repository.list).toHaveBeenCalledWith("user-id", 0, 10);
+    expect(repository.findByShareHash).toHaveBeenCalledWith("hash");
+    expect(repository.findQueuedJob).toHaveBeenCalledWith("user-id", "job-id");
+  });
+
+  it("Clears report memory before regeneration", async () => {
+    await service.clearMemory("user-id", "job-id");
+    expect(memory.clear).toHaveBeenCalledWith("user-id", "job-id");
+  });
+
+  it("Maps regeneration active-user conflicts to REPORT_IN_PROGRESS", async () => {
+    repository.update.mockRejectedValue(new ActiveReportExistsError());
+    repository.findActiveForUser.mockResolvedValue(job);
+    await expect(
+      service.update("user-id", "job-id", { status: "queued" }),
+    ).rejects.toMatchObject({
+      status: 409,
+      response: { code: "REPORT_IN_PROGRESS", id: "job-id" },
+    });
   });
 });

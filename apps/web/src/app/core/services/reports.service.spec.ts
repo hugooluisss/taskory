@@ -15,6 +15,15 @@ describe('ReportsService', () => {
   const repository = {
     create: vi.fn(() => of(new HttpResponse({ status: 200, body: { markdown: 'done' } }))),
     getJob: vi.fn(() => of(completed)),
+    list: vi.fn(() => of({ items: [], total: 0, page: 1, limit: 10 })),
+    getDetail: vi.fn(() => of({ id: 'r1' })),
+    regenerate: vi.fn(() => of({ id: 'r1', status: 'queued', progress: { done: 0, total: 1 } })),
+    renewShare: vi.fn(() =>
+      of({ shareUrl: 'https://example/shared/x', shareExpiresAt: '2026-12-01' }),
+    ),
+    getShared: vi.fn(() =>
+      of({ period: { from: '', to: '' }, language: 'en', projects: [], activities: [] }),
+    ),
     retryJob: vi.fn(() => of(completed)),
     deleteJob: vi.fn(() => of(undefined)),
   };
@@ -159,5 +168,21 @@ describe('ReportsService', () => {
     service.delete('j').subscribe();
     expect(repository.retryJob).toHaveBeenCalledWith('j');
     expect(repository.deleteJob).toHaveBeenCalledWith('j');
+  });
+  it('delegates report library and sharing operations', () => {
+    service.list(2).subscribe();
+    service.detail('r1').subscribe();
+    service.regenerate('r1', 'custom', 'es', 'Focus').subscribe();
+    service.renewShare('r1').subscribe();
+    service.shared('x').subscribe();
+    expect(repository.list).toHaveBeenCalledWith(2);
+    expect(repository.getDetail).toHaveBeenCalledWith('r1');
+    expect(repository.regenerate).toHaveBeenCalledWith('r1', {
+      style: 'custom',
+      language: 'es',
+      customPrompt: 'Focus',
+    });
+    expect(repository.renewShare).toHaveBeenCalledWith('r1');
+    expect(repository.getShared).toHaveBeenCalledWith('x');
   });
 });

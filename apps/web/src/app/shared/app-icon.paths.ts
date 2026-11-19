@@ -48,6 +48,7 @@ export const APP_ICON_PATHS = {
     'M6.2 6.2C3.7 8 2.25 12 2.25 12s3.5 7 9.75 7c1.4 0 2.65-.35 3.75-.9',
   ],
   download: ['M12 3v12m0 0 4-4m-4 4-4-4', 'M4 17v3h16v-3'],
+  refresh: ['M20 7v5h-5', 'M4 17v-5h5', 'M5.6 9A7 7 0 0 1 18 6l2 6', 'M4 12l2 6a7 7 0 0 0 12.4-3'],
 } as const;
 
 export type AppIconName = keyof typeof APP_ICON_PATHS;

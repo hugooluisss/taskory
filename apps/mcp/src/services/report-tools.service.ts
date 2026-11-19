@@ -1,5 +1,10 @@
 import type { TaskoryApiClient } from "../repositories/taskory-api.client.js";
-import type { ReportJob, ReportResult, ReportStyles } from "../types/api.js";
+import type {
+  ReportJob,
+  ReportList,
+  ReportResult,
+  ReportStyles,
+} from "../types/api.js";
 
 export class UnknownProjectError extends Error {
   constructor(name: string) {
@@ -58,6 +63,10 @@ export class ReportToolsService {
 
   listStyles(token: string): Promise<ReportStyles> {
     return this.api.listReportStyles(token);
+  }
+
+  list(token: string, page?: number, limit?: number): Promise<ReportList> {
+    return this.api.listReports(token, { page, limit });
   }
 
   get(token: string, id: string): Promise<ReportJob> {

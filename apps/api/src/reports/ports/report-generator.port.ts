@@ -3,7 +3,11 @@ import { ChunkEvaluation } from "./chunk-evaluation";
 import { MemoryChunk } from "./memory-chunk";
 import { ReportTotals } from "./report-totals";
 
-export interface ReportProject { id: string; name: string; description: string | null }
+export interface ReportProject {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 export interface ReportGeneratorPort {
   generate(options: {

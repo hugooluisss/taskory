@@ -189,19 +189,29 @@ describe("Projects involved in a report", () => {
     const selected = [{ id: "p1", name: "Core", description: "Platform" }];
     const projects = { getMany: jest.fn().mockResolvedValue(selected) };
     const repository = fakeRepository();
-    const service = new ActivitiesService(repository, () => new Date(), projects as never);
+    const service = new ActivitiesService(
+      repository,
+      () => new Date(),
+      projects as never,
+    );
 
-    await expect(service.findReportProjects("u1", ["a1"], ["p1"])).resolves.toEqual(selected);
+    await expect(
+      service.findReportProjects("u1", ["a1"], ["p1"]),
+    ).resolves.toEqual(selected);
     expect(projects.getMany).toHaveBeenCalledWith("u1", ["p1"]);
     expect(repository.findReportProjects).not.toHaveBeenCalled();
   });
 
   it("Projects linked to included activities when none are selected", async () => {
     const linked = [{ id: "p1", name: "Core", description: "Platform" }];
-    const repository = fakeRepository({ findReportProjects: jest.fn().mockResolvedValue(linked) });
+    const repository = fakeRepository({
+      findReportProjects: jest.fn().mockResolvedValue(linked),
+    });
     const service = createService(repository);
 
-    await expect(service.findReportProjects("u1", ["a1"], [])).resolves.toEqual(linked);
+    await expect(service.findReportProjects("u1", ["a1"], [])).resolves.toEqual(
+      linked,
+    );
     expect(repository.findReportProjects).toHaveBeenCalledWith("u1", ["a1"]);
   });
 });

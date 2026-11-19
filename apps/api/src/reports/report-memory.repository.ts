@@ -32,6 +32,10 @@ export class ReportMemoryRepository {
   async remove(userId: string, reportId: string): Promise<void> {
     await this.memory.delete({ userId, reportId });
   }
+
+  clear(userId: string, reportId: string): Promise<unknown> {
+    return this.memory.delete({ userId, reportId });
+  }
 }
 
 function isMemoryForeignKeyFailure(error: unknown): boolean {

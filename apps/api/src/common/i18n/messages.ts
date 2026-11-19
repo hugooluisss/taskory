@@ -16,6 +16,7 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.LLM_UNAVAILABLE]: "LLM provider is unavailable",
     [ERROR_CODES.REPORT_IN_PROGRESS]: "A report is already in progress",
     [ERROR_CODES.REPORT_NOT_RETRYABLE]: "Only failed reports can be retried",
+    [ERROR_CODES.SHARE_EXPIRED]: "This share link has expired",
     [ERROR_CODES.INVALID_LLM_OUTPUT]: "The LLM returned invalid output",
   },
   es: {
@@ -37,6 +38,7 @@ export const messages: Record<"en" | "es", Record<string, string>> = {
     [ERROR_CODES.REPORT_IN_PROGRESS]: "Ya hay un informe en curso",
     [ERROR_CODES.REPORT_NOT_RETRYABLE]:
       "Solo se pueden reintentar informes fallidos",
+    [ERROR_CODES.SHARE_EXPIRED]: "Este enlace para compartir ha caducado",
     [ERROR_CODES.INVALID_LLM_OUTPUT]:
       "El proveedor de IA devolvió una respuesta no válida",
   },

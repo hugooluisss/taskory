@@ -1,4 +1,4 @@
-import { getTrustProxyHops, validateConfig } from "./config";
+import { getTrustProxyHops, getWebPublicUrl, validateConfig } from "./config";
 
 const originalEnv = {
   JWT_SECRET: process.env.JWT_SECRET,
@@ -10,6 +10,8 @@ const originalEnv = {
   DB_NAME: process.env.DB_NAME,
   DB_USER: process.env.DB_USER,
   DB_PASSWORD: process.env.DB_PASSWORD,
+  WEB_PUBLIC_URL: process.env.WEB_PUBLIC_URL,
+  NODE_ENV: process.env.NODE_ENV,
 };
 
 afterEach(() => {
@@ -74,5 +76,25 @@ describe("TRUST_PROXY_HOPS", () => {
     process.env.PUBLIC_URL = "https://taskory.example";
     process.env.MCP_PATH = "/mcp/";
     expect(() => validateConfig()).toThrow("MCP_PATH");
+  });
+});
+
+describe("WEB_PUBLIC_URL", () => {
+  it("accepts an absolute URL with an optional path and no trailing slash", () => {
+    process.env.WEB_PUBLIC_URL = "https://example.test/taskory-web";
+    expect(getWebPublicUrl()).toBe("https://example.test/taskory-web");
+  });
+
+  it("rejects a trailing slash", () => {
+    process.env.WEB_PUBLIC_URL = "https://example.test/taskory-web/";
+    expect(() => getWebPublicUrl()).toThrow("without a trailing slash");
+  });
+
+  it("is required in production", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.WEB_PUBLIC_URL;
+    expect(() => getWebPublicUrl()).toThrow(
+      "WEB_PUBLIC_URL is required in production",
+    );
   });
 });

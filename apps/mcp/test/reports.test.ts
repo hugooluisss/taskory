@@ -88,6 +88,7 @@ describe("generate_report 200 response", () => {
           ),
         );
         expect(result).toEqual({
+          id: reportId,
           markdown: "# Report",
           provider: "local",
           model: "test-model",
@@ -96,6 +97,8 @@ describe("generate_report 200 response", () => {
           completionTokens: 3,
           costUsd: 0,
           activityCount: 3,
+          shareUrl: "https://taskory.test/shared/token",
+          shareExpiresAt: "2026-03-30T00:00:00.000Z",
         });
       },
     );
@@ -181,6 +184,57 @@ describe("Asynchronous reports", () => {
         expect(result).toMatchObject({
           error: { code: "LLM_UNAVAILABLE", chunk: 2 },
         });
+      },
+    );
+  });
+});
+
+describe("Report library", () => {
+  it("lists paginated summaries without markdown", async () => {
+    await withMcpClient(
+      defaultFakeTaskoryHandler,
+      "report-token",
+      async ({ client, system }) => {
+        const result = JSON.parse(
+          contentText(
+            await client.callTool({
+              name: "list_reports",
+              arguments: { page: 2, limit: 10 },
+            }),
+          ),
+        );
+        expect(result).toMatchObject({ total: 1, page: 1, limit: 50 });
+        expect(result.items[0]).not.toHaveProperty("markdown");
+        expect(
+          system.apiRequests.find((request) =>
+            request.url.startsWith("/api/v1/reports?"),
+          )?.url,
+        ).toBe("/api/v1/reports?page=2&limit=10");
+      },
+    );
+  });
+
+  it("returns a clear API 404 for an unknown or other user's report", async () => {
+    await withMcpClient(
+      (request) =>
+        request.url.endsWith(reportId)
+          ? {
+              status: 404,
+              body: {
+                statusCode: 404,
+                code: "NOT_FOUND",
+                message: "Report was not found.",
+              },
+            }
+          : defaultFakeTaskoryHandler(request),
+      "report-token",
+      async ({ client }) => {
+        const result = await client.callTool({
+          name: "get_report",
+          arguments: { id: reportId },
+        });
+        expect(result.isError).toBe(true);
+        expect(contentText(result)).toContain("NOT_FOUND: Report was not found.");
       },
     );
   });

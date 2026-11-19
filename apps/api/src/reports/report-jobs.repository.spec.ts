@@ -11,6 +11,35 @@ import { ReportMemoryRepository } from "./report-memory.repository";
 import { ActiveReportExistsError } from "./errors/active-report-exists.error";
 import { ReportNotFoundForMemoryError } from "./errors/report-not-found-for-memory.error";
 
+describe("Report listing and share lookup queries", () => {
+  it("Scopes and paginates report rows newest first", async () => {
+    const findAndCount = jest.fn().mockResolvedValue([[], 0]);
+    const repository = new ReportJobsRepository(
+      { findAndCount } as never,
+      {} as never,
+    );
+    await repository.list("owner", 10, 5);
+    expect(findAndCount).toHaveBeenCalledWith({
+      where: { userId: "owner" },
+      order: { createdAt: "DESC" },
+      skip: 10,
+      take: 5,
+    });
+  });
+
+  it("Looks up shares by token hash only", async () => {
+    const findOne = jest.fn().mockResolvedValue(null);
+    const repository = new ReportJobsRepository(
+      { findOne } as never,
+      {} as never,
+    );
+    await repository.findByShareHash("sha256-hash");
+    expect(findOne).toHaveBeenCalledWith({
+      where: { shareTokenHash: "sha256-hash" },
+    });
+  });
+});
+
 describe("Report job repository", () => {
   let source: DataSource;
   let jobs: ReportJobsRepository;
@@ -93,23 +122,16 @@ describe("Report job repository", () => {
     );
   });
 
-  it("Purges only finished reports older than the retention cutoff", async () => {
-    const expired = await createJob("owner", "completed");
-    const recent = await createJob("owner", "completed");
-    const active = await createJob("owner", "running");
-    await source.getRepository(ReportJob).update(expired.id, {
-      finishedAt: new Date(Date.now() - 31 * 86400000),
-    });
-    await source.getRepository(ReportJob).update(recent.id, {
-      finishedAt: new Date(Date.now() - 2 * 86400000),
-    });
+  it("Lists reports regardless of age", async () => {
+    const old = await createJob("owner", "completed");
     await source
       .getRepository(ReportJob)
-      .update(active.id, { finishedAt: null });
-    await expect(
-      jobs.purgeExpired(new Date(Date.now() - 30 * 86400000)),
-    ).resolves.toEqual([
-      expect.objectContaining({ id: expired.id, userId: "owner" }),
+      .update(old.id, {
+        createdAt: new Date(Date.now() - 31 * 86400000),
+      } as never);
+    await expect(jobs.list("owner", 0, 50)).resolves.toMatchObject([
+      [{ id: old.id }],
+      1,
     ]);
   });
 
@@ -159,6 +181,8 @@ describe("Report job repository", () => {
       errorCode: null,
       errorChunk: null,
       finishedAt: null,
+      shareTokenHash: null,
+      shareExpiresAt: null,
     });
   }
 

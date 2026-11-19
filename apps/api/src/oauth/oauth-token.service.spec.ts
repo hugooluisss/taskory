@@ -52,14 +52,12 @@ describe("Token issuance and revocation", () => {
       findByHash: jest.fn().mockImplementation(async () => ({ ...code })),
     };
     authorizations = {
-      findById: jest
-        .fn()
-        .mockResolvedValue({
-          id: "authorization-1",
-          clientId: "client-1",
-          userId: "user-1",
-          createdAt: now,
-        }),
+      findById: jest.fn().mockResolvedValue({
+        id: "authorization-1",
+        clientId: "client-1",
+        userId: "user-1",
+        createdAt: now,
+      }),
       revokeAuthorizationById: jest.fn().mockResolvedValue(true),
       touchLastUsed: jest.fn().mockResolvedValue(true),
     };
@@ -91,14 +89,12 @@ describe("Token issuance and revocation", () => {
       authorizations as never,
       tokens as never,
       {
-        findById: jest
-          .fn()
-          .mockResolvedValue({
-            id: "user-1",
-            email: "u@example.com",
-            name: "U",
-            language: "en",
-          }),
+        findById: jest.fn().mockResolvedValue({
+          id: "user-1",
+          email: "u@example.com",
+          name: "U",
+          language: "en",
+        }),
       } as never,
       () => new Date(now),
     );

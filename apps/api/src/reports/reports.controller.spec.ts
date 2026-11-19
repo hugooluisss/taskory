@@ -5,7 +5,9 @@ describe("List styles", () => {
     const result = { styles: [], customPrompt: "Saved" };
     const service = { listStyles: jest.fn().mockResolvedValue(result) };
     const controller = new ReportsController(service as never);
-    await expect(controller.styles({ id: "user" } as never)).resolves.toBe(result);
+    await expect(controller.styles({ id: "user" } as never)).resolves.toBe(
+      result,
+    );
     expect(service.listStyles).toHaveBeenCalledWith("user");
   });
 });

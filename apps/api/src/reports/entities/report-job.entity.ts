@@ -31,4 +31,7 @@ export class ReportJob {
   @Column({ type: "integer", default: 0 }) promptTokens!: number;
   @Column({ type: "integer", default: 0 }) completionTokens!: number;
   @Column({ type: "integer", default: 0 }) costMicros!: number;
+  @Column({ type: "varchar", length: 64, nullable: true, unique: true })
+  shareTokenHash!: string | null;
+  @Column({ type: "datetime", nullable: true }) shareExpiresAt!: Date | null;
 }

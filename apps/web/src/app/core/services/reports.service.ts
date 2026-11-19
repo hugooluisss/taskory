@@ -15,7 +15,14 @@ import {
   throwError,
   timer,
 } from 'rxjs';
-import { ReportJob, ReportRequest, ReportResult, ReportStyles } from '../models';
+import {
+  ReportJob,
+  ReportRequest,
+  ReportResult,
+  ReportStyles,
+  ReportStyle,
+  Language,
+} from '../models';
 import { ReportsRepository } from '../repositories/reports.repository';
 import { REPORT_SCHEDULER } from './report-scheduler';
 import { ReportCreationResult } from './reports.repository-result';
@@ -39,6 +46,25 @@ export class ReportsService {
   private scheduler = inject(REPORT_SCHEDULER);
   getStyles(): Observable<ReportStyles> {
     return this.repository.getStyles();
+  }
+  list(page: number) {
+    return this.repository.list(page);
+  }
+  detail(id: string) {
+    return this.repository.getDetail(id);
+  }
+  regenerate(id: string, style: ReportStyle, language: Language, customPrompt: string) {
+    return this.repository.regenerate(id, {
+      style,
+      language,
+      ...(style === 'custom' ? { customPrompt } : {}),
+    });
+  }
+  renewShare(id: string) {
+    return this.repository.renewShare(id);
+  }
+  shared(token: string) {
+    return this.repository.getShared(token);
   }
   presets(now = new Date()): ReportPresets {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());

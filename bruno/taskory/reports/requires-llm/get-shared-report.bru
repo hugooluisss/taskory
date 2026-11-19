@@ -1,0 +1,40 @@
+meta {
+  name: Get public shared report
+  type: http
+  seq: 9
+  tags: [requires-llm]
+}
+get {
+  url: {{baseUrl}}/shared/{{shareToken}}
+  body: none
+  auth: none
+}
+headers {
+  Accept: application/json
+}
+script:pre-request {
+  const user = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/auth/register", headers: { "Content-Type": "application/json" }, data: { email: "public-report+" + Date.now() + "@example.com", name: "Public report", password: bru.getEnvVar("password") } });
+  const headers = { "Content-Type": "application/json", Authorization: "Bearer " + user.data.token };
+  await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/activities", headers, data: { date: "2026-11-16", title: "Public activity", description: "Shared evidence", tags: ["public"] } });
+  const report = await bru.sendRequest({ method: "POST", url: bru.getEnvVar("baseUrl") + "/reports", headers, data: { from: "2026-11-16", to: "2026-11-16", language: "en" } });
+  bru.setVar("shareToken", report.data.shareUrl.split("/shared/")[1]);
+}
+docs {
+  Reads the public activity snapshot without an Authorization header. Setup obtains a real share link and requires an available LLM.
+}
+tests {
+  test("returns only the public period and activity snapshot", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.period).to.have.all.keys("from", "to");
+    expect(res.body.language).to.be.oneOf(["en", "es"]);
+    expect(res.body.projects).to.be.an("array");
+    expect(res.body.activities).to.be.an("array");
+    for (const activity of res.body.activities) {
+      expect(activity).to.have.all.keys("date", "title", "description", "projects", "tags", "referenceUrls");
+      expect(activity).not.to.have.property("id");
+    }
+    expect(res.body).not.to.have.property("markdown");
+    expect(res.headers["cache-control"]).to.include("no-store");
+    expect(res.headers["x-robots-tag"]).to.equal("noindex");
+  });
+}

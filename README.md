@@ -6,6 +6,10 @@ Copia `.env.example` a `.env`, genera `JWT_SECRET` con `openssl rand -hex 32` y 
 
 `WEB_BIND` vale `127.0.0.1` por defecto: configura el proxy TLS del host para conectarse a `127.0.0.1:WEB_PORT` y expón solo ese proxy. No publiques directamente el puerto web. El proxy TLS debe sobrescribir los `X-Forwarded-*` recibidos del cliente (o construirlos con sus propios valores), nunca anexar a ciegas valores suministrados por el cliente. nginx conserva `$proxy_add_x_forwarded_for` para añadir su conexión a la cadena. `TRUST_PROXY_HOPS` cuenta todos los proxies confiables, incluido nginx: 1 sin proxy externo, 2 con un proxy TLS delante.
 
+## Enlaces para compartir informes
+
+`WEB_PUBLIC_URL` es la URL base pública de la web, sin `/` final. Es obligatoria en producción y debe incluir la ruta base si la web se sirve bajo una subruta; por ejemplo: `https://host/taskory-web`. El Compose de producción la requiere en `.env`; `.env.example` trae el ejemplo. La API crea enlaces de informe válidos durante 30 días y permite renovarlos desde el detalle del informe; al renovar, el enlace anterior deja de funcionar. La página de informe muestra un QR después de crear o renovar el enlace y lo incluye al imprimir. La página pública del enlace muestra el período, idioma, nombres de proyectos y las actividades incluidas (fecha, título, descripción, proyectos, etiquetas y referencias); no muestra el informe generado ni información de la cuenta.
+
 Configura `MYSQL_ROOT_PASSWORD`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` en `.env`. MySQL aplica la política de contraseñas `MEDIUM`; usa contraseñas únicas que cumplan esa política. `DB_HOST=mysql` usa el servicio local del Compose; puedes definir `DB_HOST` con el hostname de un MySQL externo (en ese caso, el servicio local sigue disponible pero la API se conecta al host indicado).
 
 Antes de cada actualización, respalda MySQL con una transacción consistente:

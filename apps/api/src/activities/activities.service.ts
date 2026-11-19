@@ -106,9 +106,15 @@ export class ActivitiesService {
     return this.activities.findReportChunk(userId, ids);
   }
 
-  async findReportProjects(userId: string, activityIds: string[], projectIds: string[]) {
+  async findReportProjects(
+    userId: string,
+    activityIds: string[],
+    projectIds: string[],
+  ) {
     if (projectIds.length) {
-      return (await this.projects.getMany(userId, projectIds)).map(({ id, name, description }) => ({ id, name, description }));
+      return (await this.projects.getMany(userId, projectIds)).map(
+        ({ id, name, description }) => ({ id, name, description }),
+      );
     }
     return this.activities.findReportProjects(userId, activityIds);
   }

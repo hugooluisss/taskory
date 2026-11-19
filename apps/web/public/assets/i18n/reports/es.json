@@ -62,5 +62,35 @@
     "message": "Se eliminarán el informe y su progreso.",
     "confirm": "Eliminar",
     "cancel": "Conservar informe"
+  },
+  "library": {
+    "title": "Informes",
+    "description": "Tus informes guardados",
+    "new": "Nuevo informe",
+    "allProjects": "Todos los proyectos",
+    "activities": "actividades",
+    "empty": "Aún no hay informes."
+  },
+  "detail": {
+    "back": "Todos los informes",
+    "print": "Imprimir informe",
+    "delete": "Eliminar informe",
+    "copy": "Copiar Markdown",
+    "prompt": "Instrucción del informe",
+    "regenerate": "Regenerar",
+    "activitiesIncluded": "Actividades incluidas",
+    "expired": "Este enlace ha caducado.",
+    "validUntil": "Enlace válido hasta",
+    "renew": "Renovar enlace",
+    "metadata": "{{style}} · {{language}} · {{provider}} / {{model}} · {{tokens}} tokens · {{count}} actividades",
+    "customPrompt": "Instrucción personalizada del informe",
+    "language": "Idioma del informe",
+    "qrAlt": "Código QR del enlace a las actividades compartidas"
+  },
+  "shared": {
+    "title": "Actividades incluidas",
+    "loading": "Cargando informe compartido…",
+    "expired": "Este enlace ha caducado.",
+    "unknown": "Este enlace no está disponible."
   }
 }

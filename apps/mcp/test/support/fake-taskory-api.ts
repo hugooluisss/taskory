@@ -59,6 +59,7 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
   if (request.url === "/api/v1/reports" && request.method === "POST") {
     return {
       body: {
+        id: "00000000-0000-4000-8000-000000000002",
         markdown: "# Report",
         provider: "local",
         model: "test-model",
@@ -67,9 +68,37 @@ export const defaultFakeTaskoryHandler: FakeTaskoryHandler = (request) => {
         completionTokens: 3,
         costUsd: 0,
         activityCount: 3,
+        shareUrl: "https://taskory.test/shared/token",
+        shareExpiresAt: "2026-03-30T00:00:00.000Z",
       },
     };
   }
+  if (request.url.startsWith("/api/v1/reports?") && request.method === "GET")
+    return {
+      body: {
+        items: [
+          {
+            id: "00000000-0000-4000-8000-000000000002",
+            status: "completed",
+            from: "2026-01-01",
+            to: "2026-01-31",
+            language: "en",
+            style: "summary",
+            projects: [],
+            activityCount: 3,
+            provider: "local",
+            model: "test-model",
+            totalTokens: 10,
+            costUsd: 0,
+            createdAt: "2026-02-01T00:00:00.000Z",
+            finishedAt: "2026-02-01T00:00:01.000Z",
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 50,
+      },
+    };
   if (request.url === "/api/v1/reports/styles" && request.method === "GET") {
     return {
       body: {

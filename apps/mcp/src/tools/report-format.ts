@@ -4,6 +4,7 @@ export function reportResult(report: ReportResult | ReportJob): unknown {
   if ("markdown" in report && report.markdown !== undefined) {
     if ("provider" in report) {
       return {
+        id: report.id,
         markdown: report.markdown,
         provider: report.provider,
         model: report.model,
@@ -12,6 +13,8 @@ export function reportResult(report: ReportResult | ReportJob): unknown {
         completionTokens: report.completionTokens,
         costUsd: report.costUsd,
         activityCount: report.activityCount,
+        shareUrl: report.shareUrl,
+        shareExpiresAt: report.shareExpiresAt,
       };
     }
     return {
@@ -27,11 +30,13 @@ export function reportResult(report: ReportResult | ReportJob): unknown {
       costUsd: report.costUsd,
     };
   }
-  if ("id" in report) {
+  if ("status" in report) {
     return {
       id: report.id,
       status: report.status,
       progress: report.progress,
+      ...(report.shareUrl ? { shareUrl: report.shareUrl } : {}),
+      ...(report.shareExpiresAt ? { shareExpiresAt: report.shareExpiresAt } : {}),
       instruction: `Call get_report with id ${report.id} later.`,
     };
   }

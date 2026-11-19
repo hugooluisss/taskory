@@ -1,29 +1,41 @@
 <main class="mx-auto grid w-full max-w-5xl gap-5 px-4 py-6 sm:px-6">
-  <app-page-header
-    [title]="'reports.title' | transloco"
-    [description]="'reports.description' | transloco"
+  <div class="flex items-center justify-between">
+    <app-page-header
+      [title]="'reports.library.title' | transloco"
+      [description]="'reports.library.description' | transloco"
+    /><a class="btn btn-primary" routerLink="/reports/new">{{
+      'reports.library.new' | transloco
+    }}</a>
+  </div>
+  @for (report of items(); track report.id) {
+    <a
+      class="card gap-2 bg-base-100 p-5 shadow hover:shadow-md"
+      [routerLink]="['/reports', report.id]"
+    >
+      <div class="flex justify-between">
+        <h2 class="font-semibold">{{ report.from }} – {{ report.to }}</h2>
+        <span
+          class="badge"
+          [class.badge-success]="report.status === 'completed'"
+          [class.badge-error]="report.status === 'failed'"
+          >{{ report.status }}</span
+        >
+      </div>
+      <p>
+        {{ names(report) || ('reports.library.allProjects' | transloco) }} · {{ report.style }} ·
+        {{ report.language }}
+      </p>
+      <p class="text-sm text-base-content/70">
+        {{ report.createdAt | date: 'medium' }} · {{ report.activityCount }}
+        {{ 'reports.library.activities' | transloco }}
+      </p>
+    </a>
+  } @empty {
+    <p class="text-base-content/70">{{ 'reports.library.empty' | transloco }}</p>
+  }
+  <app-pagination
+    [page]="page()"
+    [pages]="Math.max(1, Math.ceil(total() / limit))"
+    (pageChange)="load($event)"
   />
-  <app-report-form (generate)="generate($event)" />
-  @if (errorKey()) {
-    <div class="alert alert-error mt-4">
-      <app-icon name="error" /><span>{{ errorKey() | transloco }}</span>
-    </div>
-    @if (activeReportId()) {
-      <button class="open-report btn btn-primary w-fit" type="button" (click)="openActiveReport()">
-        {{ 'reports.errors.openActiveReport' | transloco }}
-      </button>
-    }
-  }
-  @if (job(); as currentJob) {
-    <app-report-progress
-      [job]="currentJob"
-      [active]="currentJob.status === 'queued' || currentJob.status === 'running'"
-      (retry)="retry()"
-      (delete)="deleteJob()"
-      (cancel)="deleteJob()"
-    />
-  }
-  @if (result(); as report) {
-    <app-report-result [report]="report" />
-  }
 </main>

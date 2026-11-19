@@ -1,7 +1,6 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { ApiException } from "../common/errors/api-exception";
 import { ERROR_CODES } from "../common/errors/error-codes";
-import { REPORT_RETENTION_DAYS } from "./constants";
 import { ReportJob } from "./entities/report-job.entity";
 import { ReportJobsRepository } from "./report-jobs.repository";
 import { ReportJobParams } from "./entities/report-job-params";
@@ -10,33 +9,25 @@ import { ActiveReportExistsError } from "./errors/active-report-exists.error";
 
 @Injectable()
 export class ReportJobsService implements OnModuleDestroy {
-  private retentionTimer?: NodeJS.Timeout;
-
   constructor(
     private readonly jobs: ReportJobsRepository,
     private readonly memory: ReportMemoryRepository,
   ) {}
 
   async recover(): Promise<ReportJob[]> {
-    await this.purgeExpired();
     const interrupted = await this.jobs.findRunning();
     await this.jobs.markRunningInterrupted();
-    this.retentionTimer = setInterval(
-      () => void this.purgeExpired(),
-      24 * 60 * 60 * 1000,
-    );
     return interrupted;
   }
 
-  onModuleDestroy(): void {
-    if (this.retentionTimer) clearInterval(this.retentionTimer);
-  }
+  onModuleDestroy(): void {}
 
   async enqueue(
     userId: string,
     input: ReportJobParams,
     activityIds: string[],
     chunkSize: number,
+    sharing?: { shareTokenHash: string; shareExpiresAt: Date },
   ): Promise<ReportJob> {
     try {
       return await this.jobs.create({
@@ -53,6 +44,7 @@ export class ReportJobsService implements OnModuleDestroy {
         errorCode: null,
         errorChunk: null,
         finishedAt: null,
+        ...sharing,
       });
     } catch (error) {
       if (error instanceof ActiveReportExistsError) {
@@ -63,6 +55,18 @@ export class ReportJobsService implements OnModuleDestroy {
       }
       throw error;
     }
+  }
+
+  createCompleted(userId: string, values: Partial<ReportJob>) {
+    return this.jobs.create({ ...values, userId, status: "completed" });
+  }
+
+  list(userId: string, skip: number, take: number) {
+    return this.jobs.list(userId, skip, take);
+  }
+
+  findByShareHash(hash: string) {
+    return this.jobs.findByShareHash(hash);
   }
 
   async get(userId: string, id: string): Promise<ReportJob> {
@@ -122,6 +126,10 @@ export class ReportJobsService implements OnModuleDestroy {
     return this.memory.save(userId, row);
   }
 
+  clearMemory(userId: string, id: string) {
+    return this.memory.clear(userId, id);
+  }
+
   async delete(userId: string, id: string): Promise<void> {
     await this.get(userId, id);
     await this.jobs.remove(userId, id);
@@ -136,14 +144,14 @@ export class ReportJobsService implements OnModuleDestroy {
     id: string,
     values: Partial<ReportJob>,
   ): Promise<void> {
-    await this.jobs.update(userId, id, values);
-  }
-
-  async purgeExpired(): Promise<void> {
-    const cutoff = new Date(Date.now() - REPORT_RETENTION_DAYS * 86400000);
-    const expired = await this.jobs.purgeExpired(cutoff);
-    for (const job of expired) {
-      await this.jobs.remove(job.userId, job.id);
+    try {
+      await this.jobs.update(userId, id, values);
+    } catch (error) {
+      if (!(error instanceof ActiveReportExistsError)) throw error;
+      const active = await this.jobs.findActiveForUser(userId);
+      throw new ApiException(409, ERROR_CODES.REPORT_IN_PROGRESS, {
+        id: active?.id,
+      });
     }
   }
 }

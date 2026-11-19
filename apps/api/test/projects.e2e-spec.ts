@@ -61,7 +61,10 @@ describe("Project management", () => {
         .send({ name: "Described", description: "  Internal tools  " })
         .expect(201);
       expect(created.body.description).toBe("Internal tools");
-      await request(app.getHttpServer()).get("/api/v1/projects").set(headers).expect(200, [created.body]);
+      await request(app.getHttpServer())
+        .get("/api/v1/projects")
+        .set(headers)
+        .expect(200, [created.body]);
       await request(app.getHttpServer())
         .patch(`/api/v1/projects/${created.body.id}`)
         .set(headers)

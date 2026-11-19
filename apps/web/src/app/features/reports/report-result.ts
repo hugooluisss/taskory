@@ -16,6 +16,7 @@ export class ReportResultComponent {
   private toast = inject(ToastService);
   private transloco = inject(TranslocoService);
   @Input({ required: true }) report!: ReportResult;
+  @Input() shareUrl?: string;
   @Output() delete = new EventEmitter<void>();
   readonly copying = signal(false);
   get html(): string {
@@ -35,7 +36,7 @@ export class ReportResultComponent {
   async copy(): Promise<void> {
     this.copying.set(true);
     try {
-      await this.reports.copyMarkdown(this.report.markdown);
+      await this.reports.copyMarkdown(this.withShareUrl);
       this.toast.success(this.transloco.translate('reports.result.copied'));
     } catch {
       this.toast.error(this.transloco.translate('reports.result.copyFailed'));
@@ -44,11 +45,14 @@ export class ReportResultComponent {
     }
   }
   download(): void {
-    const url = URL.createObjectURL(new Blob([this.report.markdown], { type: 'text/markdown' }));
+    const url = URL.createObjectURL(new Blob([this.withShareUrl], { type: 'text/markdown' }));
     const link = document.createElement('a');
     link.href = url;
     link.download = 'taskory-report.md';
     link.click();
     URL.revokeObjectURL(url);
+  }
+  private get withShareUrl(): string {
+    return this.shareUrl ? `${this.report.markdown}\n\n${this.shareUrl}` : this.report.markdown;
   }
 }

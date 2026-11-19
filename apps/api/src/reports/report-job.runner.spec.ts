@@ -13,8 +13,12 @@ describe("Chunked generation for large reports", () => {
       context.runner.enqueue("report", "owner");
       await context.runner.awaitIdle();
       const projects = [{ id: "p1", name: "Core", description: "Platform" }];
-      expect(context.generator.evaluateChunk.mock.calls[0][0].projects).toEqual(projects);
-      expect(context.generator.writeFinal.mock.calls[0][0].projects).toEqual(projects);
+      expect(context.generator.evaluateChunk.mock.calls[0][0].projects).toEqual(
+        projects,
+      );
+      expect(context.generator.writeFinal.mock.calls[0][0].projects).toEqual(
+        projects,
+      );
     });
 
     it("Completion", async () => {
@@ -662,6 +666,8 @@ describe("Chunked generation for large reports", () => {
       promptTokens: 0,
       completionTokens: 0,
       costMicros: 0,
+      shareTokenHash: null,
+      shareExpiresAt: null,
     };
   }
 

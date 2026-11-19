@@ -5,6 +5,7 @@ import type {
   ActivityList,
   Project,
   ReportJob,
+  ReportList,
   ReportResult,
   ReportStyles,
 } from "../types/api.js";
@@ -91,6 +92,17 @@ export class TaskoryApiClient {
 
   listReportStyles(token: string): Promise<ReportStyles> {
     return this.get("/reports/styles", token);
+  }
+
+  listReports(
+    token: string,
+    filters: { page?: number; limit?: number },
+  ): Promise<ReportList> {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined) query.set(key, String(value));
+    }
+    return this.get(`/reports${query.size ? `?${query}` : ""}`, token);
   }
 
   getReport(token: string, id: string): Promise<ReportJob> {

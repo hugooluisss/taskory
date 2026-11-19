@@ -58,6 +58,7 @@ describe("generate_report", () => {
   it("Report returned with metadata", () => {
     expect(
       reportResult({
+        id: "report-1",
         markdown: "# Report",
         provider: "local",
         model: "m",
@@ -66,6 +67,8 @@ describe("generate_report", () => {
         completionTokens: 3,
         costUsd: 0.000001,
         activityCount: 1,
+        shareUrl: "https://taskory.test/shared/token",
+        shareExpiresAt: "2026-03-30T00:00:00.000Z",
       }),
     ).toMatchObject({
       markdown: "# Report",

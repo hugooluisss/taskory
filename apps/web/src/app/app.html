@@ -1,90 +1,92 @@
-<header class="navbar border-b border-base-300 bg-base-100 px-4 shadow-sm md:px-6">
-  <div class="mx-auto flex w-full max-w-5xl items-center gap-3">
-    <a class="text-xl font-bold text-primary no-underline" routerLink="/activities">Taskory</a>
-    <nav
-      *ngIf="auth.isAuthenticated()"
-      class="ml-6 hidden items-center gap-2 md:flex"
-      [attr.aria-label]="'nav.label' | transloco"
-    >
-      <a class="btn btn-ghost" routerLink="/activities"
-        ><app-icon name="activities" />{{ 'nav.activities' | transloco }}</a
-      >
-      <a class="btn btn-ghost" routerLink="/reports"
-        ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
-      >
-      <a class="btn btn-ghost" routerLink="/projects"
-        ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
-      >
-      <a class="btn btn-ghost" routerLink="/settings"
-        ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
-      >
-    </nav>
-    <div class="ml-auto flex items-center gap-2">
-      <app-language-switcher />
-      <button
+@if (!isPublicRoute()) {
+  <header class="navbar border-b border-base-300 bg-base-100 px-4 shadow-sm md:px-6">
+    <div class="mx-auto flex w-full max-w-5xl items-center gap-3">
+      <a class="text-xl font-bold text-primary no-underline" routerLink="/activities">Taskory</a>
+      <nav
         *ngIf="auth.isAuthenticated()"
-        class="btn btn-ghost btn-square md:hidden"
-        type="button"
-        [attr.aria-label]="'nav.menu' | transloco"
-        [attr.aria-expanded]="mobileNavOpen()"
-        aria-controls="mobile-nav"
-        (click)="mobileNavOpen.update((value) => !value)"
+        class="ml-6 hidden items-center gap-2 md:flex"
+        [attr.aria-label]="'nav.label' | transloco"
       >
-        <app-icon name="menu" />
-      </button>
-      <button
-        *ngIf="auth.isAuthenticated()"
-        class="btn btn-ghost btn-square hidden md:inline-flex tooltip tooltip-bottom"
-        type="button"
-        [attr.aria-label]="'auth.logout' | transloco"
-        [attr.data-tip]="'auth.logout' | transloco"
-        (click)="logout()"
-      >
-        <app-icon name="logout" />
-      </button>
+        <a class="btn btn-ghost" routerLink="/activities"
+          ><app-icon name="activities" />{{ 'nav.activities' | transloco }}</a
+        >
+        <a class="btn btn-ghost" routerLink="/reports"
+          ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
+        >
+        <a class="btn btn-ghost" routerLink="/projects"
+          ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
+        >
+        <a class="btn btn-ghost" routerLink="/settings"
+          ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
+        >
+      </nav>
+      <div class="ml-auto flex items-center gap-2">
+        <app-language-switcher />
+        <button
+          *ngIf="auth.isAuthenticated()"
+          class="btn btn-ghost btn-square md:hidden"
+          type="button"
+          [attr.aria-label]="'nav.menu' | transloco"
+          [attr.aria-expanded]="mobileNavOpen()"
+          aria-controls="mobile-nav"
+          (click)="mobileNavOpen.update((value) => !value)"
+        >
+          <app-icon name="menu" />
+        </button>
+        <button
+          *ngIf="auth.isAuthenticated()"
+          class="btn btn-ghost btn-square hidden md:inline-flex tooltip tooltip-bottom"
+          type="button"
+          [attr.aria-label]="'auth.logout' | transloco"
+          [attr.data-tip]="'auth.logout' | transloco"
+          (click)="logout()"
+        >
+          <app-icon name="logout" />
+        </button>
+      </div>
     </div>
-  </div>
-  @if (auth.isAuthenticated() && mobileNavOpen()) {
-    <nav
-      id="mobile-nav"
-      class="absolute left-0 right-0 top-16 z-20 grid gap-1 border-b border-base-300 bg-base-100 p-3 shadow-md md:hidden"
-      [attr.aria-label]="'nav.label' | transloco"
-    >
-      <a
-        class="btn btn-ghost justify-start"
-        routerLink="/activities"
-        (click)="mobileNavOpen.set(false)"
-        ><app-icon name="activities" />{{ 'nav.activities' | transloco }}</a
+    @if (auth.isAuthenticated() && mobileNavOpen()) {
+      <nav
+        id="mobile-nav"
+        class="absolute left-0 right-0 top-16 z-20 grid gap-1 border-b border-base-300 bg-base-100 p-3 shadow-md md:hidden"
+        [attr.aria-label]="'nav.label' | transloco"
       >
-      <a
-        class="btn btn-ghost justify-start"
-        routerLink="/reports"
-        (click)="mobileNavOpen.set(false)"
-        ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
-      >
-      <a
-        class="btn btn-ghost justify-start"
-        routerLink="/projects"
-        (click)="mobileNavOpen.set(false)"
-        ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
-      >
-      <a
-        class="btn btn-ghost justify-start"
-        routerLink="/settings"
-        (click)="mobileNavOpen.set(false)"
-        ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
-      >
-      <button
-        class="btn btn-ghost justify-start"
-        type="button"
-        [attr.aria-label]="'auth.logout' | transloco"
-        (click)="logout()"
-      >
-        <app-icon name="logout" />
-      </button>
-    </nav>
-  }
-</header>
+        <a
+          class="btn btn-ghost justify-start"
+          routerLink="/activities"
+          (click)="mobileNavOpen.set(false)"
+          ><app-icon name="activities" />{{ 'nav.activities' | transloco }}</a
+        >
+        <a
+          class="btn btn-ghost justify-start"
+          routerLink="/reports"
+          (click)="mobileNavOpen.set(false)"
+          ><app-icon name="reports" />{{ 'nav.reports' | transloco }}</a
+        >
+        <a
+          class="btn btn-ghost justify-start"
+          routerLink="/projects"
+          (click)="mobileNavOpen.set(false)"
+          ><app-icon name="settings" />{{ 'nav.projects' | transloco }}</a
+        >
+        <a
+          class="btn btn-ghost justify-start"
+          routerLink="/settings"
+          (click)="mobileNavOpen.set(false)"
+          ><app-icon name="settings" />{{ 'nav.settings' | transloco }}</a
+        >
+        <button
+          class="btn btn-ghost justify-start"
+          type="button"
+          [attr.aria-label]="'auth.logout' | transloco"
+          (click)="logout()"
+        >
+          <app-icon name="logout" />
+        </button>
+      </nav>
+    }
+  </header>
+}
 <router-outlet />
 <app-confirm-dialog />
 <app-toast />

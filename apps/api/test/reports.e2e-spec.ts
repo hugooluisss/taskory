@@ -60,6 +60,7 @@ describe("Report generation", () => {
       model: "caller-choice",
     }).expect(200);
     expect(response.body).toEqual({
+      id: expect.any(String),
       markdown: "# Report",
       provider: "ollama",
       model: "test",
@@ -68,9 +69,175 @@ describe("Report generation", () => {
       completionTokens: 0,
       costUsd: 0,
       activityCount: 1,
+      shareUrl: expect.stringMatching(
+        /^http:\/\/localhost:4200\/shared\/[A-Za-z0-9_-]{43}$/,
+      ),
+      shareExpiresAt: expect.any(String),
     });
     expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("provider");
     expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("model");
+  });
+
+  it("Synchronous report is stored", async () => {
+    await create(owner, { date: "2026-11-16", title: "Saved report activity" });
+    const created = await report(owner).expect(200);
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/reports/${created.body.id}`)
+      .set(auth(owner))
+      .expect(200);
+    expect(detail.body).toMatchObject({
+      id: created.body.id,
+      status: "completed",
+      markdown: "# Report",
+      shareExpiresAt: expect.any(String),
+    });
+  });
+
+  it("Report listing is paginated and isolated", async () => {
+    await create(owner, { date: "2026-11-16", title: "Owner activity" });
+    await create(other, { date: "2026-11-16", title: "Other activity" });
+    const own = await report(owner).expect(200);
+    await report(other).expect(200);
+    const listing = await request(app.getHttpServer())
+      .get("/api/v1/reports")
+      .set(auth(owner))
+      .expect(200);
+    expect(listing.body).toMatchObject({
+      total: 1,
+      items: [{ id: own.body.id, costUsd: 0, projects: [] }],
+    });
+    expect(listing.body.items[0]).not.toHaveProperty("markdown");
+    await request(app.getHttpServer())
+      .get(`/api/v1/reports/${own.body.id}`)
+      .set(auth(other))
+      .expect(404);
+  });
+
+  it("Valid share link returns only the activity snapshot", async () => {
+    await create(owner, {
+      date: "2026-11-16",
+      title: "Shared evidence",
+      description: "Public description",
+      tags: ["safe"],
+    });
+    const created = await report(owner).expect(200);
+    const token = String(created.body.shareUrl).split("/").at(-1);
+    const shared = await request(app.getHttpServer())
+      .get(`/api/v1/shared/${token}`)
+      .expect(200);
+    expect(shared.headers["cache-control"]).toBe("no-store");
+    expect(shared.headers["x-robots-tag"]).toBe("noindex");
+    expect(shared.body).toMatchObject({
+      period: { from: "2026-11-01", to: "2026-11-30" },
+      language: "en",
+      activities: [
+        {
+          title: "Shared evidence",
+          description: "Public description",
+          tags: ["safe"],
+        },
+      ],
+    });
+    expect(shared.body).not.toHaveProperty("markdown");
+    expect(shared.body.activities[0]).not.toHaveProperty("id");
+  });
+
+  it("Unknown and hostile share tokens are not found", async () => {
+    for (const token of ["missing", "x".repeat(10000)])
+      await request(app.getHttpServer())
+        .get(`/api/v1/shared/${token}`)
+        .expect(404);
+  });
+
+  it("Flood is rate limited", async () => {
+    const token = "A".repeat(43);
+    for (let attempt = 0; attempt < 5; attempt += 1)
+      await request(app.getHttpServer())
+        .get(`/api/v1/shared/${token}`)
+        .expect(404);
+    await request(app.getHttpServer())
+      .get(`/api/v1/shared/${token}`)
+      .expect(429);
+  });
+
+  it("Renew invalidates the old share link", async () => {
+    await create(owner, { date: "2026-11-16", title: "Renew evidence" });
+    const created = await report(owner).expect(200);
+    const oldToken = String(created.body.shareUrl).split("/").at(-1);
+    const renewed = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${created.body.id}/share/renew`)
+      .set(auth(owner))
+      .expect(200);
+    const newToken = String(renewed.body.shareUrl).split("/").at(-1);
+    expect(newToken).not.toBe(oldToken);
+    await request(app.getHttpServer())
+      .get(`/api/v1/shared/${oldToken}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .get(`/api/v1/shared/${newToken}`)
+      .expect(200);
+  });
+
+  it("Expired share link returns SHARE_EXPIRED", async () => {
+    await create(owner, { date: "2026-11-16", title: "Expired evidence" });
+    const created = await report(owner).expect(200);
+    const token = String(created.body.shareUrl).split("/").at(-1);
+    await app
+      .get(DataSource)
+      .getRepository(ReportJob)
+      .update(created.body.id, { shareExpiresAt: new Date(Date.now() - 1000) });
+    await request(app.getHttpServer())
+      .get(`/api/v1/shared/${token}`)
+      .expect(410)
+      .expect(({ body }) => expect(body.code).toBe("SHARE_EXPIRED"));
+  });
+
+  it("Deleted report invalidates its share link", async () => {
+    await create(owner, { date: "2026-11-16", title: "Deleted evidence" });
+    const created = await report(owner).expect(200);
+    const token = String(created.body.shareUrl).split("/").at(-1);
+    await request(app.getHttpServer())
+      .delete(`/api/v1/reports/${created.body.id}`)
+      .set(auth(owner))
+      .expect(204);
+    await request(app.getHttpServer())
+      .get(`/api/v1/shared/${token}`)
+      .expect(404);
+  });
+
+  it("Regenerate with custom prompt", async () => {
+    await create(owner, { date: "2026-11-16", title: "Original snapshot" });
+    const created = await report(owner).expect(200);
+    const originalIds = await app
+      .get(DataSource)
+      .getRepository(ReportJob)
+      .findOneOrFail({ where: { id: created.body.id } })
+      .then(({ activityIds }) => activityIds);
+    const accepted = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${created.body.id}/regenerate`)
+      .set(auth(owner))
+      .send({ style: "custom", customPrompt: "  Group by project.  " })
+      .expect(202);
+    await app.get(ReportJobRunner).awaitIdle();
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/reports/${created.body.id}`)
+      .set(auth(owner))
+      .expect(200);
+    expect(accepted.body).toMatchObject({
+      id: created.body.id,
+      status: "queued",
+    });
+    expect(detail.body).toMatchObject({
+      status: "completed",
+      markdown: "# Final report",
+      customPrompt: "Group by project.",
+    });
+    await expect(
+      app
+        .get(DataSource)
+        .getRepository(ReportJob)
+        .findOneOrFail({ where: { id: created.body.id } }),
+    ).resolves.toMatchObject({ activityIds: originalIds });
   });
 
   it("List styles", async () => {
@@ -80,8 +247,14 @@ describe("Report generation", () => {
       .expect(200);
     expect(response.body).toMatchObject({
       styles: [
-        { id: "summary", prompt: { es: expect.any(String), en: expect.any(String) } },
-        { id: "detailed", prompt: { es: expect.any(String), en: expect.any(String) } },
+        {
+          id: "summary",
+          prompt: { es: expect.any(String), en: expect.any(String) },
+        },
+        {
+          id: "detailed",
+          prompt: { es: expect.any(String), en: expect.any(String) },
+        },
       ],
       customPrompt: null,
     });
@@ -89,7 +262,10 @@ describe("Report generation", () => {
 
   it("Generate with custom prompt", async () => {
     await create(owner, { date: "2026-11-16", title: "Owned" });
-    await report(owner, { style: "custom", customPrompt: "  Group by project.  " }).expect(200);
+    await report(owner, {
+      style: "custom",
+      customPrompt: "  Group by project.  ",
+    }).expect(200);
     expect(generator.generate.mock.calls[0][0]).toMatchObject({
       style: "custom",
       customPrompt: "Group by project.",
@@ -119,7 +295,9 @@ describe("Report generation", () => {
   it("Prompt only matters for custom", async () => {
     await create(owner, { date: "2026-11-16", title: "Owned" });
     await report(owner, { customPrompt: "Ignore this" }).expect(200);
-    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty("customPrompt");
+    expect(generator.generate.mock.calls[0][0]).not.toHaveProperty(
+      "customPrompt",
+    );
     const styles = await request(app.getHttpServer())
       .get("/api/v1/reports/styles")
       .set(auth(owner))
@@ -221,10 +399,12 @@ describe("Report generation", () => {
         { id: alphaId, name: "Alpha", description: "Delivery context" },
       ]);
       await report(owner, { projectIds: [] }).expect(200);
-      expect(generator.generate.mock.calls[1][0].projects).toEqual(expect.arrayContaining([
-        { id: alphaId, name: "Alpha", description: "Delivery context" },
-        { id: betaId, name: "Beta", description: null },
-      ]));
+      expect(generator.generate.mock.calls[1][0].projects).toEqual(
+        expect.arrayContaining([
+          { id: alphaId, name: "Alpha", description: "Delivery context" },
+          { id: betaId, name: "Beta", description: null },
+        ]),
+      );
     });
 
     it("None means all", async () => {
@@ -885,6 +1065,8 @@ function seedJob(
     promptTokens: 0,
     completionTokens: 0,
     costMicros: 0,
+    shareTokenHash: null,
+    shareExpiresAt: null,
   };
 }
 
